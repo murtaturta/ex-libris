@@ -1,0 +1,18 @@
+# Dependencies & Build Output
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Local Runtime State, Raw Exports & Personal Caches
+/data/
+*.zip
+*.csv
+ExLibris-Portable.html
+
+# Environment & Editor Files
+.env
+.env.*
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
