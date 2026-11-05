@@ -5,9 +5,13 @@ import {
   computeLanguagePassportMetrics,
   computeFormatVelocity,
   computeContrarianMetrics,
+  computeTranslatorLoyalty,
+  computeLiteraryHorizons,
+  computeReadingFrictionMetrics,
 } from '../lib/analytics/engine';
 import { FORMAT_LABELS, LANGUAGE_LABELS } from '../lib/classifiers/languageAndFormat';
 import { formatPublicationYear } from '../lib/formatters';
+import { getGoodreadsBookUrl, getGoodreadsAuthorUrl } from '../lib/links/goodreadsLinks';
 import {
   Compass,
   Star,
@@ -29,6 +33,7 @@ import {
   BookOpen,
   ArrowRight,
   ShieldAlert,
+  ExternalLink,
 } from 'lucide-react';
 
 interface ObservatoryViewProps {
@@ -38,6 +43,7 @@ interface ObservatoryViewProps {
   userState: UserLocalState;
   enrichmentCache: EnrichmentCacheMap;
   onOpenEnrichModal: () => void;
+  onOpenBookplate?: () => void;
 }
 
 export const ObservatoryView: React.FC<ObservatoryViewProps> = ({
@@ -47,6 +53,7 @@ export const ObservatoryView: React.FC<ObservatoryViewProps> = ({
   userState,
   enrichmentCache,
   onOpenEnrichModal,
+  onOpenBookplate,
 }) => {
   const books = bundle.books || [];
 
@@ -111,6 +118,26 @@ export const ObservatoryView: React.FC<ObservatoryViewProps> = ({
       return null;
     }
   }, [bundle, enrichmentCache]);
+
+  // B-08: Translator Loyalty & Affinity Conduits
+  const translatorLoyalty = useMemo(() => {
+    try {
+      return computeTranslatorLoyalty(bundle, userState);
+    } catch (e) {
+      console.warn('computeTranslatorLoyalty fallback:', e);
+      return [];
+    }
+  }, [bundle, userState]);
+
+  // B-12 (Lucien's Grant): Literary Frontier Radar & Uncharted Horizons
+  const literaryHorizons = useMemo(() => {
+    try {
+      return computeLiteraryHorizons(bundle, userState, enrichmentCache);
+    } catch (e) {
+      console.warn('computeLiteraryHorizons fallback:', e);
+      return null;
+    }
+  }, [bundle, userState, enrichmentCache]);
 
   // Session Forensics (Fastest Sprints, Longest Burns, Re-Reads)
   const { fastestSprints, longestBurns, reReadHallOfFame } = useMemo(() => {
@@ -234,10 +261,10 @@ export const ObservatoryView: React.FC<ObservatoryViewProps> = ({
     return list;
   }, [books, bundle.followedAuthors]);
 
-  // DNF Forensics Table
-  const dnfBooks = useMemo(() => {
-    return books.filter((b) => b.exclusiveShelf === 'did-not-finish');
-  }, [books]);
+  // Reading Friction Metrics & Abandonment Post-Mortem
+  const frictionMetrics = useMemo(() => {
+    return computeReadingFrictionMetrics(bundle, userState);
+  }, [bundle, userState]);
 
   // Circadian rhythm & trophy data
   const circadian = bundle.activityByHour;
@@ -349,20 +376,42 @@ export const ObservatoryView: React.FC<ObservatoryViewProps> = ({
               </div>
 
               <div className="flex flex-wrap gap-2 max-h-[220px] overflow-y-auto pr-1">
-                {fiveStarCanon.map((book) => (
-                  <button
-                    key={book.id}
-                    onClick={() => onSelectBook(book)}
-                    className="group px-3 py-1.5 rounded-lg bg-[var(--bg-surface)] hover:bg-[var(--accent-gold)]/15 border border-[var(--border-ledger)] hover:border-[var(--accent-gold)] transition-all cursor-pointer text-left"
-                  >
-                    <span className="font-serif-editorial text-xs font-semibold text-[var(--text-ink)] group-hover:text-[var(--accent-primary)] transition-colors">
-                      {book.cleanTitle || book.title}
-                    </span>
-                    <span className="text-[10px] text-[var(--text-muted)] ml-1.5 font-mono-tabular">
-                      · {book.author.split(' ').pop()}
-                    </span>
-                  </button>
-                ))}
+                {fiveStarCanon.map((book) => {
+                  const grLink = getGoodreadsBookUrl(book);
+                  return (
+                    <div
+                      key={book.id}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => onSelectBook(book)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          onSelectBook(book);
+                        }
+                      }}
+                      className="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--bg-surface)] hover:bg-[var(--accent-gold)]/15 border border-[var(--border-ledger)] hover:border-[var(--accent-gold)] transition-all cursor-pointer text-left focus:outline-none focus:ring-1 focus:ring-[var(--accent-gold)]"
+                    >
+                      <span className="font-serif-editorial text-xs font-semibold text-[var(--text-ink)] group-hover:text-[var(--accent-primary)] transition-colors">
+                        {book.cleanTitle || book.title}
+                      </span>
+                      <span className="text-[10px] text-[var(--text-muted)] font-mono-tabular">
+                        · {book.author.split(' ').pop()}
+                      </span>
+                      <a
+                        href={grLink.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        title={`Open ${grLink.label} on Goodreads`}
+                        className="opacity-0 group-hover:opacity-100 p-0.5 text-[var(--text-muted)] hover:text-[var(--accent-primary)] transition-opacity"
+                        aria-label={`Open ${book.cleanTitle || book.title} on Goodreads`}
+                      >
+                        <ExternalLink className="w-2.5 h-2.5" />
+                      </a>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -469,30 +518,54 @@ export const ObservatoryView: React.FC<ObservatoryViewProps> = ({
                   </p>
 
                   <div className="space-y-2.5">
-                    {contrarianMetrics.sacredCowsSlain.slice(0, 5).map((item, idx) => (
-                      <div
-                        key={idx}
-                        onClick={() => onSelectBook(item.book)}
-                        className="p-3 rounded-lg bg-[var(--bg-surface)] hover:bg-[var(--bg-surface)]/80 border border-transparent hover:border-[var(--accent-primary)]/40 transition-colors cursor-pointer group flex items-center justify-between gap-3"
-                      >
-                        <div className="min-w-0">
-                          <h4 className="font-serif-editorial text-xs font-bold text-[var(--text-ink)] group-hover:text-[var(--accent-primary)] truncate">
-                            {item.book.cleanTitle || item.book.title}
-                          </h4>
-                          <p className="text-[11px] text-[var(--text-muted)] truncate">
-                            by {item.book.author}
-                          </p>
-                        </div>
-                        <div className="text-right shrink-0 font-mono-tabular">
-                          <div className="text-xs font-bold text-[var(--accent-primary)]">
-                            {item.delta}★
+                    {contrarianMetrics.sacredCowsSlain.slice(0, 5).map((item, idx) => {
+                      const grLink = getGoodreadsBookUrl(item.book);
+                      return (
+                        <div
+                          key={idx}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => onSelectBook(item.book)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              onSelectBook(item.book);
+                            }
+                          }}
+                          className="p-3 rounded-lg bg-[var(--bg-surface)] hover:bg-[var(--bg-surface)]/80 border border-transparent hover:border-[var(--accent-primary)]/40 transition-colors cursor-pointer group flex items-center justify-between gap-3 focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5">
+                              <h4 className="font-serif-editorial text-xs font-bold text-[var(--text-ink)] group-hover:text-[var(--accent-primary)] truncate">
+                                {item.book.cleanTitle || item.book.title}
+                              </h4>
+                              <a
+                                href={grLink.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                title={`Open ${grLink.label} on Goodreads`}
+                                className="opacity-0 group-hover:opacity-100 p-0.5 text-[var(--text-muted)] hover:text-[var(--accent-primary)] transition-opacity shrink-0"
+                                aria-label={`Open ${item.book.cleanTitle || item.book.title} on Goodreads`}
+                              >
+                                <ExternalLink className="w-2.5 h-2.5" />
+                              </a>
+                            </div>
+                            <p className="text-[11px] text-[var(--text-muted)] truncate">
+                              by {item.book.author}
+                            </p>
                           </div>
-                          <div className="text-[10px] text-[var(--text-muted)]">
-                            You: {item.myRating}★ · Avg: {item.communityRating}★
+                          <div className="text-right shrink-0 font-mono-tabular">
+                            <div className="text-xs font-bold text-[var(--accent-primary)]">
+                              {item.delta}★
+                            </div>
+                            <div className="text-[10px] text-[var(--text-muted)]">
+                              You: {item.myRating}★ · Avg: {item.communityRating}★
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -515,30 +588,54 @@ export const ObservatoryView: React.FC<ObservatoryViewProps> = ({
                   </p>
 
                   <div className="space-y-2.5">
-                    {contrarianMetrics.hiddenChampions.slice(0, 5).map((item, idx) => (
-                      <div
-                        key={idx}
-                        onClick={() => onSelectBook(item.book)}
-                        className="p-3 rounded-lg bg-[var(--bg-surface)] hover:bg-[var(--bg-surface)]/80 border border-transparent hover:border-[var(--accent-secondary)]/40 transition-colors cursor-pointer group flex items-center justify-between gap-3"
-                      >
-                        <div className="min-w-0">
-                          <h4 className="font-serif-editorial text-xs font-bold text-[var(--text-ink)] group-hover:text-[var(--accent-secondary)] truncate">
-                            {item.book.cleanTitle || item.book.title}
-                          </h4>
-                          <p className="text-[11px] text-[var(--text-muted)] truncate">
-                            by {item.book.author}
-                          </p>
-                        </div>
-                        <div className="text-right shrink-0 font-mono-tabular">
-                          <div className="text-xs font-bold text-[var(--accent-secondary)]">
-                            +{item.delta}★
+                    {contrarianMetrics.hiddenChampions.slice(0, 5).map((item, idx) => {
+                      const grLink = getGoodreadsBookUrl(item.book);
+                      return (
+                        <div
+                          key={idx}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => onSelectBook(item.book)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              onSelectBook(item.book);
+                            }
+                          }}
+                          className="p-3 rounded-lg bg-[var(--bg-surface)] hover:bg-[var(--bg-surface)]/80 border border-transparent hover:border-[var(--accent-secondary)]/40 transition-colors cursor-pointer group flex items-center justify-between gap-3 focus:outline-none focus:ring-1 focus:ring-[var(--accent-secondary)]"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5">
+                              <h4 className="font-serif-editorial text-xs font-bold text-[var(--text-ink)] group-hover:text-[var(--accent-secondary)] truncate">
+                                {item.book.cleanTitle || item.book.title}
+                              </h4>
+                              <a
+                                href={grLink.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                title={`Open ${grLink.label} on Goodreads`}
+                                className="opacity-0 group-hover:opacity-100 p-0.5 text-[var(--text-muted)] hover:text-[var(--accent-secondary)] transition-opacity shrink-0"
+                                aria-label={`Open ${item.book.cleanTitle || item.book.title} on Goodreads`}
+                              >
+                                <ExternalLink className="w-2.5 h-2.5" />
+                              </a>
+                            </div>
+                            <p className="text-[11px] text-[var(--text-muted)] truncate">
+                              by {item.book.author}
+                            </p>
                           </div>
-                          <div className="text-[10px] text-[var(--text-muted)]">
-                            You: {item.myRating}★ · Avg: {item.communityRating}★
+                          <div className="text-right shrink-0 font-mono-tabular">
+                            <div className="text-xs font-bold text-[var(--accent-secondary)]">
+                              +{item.delta}★
+                            </div>
+                            <div className="text-[10px] text-[var(--text-muted)]">
+                              You: {item.myRating}★ · Avg: {item.communityRating}★
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -740,33 +837,67 @@ export const ObservatoryView: React.FC<ObservatoryViewProps> = ({
               </div>
             </div>
 
-            {/* Most-Read Translators Leaderboard */}
+            {/* B-08: Translator Loyalty & Affinity Conduits */}
             <div className="p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs">
-              <div className="text-xs font-mono-tabular uppercase tracking-wider text-[var(--accent-gold)] font-bold mb-3">
-                Most-Read Translators Leaderboard
+              <div className="flex items-center justify-between mb-3">
+                <div className="text-xs font-mono-tabular uppercase tracking-wider text-[var(--accent-gold)] font-bold flex items-center gap-1.5">
+                  <Languages className="w-3.5 h-3.5" />
+                  <span>Translator Loyalty & Conduits</span>
+                </div>
+                <span className="text-[11px] text-[var(--text-muted)] italic">
+                  Trusted Voices Across Tongues
+                </span>
               </div>
-              {languageMetrics.topTranslators.length === 0 ? (
+              {translatorLoyalty.length === 0 ? (
                 <p className="text-xs text-[var(--text-muted)] italic">
                   Translator data is inferred when foreign works include accredited contributors.
                 </p>
               ) : (
                 <div className="space-y-2.5">
-                  {languageMetrics.topTranslators.slice(0, 5).map((trans, idx) => (
+                  {translatorLoyalty.slice(0, 5).map((trans, idx) => (
                     <div
                       key={idx}
-                      className="p-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] text-xs flex items-center justify-between"
+                      className="p-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] text-xs space-y-1.5"
                     >
-                      <div>
-                        <span className="font-serif-editorial font-bold text-sm text-[var(--text-ink)]">
-                          {trans.name}
-                        </span>
-                        <div className="text-[10px] font-mono-tabular text-[var(--text-muted)] mt-0.5">
-                          {trans.languages.slice(0, 2).join(' · ')}
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <a
+                            href={getGoodreadsAuthorUrl(trans.translator)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-serif-editorial font-bold text-sm text-[var(--text-ink)] hover:text-[var(--accent-primary)] transition-colors truncate inline-flex items-center gap-1 group"
+                            title={`Search ${trans.translator} on Goodreads`}
+                          >
+                            <span>{trans.translator}</span>
+                            <ExternalLink className="w-2.5 h-2.5 opacity-60 group-hover:opacity-100 transition-opacity" />
+                          </a>
+                          {trans.translationFlows.length > 0 && (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-mono-tabular bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] shrink-0">
+                              {trans.translationFlows.slice(0, 2).join(', ')}
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-right font-mono-tabular shrink-0 text-xs">
+                          <span className="font-bold text-[var(--text-ink)]">
+                            {trans.readCount} read
+                          </span>
+                          {trans.toReadCount > 0 && (
+                            <span className="text-[10px] text-[var(--accent-secondary)] ml-1">
+                              (+{trans.toReadCount} TBR)
+                            </span>
+                          )}
+                          {trans.avgRating !== null && (
+                            <span className="text-[var(--accent-gold)] font-bold ml-1.5">
+                              · {trans.avgRating.toFixed(2)} ★
+                            </span>
+                          )}
                         </div>
                       </div>
-                      <div className="font-mono-tabular font-bold text-xs text-[var(--accent-gold)]">
-                        {trans.count} volume{trans.count > 1 ? 's' : ''}
-                      </div>
+                      {trans.sampleTitles.length > 0 && (
+                        <div className="text-[11px] text-[var(--text-muted)] italic truncate">
+                          “{trans.sampleTitles.slice(0, 2).join('”, “')}”
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -1066,149 +1197,412 @@ export const ObservatoryView: React.FC<ObservatoryViewProps> = ({
         </div>
       </section>
 
-      {/* 8. DNF Forensics Table (The Abandoned Shelf) */}
-      <section aria-labelledby="dnf-heading" className="space-y-4">
+      {/* 8. The Reading Friction Index & Abandonment Post-Mortem */}
+      <section aria-labelledby="dnf-heading" className="space-y-6">
         <div className="flex items-center justify-between pb-2 border-b border-[var(--border-ledger)]">
           <div className="flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-[var(--accent-primary)]" />
+            <ShieldAlert className="w-4 h-4 text-amber-600 dark:text-amber-400" />
             <h2
               id="dnf-heading"
               className="font-serif-editorial text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-ink)]"
             >
-              DNF Forensics: The Abandoned Shelf
+              The Reading Friction Index &amp; Abandonment Post-Mortem
             </h2>
-            <span className="text-xs font-mono-tabular px-2 py-0.5 rounded bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] font-semibold">
-              {dnfBooks.length} volumes
+            <span className="text-xs font-mono-tabular px-2 py-0.5 rounded bg-amber-500/10 text-amber-700 dark:text-amber-300 font-semibold border border-amber-500/20">
+              {frictionMetrics.dnfCount} volumes relinquished
             </span>
           </div>
-          <span className="text-xs text-[var(--text-muted)] hidden sm:inline">
-            Volumes consciously relinquished with exit notes
+          <span className="text-xs text-[var(--text-muted)] hidden sm:inline font-mono-tabular">
+            Editorial triage &amp; cognitive boundary defense
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {dnfBooks.map((book) => (
-            <div
-              key={book.id}
-              onClick={() => onSelectBook(book)}
-              className="p-5 rounded-lg bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs hover:border-[var(--accent-primary)] transition-colors cursor-pointer group flex flex-col justify-between"
-            >
-              <div>
-                <div className="flex items-center justify-between gap-2 mb-1">
-                  <h3 className="font-serif-editorial text-base font-bold text-[var(--text-ink)] group-hover:text-[var(--accent-primary)] truncate">
-                    {book.cleanTitle || book.title}
-                  </h3>
-                  <span className="text-xs font-mono-tabular text-[var(--text-muted)] shrink-0">
-                    {book.pageCount ? `${book.pageCount} pp.` : ''}
-                  </span>
-                </div>
-                <p className="text-xs text-[var(--text-muted)] font-medium">by {book.author}</p>
-
-                {book.myReview ? (
-                  <p className="mt-3 text-xs text-[var(--text-muted)] italic border-l-2 border-[var(--accent-primary)]/40 pl-2.5 line-clamp-3">
-                    “{book.myReview.replace(/<[^>]+>/g, '')}”
-                  </p>
-                ) : (
-                  <p className="mt-2 text-xs text-[var(--text-muted)]/60 italic">
-                    Relinquished without written exit statement.
-                  </p>
-                )}
+        {/* Editorial Discernment & Pages Preserved Banner */}
+        <div className="p-6 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Metric 1: Total Pages Preserved */}
+            <div className="p-4 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)]">
+              <span className="text-[10px] font-mono-tabular uppercase tracking-wider text-[var(--accent-secondary)] font-bold block mb-1">
+                Pages Preserved (Saved)
+              </span>
+              <div className="font-serif-editorial text-2xl sm:text-3xl font-bold text-[var(--accent-secondary)]">
+                +{frictionMetrics.totalPagesSaved.toLocaleString()} pp.
               </div>
+              <p className="text-xs text-[var(--text-muted)] mt-1">
+                Unread bulk consciously preserved across {frictionMetrics.dnfCount} abandoned works
+              </p>
+            </div>
 
-              <div className="mt-4 pt-3 border-t border-[var(--border-ledger)]/60 flex items-center justify-between text-[11px] font-mono-tabular text-[var(--text-muted)]">
-                <span>
-                  Abandoned {book.dateRead ? book.dateRead.slice(0, 10) : 'Date unrecorded'}
-                </span>
-                <span className="text-[var(--accent-primary)] font-semibold group-hover:underline">
-                  Inspect Dossier →
-                </span>
+            {/* Metric 2: Drop-Off Archetypes */}
+            <div className="p-4 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)]">
+              <span className="text-[10px] font-mono-tabular uppercase tracking-wider text-[var(--text-muted)] font-bold block mb-1">
+                Drop-Off Archetype Split
+              </span>
+              <div className="space-y-1.5 text-xs font-mono-tabular pt-0.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[var(--text-ink)]">⚡ Early Exit (&lt;25%):</span>
+                  <strong className="text-[var(--text-ink)]">{frictionMetrics.dropOffCounts.earlyExit}</strong>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[var(--text-ink)]">🌊 Midpoint Drift (25–60%):</span>
+                  <strong className="text-[var(--text-ink)]">{frictionMetrics.dropOffCounts.midpointDrift}</strong>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[var(--text-ink)]">🛑 Late Exit (&gt;60%):</span>
+                  <strong className="text-[var(--text-ink)]">{frictionMetrics.dropOffCounts.lateExit}</strong>
+                </div>
               </div>
             </div>
-          ))}
+
+            {/* Metric 3: Recurrent Friction Patterns */}
+            <div className="p-4 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)]">
+              <span className="text-[10px] font-mono-tabular uppercase tracking-wider text-[var(--text-muted)] font-bold block mb-1">
+                Recurrent Friction Signatures
+              </span>
+              {frictionMetrics.frictionPatternCounts.length === 0 ? (
+                <p className="text-xs text-[var(--text-muted)] italic">No repetitive structural patterns.</p>
+              ) : (
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {frictionMetrics.frictionPatternCounts.map((fp) => (
+                    <span
+                      key={fp.label}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono-tabular bg-[var(--bg-card)] border border-[var(--border-ledger)] text-[var(--text-ink)]"
+                    >
+                      <span>{fp.label}</span>
+                      <strong className="text-amber-700 dark:text-amber-300">({fp.count})</strong>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="text-xs font-serif-editorial italic text-[var(--text-muted)] leading-relaxed pt-1 border-t border-[var(--border-ledger)]/60">
+            &ldquo;Abandonment is not reading failure; it is active editorial stewardship. Every doorstopper set aside early preserves cognitive margin for books worthy of deep savor.&rdquo;
+          </div>
+        </div>
+
+        {/* Detailed DNF Forensic Dossiers */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {frictionMetrics.dnfBooks.map((item) => {
+            const { book, pagesRead, totalPages, pagesSaved, percentAtExit, dropOffLabel, frictionTags } = item;
+            return (
+              <div
+                key={book.id}
+                onClick={() => onSelectBook(book)}
+                className="p-5 rounded-lg bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs hover:border-[var(--accent-primary)] transition-all cursor-pointer group flex flex-col justify-between space-y-3"
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-2 mb-1.5">
+                    <span className="text-[10px] font-mono-tabular uppercase tracking-wider px-2 py-0.5 rounded bg-[var(--bg-surface)] text-[var(--text-muted)] border border-[var(--border-ledger)] font-semibold">
+                      {dropOffLabel}
+                    </span>
+                    <span className="inline-flex items-center gap-1 text-[11px] font-mono-tabular px-2 py-0.5 rounded bg-[var(--accent-secondary)]/15 text-[var(--accent-secondary)] border border-[var(--accent-secondary)]/30 font-bold">
+                      +{pagesSaved} pp. saved
+                    </span>
+                  </div>
+
+                  <h3 className="font-serif-editorial text-base font-bold text-[var(--text-ink)] group-hover:text-[var(--accent-primary)] transition-colors leading-snug">
+                    {book.cleanTitle || book.title}
+                  </h3>
+                  <p className="text-xs text-[var(--text-muted)] font-medium mt-0.5">by {book.author}</p>
+
+                  {/* Progress at exit & friction tags */}
+                  <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+                    <span className="text-[11px] font-mono-tabular text-[var(--text-muted)]">
+                      Exited at ~{pagesRead} of {totalPages} pp. ({percentAtExit}%)
+                    </span>
+                    {frictionTags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="text-[10px] font-mono-tabular px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-800 dark:text-amber-200 border border-amber-500/25"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Review / Exit Statement */}
+                  {book.myReview ? (
+                    <p className="mt-3 text-xs text-[var(--text-muted)] italic border-l-2 border-[var(--accent-primary)]/40 pl-2.5 line-clamp-3 font-serif-editorial">
+                      &ldquo;{book.myReview.replace(/<[^>]+>/g, '')}&rdquo;
+                    </p>
+                  ) : (
+                    <p className="mt-2.5 text-xs text-[var(--text-muted)]/60 italic font-serif-editorial">
+                      Relinquished without written exit statement.
+                    </p>
+                  )}
+                </div>
+
+                <div className="pt-3 border-t border-[var(--border-ledger)]/60 flex items-center justify-between text-[11px] font-mono-tabular text-[var(--text-muted)]">
+                  <span>
+                    Abandoned {book.dateRead ? book.dateRead.slice(0, 10) : 'Date unrecorded'}
+                  </span>
+                  <span className="text-[var(--accent-primary)] font-semibold group-hover:underline">
+                    Inspect Dossier →
+                  </span>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </section>
 
-      {/* 9. Circadian Reading Rhythm & Platform Split */}
-      {circadian && (
-        <section aria-labelledby="circadian-heading" className="space-y-4">
-          <div className="flex items-center justify-between pb-2 border-b border-[var(--border-ledger)]">
-            <div className="flex items-center gap-2">
-              <Activity className="w-4 h-4 text-[var(--accent-secondary)]" />
-              <h2
-                id="circadian-heading"
-                className="font-serif-editorial text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-ink)]"
+      {/* Optional Goodreads Client Platform Split from DSAR Archive */}
+      {circadian?.platformBreakdown && (
+        <div className="px-5 py-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs flex flex-wrap items-center justify-between gap-3 text-xs font-mono-tabular">
+          <span className="text-[var(--text-muted)] font-semibold uppercase tracking-wider text-[11px]">
+            Goodreads Activity Platform Breakdown:
+          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            {Object.entries(circadian.platformBreakdown).map(([platform, count]) => (
+              <div
+                key={platform}
+                className="px-2.5 py-1 rounded bg-[var(--bg-surface)] text-[var(--text-ink)] border border-[var(--border-ledger)]"
               >
-                Circadian Reading Rhythm
-              </h2>
-            </div>
-            <span className="text-xs font-mono-tabular text-[var(--text-muted)]">
-              Peak: {circadian.peakHour}:00 · Quietest: {circadian.quietestHour}:00
-            </span>
-          </div>
-
-          <div className="p-6 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs space-y-6">
-            {/* 24-Hour Bar Chart */}
-            <div>
-              <div className="text-xs font-mono-tabular uppercase tracking-wider text-[var(--text-muted)] font-semibold mb-3">
-                24-Hour Reading &amp; Login Event Distribution (00:00 – 23:00)
+                <strong>{platform}:</strong> {count.toLocaleString()} sessions
               </div>
-              <div className="flex items-end gap-1.5 h-36 pt-4">
-                {circadian.hourlyDistribution.map((bucket) => {
-                  const maxCount = Math.max(
-                    ...circadian.hourlyDistribution.map((b) => b.count),
-                    1
-                  );
-                  const heightPct = Math.round((bucket.count / maxCount) * 100);
-                  const isPeak = bucket.hour === circadian.peakHour;
+            ))}
+          </div>
+        </div>
+      )}
 
-                  return (
+      {/* 9B. Literary Frontier Radar: Superpowers vs. Uncharted TBR Horizons (Lucien's Grant) */}
+      {literaryHorizons &&
+        (literaryHorizons.superpowers.length > 0 ||
+          literaryHorizons.unchartedHorizons.length > 0) && (
+          <section aria-labelledby="literary-horizons-heading" className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-[var(--border-ledger)]">
+              <div className="flex items-center gap-2">
+                <Compass className="w-4 h-4 text-[var(--accent-primary)]" />
+                <h2
+                  id="literary-horizons-heading"
+                  className="font-serif-editorial text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-ink)]"
+                >
+                  Literary Frontier Radar · Superpowers &amp; Terra Incognita
+                </h2>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="px-2.5 py-1 rounded-full bg-[var(--accent-gold)]/15 border border-[var(--accent-gold)]/30 text-xs font-mono-tabular font-semibold text-[var(--text-ink)]">
+                  Exploration Breadth: <strong>{literaryHorizons.explorationRatio}</strong>/100
+                </span>
+                {onOpenBookplate && (
+                  <button
+                    type="button"
+                    onClick={onOpenBookplate}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md border border-[var(--accent-primary)]/40 bg-[var(--bg-card)] hover:bg-[var(--accent-primary)]/10 text-xs font-serif-editorial font-semibold text-[var(--accent-primary)] transition-colors cursor-pointer shadow-2xs"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Open Broadside Almanac &amp; Ex Libris Seal</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Left Column: Proven Literary Superpowers */}
+              <div className="p-6 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs font-mono-tabular uppercase tracking-wider text-[var(--accent-secondary)] font-bold flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Proven Literary Superpowers</span>
+                  </div>
+                  <span className="text-[11px] text-[var(--text-muted)] italic">
+                    High-affinity completed clusters
+                  </span>
+                </div>
+
+                <div className="space-y-3">
+                  {literaryHorizons.superpowers.slice(0, 4).map((sp) => (
                     <div
-                      key={bucket.hour}
-                      className="flex-1 flex flex-col items-center gap-1 group relative"
+                      key={sp.id}
+                      className="p-4 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] space-y-2"
                     >
-                      <div className="w-full flex items-end justify-center h-28">
-                        <div
-                          style={{ height: `${Math.max(4, heightPct)}%` }}
-                          className={`w-full rounded-t transition-all ${
-                            isPeak
-                              ? 'bg-[var(--accent-primary)]'
-                              : 'bg-[var(--accent-secondary)]/50 group-hover:bg-[var(--accent-secondary)]'
-                          }`}
-                        />
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <span className="text-[10px] font-mono-tabular uppercase tracking-wider px-1.5 py-0.5 rounded bg-[var(--accent-secondary)]/10 text-[var(--accent-secondary)] font-semibold">
+                            {sp.dimension}
+                          </span>
+                          <h3 className="font-serif-editorial text-sm sm:text-base font-bold text-[var(--text-ink)] mt-1">
+                            {sp.title}
+                          </h3>
+                        </div>
+                        <div className="text-right font-mono-tabular text-xs shrink-0">
+                          <div className="font-bold text-[var(--accent-gold)]">
+                            {sp.avgMyRating.toFixed(2)}★ avg
+                          </div>
+                          <div className="text-[11px] text-[var(--text-muted)]">
+                            {sp.readCount} read
+                          </div>
+                        </div>
                       </div>
-                      <span className="text-[10px] font-mono-tabular text-[var(--text-muted)]">
-                        {bucket.hour % 3 === 0 ? bucket.hour : ''}
-                      </span>
 
-                      {/* Tooltip */}
-                      <div className="absolute -top-7 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity bg-[var(--bg-surface)] border border-[var(--border-ledger)] px-1.5 py-0.5 rounded text-[10px] font-mono-tabular text-[var(--text-ink)] whitespace-nowrap z-10 shadow-xs">
-                        {bucket.hour}:00 — {bucket.count} events
+                      <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+                        {sp.summary}
+                      </p>
+
+                      {sp.signatureBooks.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 pt-1">
+                          {sp.signatureBooks.slice(0, 3).map((b) => (
+                            <button
+                              key={b.id}
+                              type="button"
+                              onClick={() => onSelectBook(b)}
+                              className="px-2 py-0.5 rounded bg-[var(--bg-card)] border border-[var(--border-ledger)] hover:border-[var(--accent-secondary)] text-[11px] font-serif-editorial text-[var(--text-ink)] hover:text-[var(--accent-secondary)] transition-colors cursor-pointer truncate max-w-[200px]"
+                            >
+                              {b.cleanTitle || b.title}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Right Column: Uncharted Horizons Waiting on TBR */}
+              <div className="p-6 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs font-mono-tabular uppercase tracking-wider text-[var(--accent-primary)] font-bold flex items-center gap-1.5">
+                    <Globe className="w-3.5 h-3.5" />
+                    <span>Uncharted Horizons (Terra Incognita)</span>
+                  </div>
+                  <span className="text-[11px] text-[var(--text-muted)] italic">
+                    Untapped territories waiting on your TBR
+                  </span>
+                </div>
+
+                <div className="space-y-3">
+                  {literaryHorizons.unchartedHorizons.slice(0, 4).map((uh) => (
+                    <div
+                      key={uh.id}
+                      className="p-4 rounded-lg bg-[var(--bg-surface)] border border-dashed border-[var(--accent-primary)]/40 space-y-2"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <span className="text-[10px] font-mono-tabular uppercase tracking-wider px-1.5 py-0.5 rounded bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] font-semibold">
+                            {uh.dimension} · Frontier
+                          </span>
+                          <h3 className="font-serif-editorial text-sm sm:text-base font-bold text-[var(--text-ink)] mt-1">
+                            {uh.title}
+                          </h3>
+                        </div>
+                        <div className="text-right font-mono-tabular text-xs shrink-0">
+                          <div className="font-bold text-[var(--accent-primary)]">
+                            {uh.tbrCount} on TBR
+                          </div>
+                          <div className="text-[11px] text-[var(--text-muted)]">
+                            {uh.readCount} read so far
+                          </div>
+                        </div>
+                      </div>
+
+                      <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+                        {uh.callToAdventure}
+                      </p>
+
+                      {uh.sampleTbrBooks.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 pt-1">
+                          {uh.sampleTbrBooks.slice(0, 3).map((b) => {
+                            const gr = getGoodreadsBookUrl(b);
+                            return (
+                              <span
+                                key={b.id}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[var(--bg-card)] border border-[var(--border-ledger)] text-[11px]"
+                              >
+                                <button
+                                  type="button"
+                                  onClick={() => onSelectBook(b)}
+                                  className="font-serif-editorial text-[var(--text-ink)] hover:text-[var(--accent-primary)] transition-colors cursor-pointer truncate max-w-[175px]"
+                                >
+                                  → {b.cleanTitle || b.title}
+                                </button>
+                                <a
+                                  href={gr.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-[var(--text-muted)] hover:text-[var(--accent-gold)]"
+                                  title={gr.label}
+                                >
+                                  <ExternalLink className="w-2.5 h-2.5" />
+                                </a>
+                              </span>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Frontier Expedition Bridges (Anchor -> Frontier Pairings) */}
+            {literaryHorizons.expeditionPairs.length > 0 && (
+              <div className="space-y-3">
+                <div className="text-xs font-mono-tabular uppercase tracking-wider text-[var(--accent-gold)] font-bold flex items-center gap-1.5">
+                  <ArrowRight className="w-3.5 h-3.5" />
+                  <span>Frontier Expedition Bridges (Beloved Anchor → Uncharted TBR Step)</span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {literaryHorizons.expeditionPairs.map((pair) => (
+                    <div
+                      key={pair.id}
+                      className="p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] hover:border-[var(--accent-gold)]/60 transition-all shadow-2xs flex flex-col justify-between space-y-3"
+                    >
+                      <div className="space-y-2.5">
+                        <div className="flex items-center justify-between gap-2 text-[10px] font-mono-tabular uppercase tracking-wider">
+                          <span className="px-2 py-0.5 rounded bg-[var(--accent-gold)]/15 text-[var(--text-ink)] font-semibold">
+                            {pair.horizonTag}
+                          </span>
+                          <span className="text-[var(--text-muted)]">~{pair.estimatedHours}h</span>
+                        </div>
+
+                        <h4 className="font-serif-editorial text-base font-bold text-[var(--text-ink)]">
+                          {pair.title}
+                        </h4>
+
+                        <div className="p-2.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] space-y-1.5 text-xs">
+                          <div
+                            onClick={() => onSelectBook(pair.anchorBook)}
+                            className="cursor-pointer hover:text-[var(--accent-secondary)] transition-colors"
+                          >
+                            <span className="font-mono-tabular text-[10px] uppercase text-[var(--accent-secondary)] font-bold block">
+                              1. Proven Anchor ({pair.anchorBook.myRating || 5}★):
+                            </span>
+                            <span className="font-serif-editorial font-semibold text-[var(--text-ink)]">
+                              {pair.anchorBook.cleanTitle || pair.anchorBook.title}
+                            </span>
+                          </div>
+
+                          <div className="border-t border-[var(--border-ledger)]/60 pt-1.5">
+                            <div
+                              onClick={() => onSelectBook(pair.frontierBook)}
+                              className="cursor-pointer hover:text-[var(--accent-primary)] transition-colors"
+                            >
+                              <span className="font-mono-tabular text-[10px] uppercase text-[var(--accent-primary)] font-bold block">
+                                2. Frontier Expedition (On TBR):
+                              </span>
+                              <span className="font-serif-editorial font-semibold text-[var(--text-ink)]">
+                                {pair.frontierBook.cleanTitle || pair.frontierBook.title}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <p className="text-xs text-[var(--text-muted)] italic leading-relaxed">
+                          {pair.bridgeRationale}
+                        </p>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Platform breakdown */}
-            {circadian.platformBreakdown && (
-              <div className="pt-4 border-t border-[var(--border-ledger)] flex flex-wrap items-center gap-4 text-xs font-mono-tabular">
-                <span className="text-[var(--text-muted)] font-semibold uppercase">
-                  Platform Split:
-                </span>
-                {Object.entries(circadian.platformBreakdown).map(([platform, count]) => (
-                  <div
-                    key={platform}
-                    className="px-2.5 py-1 rounded bg-[var(--bg-surface)] text-[var(--text-ink)] border border-[var(--border-ledger)]"
-                  >
-                    <strong>{platform}:</strong> {count.toLocaleString()} sessions
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             )}
-          </div>
-        </section>
-      )}
+          </section>
+        )}
 
       {/* 10. Annual Goals, 12 Challenge Badges Trophy Case, & Favorite Genres */}
       <section aria-labelledby="trophy-heading" className="space-y-6">

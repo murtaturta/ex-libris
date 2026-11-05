@@ -11,7 +11,8 @@ import {
   FORMAT_LABELS,
   LANGUAGE_LABELS,
 } from '../lib/classifiers/languageAndFormat';
-import { formatPublicationYear, getSpineStyle } from '../lib/formatters';
+import { formatPublicationYear } from '../lib/formatters';
+import { getGoodreadsBookUrl, getGoodreadsAuthorUrl } from '../lib/links/goodreadsLinks';
 import {
   Search,
   Grid,
@@ -29,6 +30,7 @@ import {
   FileText,
   BookmarkCheck,
   Sparkles,
+  ExternalLink,
 } from 'lucide-react';
 
 export type ViewMode = 'cards' | 'shelf' | 'ledger';
@@ -77,9 +79,8 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
   // Sorting
   const [sortBy, setSortBy] = useState<string>('dateReadDesc');
 
-  // Hovered spine popover
-  const [hoveredBook, setHoveredBook] = useState<Book | null>(null);
-  const [hoverPosition, setHoverPosition] = useState<{ x: number; y: number } | null>(null);
+  // Spine Shelf scale mode: uniform ('regularized') or proportional (1, 2, or 4 pages per pixel)
+  const [spineScale, setSpineScale] = useState<'regularized' | 1 | 2 | 4>(2);
 
   // Pagination for heavy lists (cards and ledger)
   const [visibleCount, setVisibleCount] = useState(48);
@@ -311,6 +312,50 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
       }
     });
   }, [filteredBooks, sortBy]);
+
+  // Spine Shelf: cluster series volumes together (anchored at the first member's sorted position,
+  // ordered internally by series number). Only series with 2+ visible volumes form a group.
+  const [groupSeries, setGroupSeries] = useState(true);
+  const shelfGroups = useMemo(() => {
+    type ShelfGroup = { key: string; seriesName: string | null; books: Book[] };
+    if (!groupSeries) {
+      return sortedBooks.map((b): ShelfGroup => ({ key: b.id, seriesName: null, books: [b] }));
+    }
+    const seriesKey = (b: Book) => (b.seriesName ? b.seriesName.trim().toLowerCase() : null);
+    const buckets = new Map<string, Book[]>();
+    for (const b of sortedBooks) {
+      const k = seriesKey(b);
+      if (k) {
+        if (!buckets.has(k)) buckets.set(k, []);
+        buckets.get(k)!.push(b);
+      }
+    }
+    const seriesNum = (b: Book) => {
+      const n = parseFloat(b.seriesNumber ?? '');
+      return Number.isFinite(n) ? n : Number.POSITIVE_INFINITY;
+    };
+    const emitted = new Set<string>();
+    const groups: ShelfGroup[] = [];
+    for (const b of sortedBooks) {
+      const k = seriesKey(b);
+      const members = k ? buckets.get(k)! : null;
+      if (!k || !members || members.length < 2) {
+        groups.push({ key: b.id, seriesName: null, books: [b] });
+        continue;
+      }
+      if (emitted.has(k)) continue;
+      emitted.add(k);
+      const ordered = [...members].sort((x, y) => {
+        const d = seriesNum(x) - seriesNum(y);
+        if (d !== 0 && Number.isFinite(d)) return d;
+        if (seriesNum(x) !== seriesNum(y)) return seriesNum(x) === Infinity ? 1 : -1;
+        return (x.originalPublicationYear || x.yearPublished || 0) -
+          (y.originalPublicationYear || y.yearPublished || 0);
+      });
+      groups.push({ key: `series:${k}`, seriesName: b.seriesName!.trim(), books: ordered });
+    }
+    return groups;
+  }, [sortedBooks, groupSeries]);
 
   const visibleBooks = sortedBooks.slice(0, visibleCount);
   const isFiltered =
@@ -793,9 +838,30 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                         )}
                       </div>
 
-                      {formattedYear && (
-                        <span className="text-[var(--text-muted)]">{formattedYear}</span>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {/* Letterpress Goodreads Archival Link (B-01) */}
+                        {(() => {
+                          const gr = getGoodreadsBookUrl(book);
+                          return (
+                            <a
+                              href={gr.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-[var(--border-ledger)] hover:border-[var(--accent-gold)]/60 bg-[var(--bg-surface)] hover:bg-[var(--accent-gold)]/10 text-[10px] font-mono-tabular text-[var(--text-muted)] hover:text-[var(--text-ink)] transition-colors"
+                              title={gr.label}
+                              aria-label={`Open ${book.cleanTitle || book.title} on Goodreads`}
+                            >
+                              <span className="font-semibold">GR</span>
+                              <ExternalLink className="w-2.5 h-2.5 opacity-70" />
+                            </a>
+                          );
+                        })()}
+
+                        {formattedYear && (
+                          <span className="text-[var(--text-muted)]">{formattedYear}</span>
+                        )}
+                      </div>
                     </div>
 
                     {/* Series Indicator */}
@@ -821,7 +887,17 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                         </h3>
 
                         <p className="text-xs text-[var(--text-muted)] mt-1 font-medium truncate">
-                          by <span className="text-[var(--text-ink)]">{book.author}</span>
+                          by{' '}
+                          <a
+                            href={getGoodreadsAuthorUrl(book.author)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-[var(--text-ink)] hover:underline hover:text-[var(--accent-primary)] transition-colors"
+                            title={`Search ${book.author} on Goodreads`}
+                          >
+                            {book.author}
+                          </a>
                         </p>
                       </div>
                     </div>
@@ -939,127 +1015,275 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
         </div>
       )}
 
-      {/* 5. MODE 2: Physical Spine Shelf View */}
+      {/* 5. MODE 2: Continuous Full-Page Top-to-Bottom Stacked Spine Shelf View */}
       {viewMode === 'shelf' && sortedBooks.length > 0 && (
-        <div className="space-y-12">
-          {Array.from({ length: Math.ceil(sortedBooks.length / 22) }).map((_, shelfIdx) => {
-            const shelfBooks = sortedBooks.slice(shelfIdx * 22, (shelfIdx + 1) * 22);
-
-            return (
-              <div key={shelfIdx} className="relative pt-6">
-                {/* Horizontal row of book spines */}
-                <div className="flex items-end justify-start gap-1 overflow-x-auto px-4 pb-0 pt-8 min-h-[300px] border-b-8 border-transparent">
-                  {shelfBooks.map((book) => {
-                    const spine = getSpineStyle(book);
-                    const spineWidth =
-                      spine?.widthPx ||
-                      Math.min(
-                        68,
-                        Math.max(28, Math.round(((book.pageCount || 300) / 1000) * 36 + 28))
-                      );
-                    const spineHeight =
-                      spine?.heightPx ||
-                      Math.min(290, Math.max(230, 240 + ((book.pageCount || 300) % 50)));
-                    const accentClass = spine?.accentClass || 'spine-burgundy';
-
-                    return (
-                      <div
-                        key={book.id}
-                        onClick={() => onSelectBook(book)}
-                        onMouseEnter={(e) => {
-                          const rect = e.currentTarget.getBoundingClientRect();
-                          setHoveredBook(book);
-                          setHoverPosition({ x: rect.left, y: rect.top - 12 });
-                        }}
-                        onMouseLeave={() => setHoveredBook(null)}
-                        style={{
-                          width: `${spineWidth}px`,
-                          height: `${spineHeight}px`,
-                        }}
-                        className={`book-spine shrink-0 ${accentClass} flex flex-col justify-between p-1.5`}
-                      >
-                        {/* Top headband */}
-                        <div className="spine-ribbon-band rounded-xs shrink-0" />
-
-                        {/* Vertical Rotated Title & Author */}
-                        <div className="flex-1 flex flex-col justify-center items-center overflow-hidden py-1">
-                          <span className="spine-text-vertical text-xs font-serif-editorial font-bold tracking-tight truncate max-h-[170px] select-none">
-                            {book.cleanTitle || book.title}
-                          </span>
-                          <span className="spine-text-vertical text-[10px] font-mono-tabular opacity-75 mt-1 truncate max-h-[80px] select-none">
-                            {book.author}
-                          </span>
-                        </div>
-
-                        {/* Base Star Pip or Pages */}
-                        <div className="shrink-0 flex flex-col items-center justify-center pt-1 border-t border-white/10">
-                          {book.myRating ? (
-                            <span className="text-[10px] font-bold spine-gold-emboss font-mono-tabular">
-                              {book.myRating}★
-                            </span>
-                          ) : (
-                            <span className="text-[9px] opacity-60 font-mono-tabular">
-                              {book.pageCount ? `${book.pageCount}p` : ''}
-                            </span>
-                          )}
-                          <div className="spine-ribbon-band rounded-xs mt-1" />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Wooden Shelf Ledge */}
-                <div className="shelf-wood-ledge h-5 w-full rounded-b-sm shadow-md flex items-center justify-between px-4">
-                  <span className="text-[10px] font-mono-tabular tracking-wider text-amber-200/60 uppercase">
-                    Bay {shelfIdx + 1}
-                  </span>
-                  <span className="text-[10px] font-mono-tabular text-amber-200/40">
-                    {shelfBooks.length} volumes
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-
-          {/* Spine Tooltip Popover */}
-          {hoveredBook && hoverPosition && (
-            <div
-              style={{
-                position: 'fixed',
-                left: `${Math.min(window.innerWidth - 320, Math.max(16, hoverPosition.x - 100))}px`,
-                top: `${Math.max(16, hoverPosition.y - 140)}px`,
-              }}
-              className="z-50 pointer-events-none w-72 p-3.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] shadow-xl transition-all animate-card-draw"
-            >
-              <div className="flex items-center justify-between text-[10px] font-mono-tabular uppercase tracking-wider mb-1">
-                <span className="text-[var(--accent-primary)] font-bold">
-                  {hoveredBook.exclusiveShelf}
-                </span>
-                <span className="text-[var(--text-muted)]">
-                  {classifyBookLanguageAndFormat(
-                    hoveredBook,
-                    userState?.bookOverrides?.[hoveredBook.id],
-                    enrichmentCache?.[hoveredBook.id]
-                  ).translationFlow}
-                </span>
-              </div>
-              <h4 className="font-serif-editorial text-sm font-bold text-[var(--text-ink)] leading-snug">
-                {hoveredBook.cleanTitle || hoveredBook.title}
-              </h4>
-              <p className="text-xs text-[var(--text-muted)] font-medium">by {hoveredBook.author}</p>
-              <div className="mt-2 flex items-center justify-between text-[11px] font-mono-tabular text-[var(--text-muted)] border-t border-[var(--border-ledger)] pt-1.5">
+        <div className="flex flex-col w-full space-y-3">
+          {/* Spine Scale Toggle Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-3 px-3.5 py-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-ledger)] text-xs font-mono-tabular shadow-2xs">
+            <div className="flex items-center gap-2 text-[var(--text-muted)]">
+              <Layers className="w-3.5 h-3.5 text-[var(--accent-gold)]" />
+              {spineScale === 'regularized' ? (
                 <span>
-                  {hoveredBook.pageCount ? `${hoveredBook.pageCount} pp.` : 'Pages unlisted'}
+                  Physical Scale:{' '}
+                  <strong className="text-[var(--text-ink)]">Regularized</strong>{' '}
+                  <span className="hidden sm:inline">
+                    (uniform spine size across all volumes, regardless of page count)
+                  </span>
                 </span>
+              ) : (
                 <span>
-                  {hoveredBook.myRating
-                    ? `${hoveredBook.myRating}★ Personal`
-                    : `Avg ${hoveredBook.averageRating?.toFixed(2) || '—'}★`}
+                  Physical Scale:{' '}
+                  <strong className="text-[var(--text-ink)]">
+                    1 px = {spineScale} {spineScale === 1 ? 'page' : 'pages'}
+                  </strong>{' '}
+                  <span className="hidden sm:inline">
+                    (min height adapts automatically to spine text)
+                  </span>
                 </span>
-              </div>
+              )}
             </div>
-          )}
+
+            <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setGroupSeries((v) => !v)}
+              aria-pressed={groupSeries}
+              className={`px-2.5 py-1 rounded-md border text-[11px] font-semibold transition-colors cursor-pointer ${
+                groupSeries
+                  ? 'bg-[var(--accent-primary)] border-[var(--accent-primary)] text-white shadow-2xs'
+                  : 'bg-[var(--bg-surface)] border-[var(--border-ledger)] text-[var(--text-muted)] hover:text-[var(--text-ink)]'
+              }`}
+              title="Cluster series volumes together, ordered by series number"
+            >
+              Group Series
+            </button>
+            <div className="flex items-center gap-1 p-0.5 rounded-md bg-[var(--bg-surface)] border border-[var(--border-ledger)]">
+              <button
+                type="button"
+                onClick={() => setSpineScale('regularized')}
+                className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-colors cursor-pointer ${
+                  spineScale === 'regularized'
+                    ? 'bg-[var(--accent-primary)] text-white shadow-2xs'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-ink)]'
+                }`}
+                title="Uniform spine height for every book regardless of page count"
+              >
+                Regularized
+              </button>
+              <div className="h-3.5 w-px bg-[var(--border-ledger)] mx-0.5" />
+              {([1, 2, 4] as const).map((ratio) => (
+                <button
+                  key={ratio}
+                  type="button"
+                  onClick={() => setSpineScale(ratio)}
+                  className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-colors cursor-pointer ${
+                    spineScale === ratio
+                      ? 'bg-[var(--accent-primary)] text-white shadow-2xs'
+                      : 'text-[var(--text-muted)] hover:text-[var(--text-ink)]'
+                  }`}
+                  title={`1 pixel represents ${ratio} ${ratio === 1 ? 'page' : 'pages'}`}
+                >
+                  {ratio}p / px
+                </button>
+              ))}
+            </div>
+            </div>
+          </div>
+
+          {/* Continuous Top-to-Bottom Spine Stack */}
+          <div className="flex flex-col w-full">
+            <div className="flex flex-col gap-[3px] w-full">
+              {shelfGroups.map((group) => {
+                const spines = group.books.map((book) => {
+                const override = userState?.bookOverrides?.[book.id];
+                const enriched = enrichmentCache?.[book.id];
+                const profile = classifyBookLanguageAndFormat(book, override, enriched);
+                const isOnHold = override?.nightstandState === 'on-hold';
+                const gr = getGoodreadsBookUrl(book);
+
+                // Deterministic subtle cloth variation within semantic shelf/rating palettes
+                const keyStr = book.id || book.cleanTitle || book.title || '';
+                let hash = 0;
+                for (let i = 0; i < keyStr.length; i++) {
+                  hash = (hash * 31 + keyStr.charCodeAt(i)) >>> 0;
+                }
+
+                let clothClass = 'spine-leather-dark';
+                if (book.exclusiveShelf === 'currently-reading') {
+                  clothClass = 'spine-terracotta';
+                } else if (
+                  book.exclusiveShelf === 'did-not-finish' ||
+                  book.exclusiveShelf === 'dnf'
+                ) {
+                  clothClass = 'spine-slate opacity-80';
+                } else if (book.exclusiveShelf === 'to-read') {
+                  clothClass = hash % 2 === 0 ? 'spine-plum' : 'spine-slate';
+                } else if (book.myRating === 5) {
+                  clothClass = hash % 3 === 0 ? 'spine-amber' : 'spine-burgundy';
+                } else if (book.myRating === 4) {
+                  clothClass = 'spine-forest';
+                } else if (book.myRating === 3) {
+                  clothClass = 'spine-navy';
+                } else {
+                  clothClass = 'spine-leather-dark';
+                }
+
+                // Regularized mode: uniform 56px height for all volumes regardless of page count.
+                // Proportional modes (1, 2, 4): linear page-to-pixel height where text box sets the natural minimum.
+                const effectivePages = Math.max(1, book.pageCount ?? 260);
+                const spineMinHeightPx =
+                  spineScale === 'regularized'
+                    ? 56
+                    : Math.max(1, Math.round(effectivePages / spineScale));
+
+                return (
+                  <div
+                    key={book.id}
+                    onClick={() => onSelectBook(book)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        onSelectBook(book);
+                      }
+                    }}
+                    style={{ minHeight: `${spineMinHeightPx}px` }}
+                    className={`book-spine-horizontal w-full ${clothClass} flex items-stretch justify-between overflow-hidden`}
+                    title={`${book.author} — ${book.cleanTitle || book.title}${book.pageCount ? ` (${book.pageCount} pp.)` : ''} (click to open dossier)`}
+                  >
+                    {/* Left bookbinder headband */}
+                    <div className="ml-2.5 my-1 flex items-stretch shrink-0">
+                      <div className="spine-band-vertical rounded-xs" />
+                    </div>
+
+                    {/* Single-Line Book Spine Typography: Author (2 sizes bigger + contrasting gold foil) + Title (crisp ivory, wraps cleanly) */}
+                    <div className="flex-1 min-w-0 px-3.5 py-1 flex items-center">
+                      <div
+                        className={`${
+                          spineScale === 'regularized' ? 'leading-tight' : 'leading-snug'
+                        } whitespace-normal break-words`}
+                      >
+                        <span className="font-sans-ui text-lg sm:text-xl font-bold tracking-wide text-[#F5C96B] drop-shadow-[0_1px_1px_rgba(0,0,0,0.65)] mr-3">
+                          {book.author}
+                        </span>
+                        <span className="font-serif-editorial text-sm sm:text-base font-medium text-[#FAF6EE]">
+                          {book.cleanTitle || book.title}
+                        </span>
+                        {book.seriesName && (
+                          <span className="ml-2 text-xs font-mono-tabular font-normal text-white/65">
+                            {group.seriesName
+                              ? book.seriesNumber
+                                ? `#${book.seriesNumber}`
+                                : ''
+                              : `(${book.seriesName}${book.seriesNumber ? ` #${book.seriesNumber}` : ''})`}
+                          </span>
+                        )}
+                        {profile.isTranslation && (
+                          <span className="ml-2 font-mono-tabular text-[10px] px-1.5 py-0.2 rounded bg-black/25 text-amber-200/95 align-middle">
+                            {profile.translationFlow}
+                          </span>
+                        )}
+                        {isOnHold && (
+                          <span className="ml-2 font-mono-tabular text-[10px] px-1.5 py-0.2 rounded bg-amber-400/20 text-amber-200 align-middle">
+                            On Hold
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Single-Row Right Tail Stamp so slim books never get forced to 2 rows */}
+                    <div className="shrink-0 flex items-center gap-2.5 pr-2.5 py-1 pl-3 border-l border-white/10">
+                      <div className="flex items-center gap-2 font-mono-tabular whitespace-nowrap">
+                        {book.myRating ? (
+                          <span className="text-xs sm:text-sm font-bold spine-gold-emboss">
+                            {book.myRating}★
+                          </span>
+                        ) : (
+                          <span className="text-[10px] uppercase tracking-wider text-white/80 font-semibold">
+                            {book.exclusiveShelf === 'currently-reading'
+                              ? 'Desk'
+                              : book.exclusiveShelf === 'to-read'
+                              ? 'TBR'
+                              : book.exclusiveShelf === 'did-not-finish'
+                              ? 'DNF'
+                              : 'Read'}
+                          </span>
+                        )}
+                        {book.pageCount ? (
+                          <span className="text-[11px] text-white/65">{book.pageCount}p</span>
+                        ) : null}
+                      </div>
+
+                      <a
+                        href={gr.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="p-1 rounded hover:bg-white/15 text-white/70 hover:text-white transition-colors"
+                        title={gr.label}
+                        aria-label={`Open ${book.cleanTitle || book.title} on Goodreads`}
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+
+                      <div className="my-[-2px] self-stretch flex items-stretch">
+                        <div className="spine-band-vertical rounded-xs" />
+                      </div>
+                    </div>
+                  </div>
+                );
+                });
+
+                if (!group.seriesName) return spines[0];
+
+                const groupPages = group.books.reduce((s, b) => s + (b.pageCount || 0), 0);
+                return (
+                  <div
+                    key={group.key}
+                    className="relative flex w-full gap-2 my-1.5 pl-1"
+                    aria-label={`${group.seriesName} series`}
+                  >
+                    {/* Gold-foil series bracket */}
+                    <div className="shrink-0 flex flex-col items-center w-5">
+                      <div className="w-3 h-2 border-t-2 border-l-2 border-[var(--accent-gold)] rounded-tl-sm self-end" />
+                      <div className="flex-1 w-0.5 bg-[var(--accent-gold)]/70" />
+                      <div className="w-3 h-2 border-b-2 border-l-2 border-[var(--accent-gold)] rounded-bl-sm self-end" />
+                    </div>
+                    <div className="flex-1 min-w-0 flex flex-col gap-[3px]">
+                      <div className="flex items-baseline justify-between gap-3 px-1 pb-0.5 font-mono-tabular">
+                        <span className="text-[11px] uppercase tracking-[0.14em] font-bold text-[var(--accent-gold)]">
+                          {group.seriesName}
+                        </span>
+                        <span className="text-[10px] text-[var(--text-muted)] whitespace-nowrap">
+                          {group.books.length} volumes
+                          {groupPages ? ` · ${groupPages.toLocaleString()}p` : ''}
+                        </span>
+                      </div>
+                      {spines}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Single Full-Width Wooden Plinth at the Base of the Continuous Stack */}
+            <div className="shelf-wood-ledge h-6 w-full rounded-b-sm shadow-md flex items-center justify-between px-4 border-t border-amber-900/40">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-amber-400/45 shadow-xs" />
+                <span className="text-[10px] font-mono-tabular tracking-wider text-amber-200/85 font-bold uppercase">
+                  Ex Libris Spine Stack
+                </span>
+              </div>
+              <span className="text-[10px] font-mono-tabular text-amber-200/65">
+                {sortedBooks.length} volumes ·{' '}
+                {sortedBooks
+                  .reduce((sum, b) => sum + (b.pageCount || 0), 0)
+                  .toLocaleString()}{' '}
+                listed pages
+              </span>
+            </div>
+          </div>
         </div>
       )}
 
@@ -1100,8 +1324,26 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                       className="hover:bg-[var(--bg-surface)]/80 transition-colors cursor-pointer group"
                     >
                       <td className="py-3 px-3.5 font-medium max-w-[260px]">
-                        <div className="font-serif-editorial text-sm font-bold text-[var(--text-ink)] group-hover:text-[var(--accent-primary)] transition-colors truncate">
-                          {book.cleanTitle || book.title}
+                        <div className="flex items-center gap-1.5">
+                          <div className="font-serif-editorial text-sm font-bold text-[var(--text-ink)] group-hover:text-[var(--accent-primary)] transition-colors truncate">
+                            {book.cleanTitle || book.title}
+                          </div>
+                          {(() => {
+                            const gr = getGoodreadsBookUrl(book);
+                            return (
+                              <a
+                                href={gr.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="shrink-0 p-0.5 rounded hover:bg-[var(--accent-gold)]/15 text-[var(--text-muted)] hover:text-[var(--accent-gold)] transition-colors"
+                                title={gr.label}
+                                aria-label={`Open ${book.cleanTitle || book.title} on Goodreads`}
+                              >
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                            );
+                          })()}
                         </div>
                         {book.seriesName && (
                           <div className="text-[11px] text-[var(--accent-secondary)] truncate">
@@ -1111,7 +1353,16 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                       </td>
 
                       <td className="py-3 px-3 text-[var(--text-ink)] max-w-[160px] truncate">
-                        {book.author}
+                        <a
+                          href={getGoodreadsAuthorUrl(book.author)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="hover:underline hover:text-[var(--accent-primary)] transition-colors inline-block truncate max-w-full"
+                          title={`Search ${book.author} on Goodreads`}
+                        >
+                          {book.author}
+                        </a>
                       </td>
 
                       <td className="py-3 px-2.5 whitespace-nowrap">

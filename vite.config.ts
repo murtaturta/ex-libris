@@ -9,6 +9,7 @@ function localDiskStorePlugin(): Plugin {
   const publicDataDir = path.resolve(__dirname, 'public/data');
   const userStatePath = path.join(dataDir, 'user_state.json');
   const enrichmentPath = path.join(dataDir, 'enrichment_cache.json');
+  const enrichmentPublicPath = path.join(publicDataDir, 'enrichment_cache.json');
   const bundleDataPath = path.join(dataDir, 'library_bundle.json');
   const bundlePublicPath = path.join(publicDataDir, 'library_bundle.json');
 
@@ -85,7 +86,9 @@ function localDiskStorePlugin(): Plugin {
               const incoming = JSON.parse(raw);
               const existing = readJsonSafe<Record<string, unknown>>(enrichmentPath, {});
               const merged = { ...existing, ...incoming };
-              fs.writeFileSync(enrichmentPath, JSON.stringify(merged, null, 2), 'utf-8');
+              const serialized = JSON.stringify(merged, null, 2);
+              fs.writeFileSync(enrichmentPath, serialized, 'utf-8');
+              fs.writeFileSync(enrichmentPublicPath, serialized, 'utf-8');
               res.statusCode = 200;
               res.end(JSON.stringify({ ok: true, count: Object.keys(merged).length }));
               return;
@@ -101,6 +104,55 @@ function localDiskStorePlugin(): Plugin {
             res.statusCode = 200;
             res.end(JSON.stringify({ ok: true }));
             return;
+          }
+
+          if (url === '/api/goodreads-rss' && req.method === 'GET') {
+            const parsedUrl = new URL(req.url || '', 'http://localhost');
+            const userId = parsedUrl.searchParams.get('userId');
+            const shelf = parsedUrl.searchParams.get('shelf') || 'read';
+            const page = parsedUrl.searchParams.get('page') || '1';
+
+            if (!userId || !/^\d+$/.test(userId.trim())) {
+              res.statusCode = 400;
+              res.setHeader('Content-Type', 'application/json; charset=utf-8');
+              res.end(JSON.stringify({ error: 'Valid numeric userId is required' }));
+              return;
+            }
+
+            const targetUrl = `https://www.goodreads.com/review/list_rss/${encodeURIComponent(userId.trim())}?shelf=${encodeURIComponent(shelf)}&page=${encodeURIComponent(page)}&per_page=200`;
+
+            try {
+              const upstreamRes = await fetch(targetUrl, {
+                headers: {
+                  'User-Agent':
+                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 ExLibris/1.0',
+                  Accept: 'application/rss+xml, application/xml, text/xml, */*',
+                },
+              });
+
+              if (!upstreamRes.ok) {
+                res.statusCode = upstreamRes.status;
+                res.setHeader('Content-Type', 'application/json; charset=utf-8');
+                res.end(JSON.stringify({ error: `Goodreads RSS returned status ${upstreamRes.status}` }));
+                return;
+              }
+
+              const xml = await upstreamRes.text();
+              res.statusCode = 200;
+              res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+              res.setHeader('Access-Control-Allow-Origin', '*');
+              res.end(xml);
+              return;
+            } catch (fetchErr: any) {
+              res.statusCode = 502;
+              res.setHeader('Content-Type', 'application/json; charset=utf-8');
+              res.end(
+                JSON.stringify({
+                  error: `Failed to fetch Goodreads RSS: ${fetchErr?.message || fetchErr}`,
+                })
+              );
+              return;
+            }
           }
 
           return next();
