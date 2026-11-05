@@ -6,6 +6,10 @@ import {
   EnrichmentCacheMap,
   BookUserOverride,
   KindleClipping,
+  ExternalDiscoveryPick,
+  ExternalWantListItem,
+  BookplateConfig,
+  LetterboxdArchiveData,
 } from './types/library';
 import {
   DEFAULT_USER_STATE,
@@ -15,16 +19,19 @@ import {
   saveEnrichmentBatch,
 } from './lib/storage/localStateClient';
 import { enrichSingleBook } from './lib/enrichment/metadataEnricher';
+import { fetchGoodreadsPublicLibrary } from './lib/parsers/goodreadsRss';
 import { Header, TabId } from './components/Header';
 import { StudyView } from './components/StudyView';
 import { LibraryView } from './components/LibraryView';
 import { OracleView } from './components/OracleView';
 import { ObservatoryView } from './components/ObservatoryView';
+import { ScriptoriumView } from './components/ScriptoriumView';
 import { BookDossierDrawer } from './components/BookDossierDrawer';
 import { CommandPaletteModal } from './components/CommandPaletteModal';
 import { ImportModal } from './components/ImportModal';
 import { EnrichmentModal } from './components/EnrichmentModal';
-import { BookOpen, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
+import { BroadsideBookplateModal } from './components/BroadsideBookplateModal';
+import { BookOpen, Loader2, AlertCircle, RefreshCw, RotateCcw } from 'lucide-react';
 
 export const App: React.FC = () => {
   // Theme state with safe localStorage persistence (works in file:// and sandboxed iframes)
@@ -59,6 +66,15 @@ export const App: React.FC = () => {
   const [bundle, setBundle] = useState<LibraryBundle | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadingStatusText, setLoadingStatusText] = useState<string>(
+    'Opening reading archive & observatory...'
+  );
+
+  // Public Goodreads Profile routing state (B-02: ?u=<id>)
+  const [publicProfileInfo, setPublicProfileInfo] = useState<{
+    userId: string;
+    profileName: string | null;
+  } | null>(null);
 
   // User Local State (overrides, clippings, cover settings)
   const [userState, setUserState] = useState<UserLocalState>(DEFAULT_USER_STATE);
@@ -77,6 +93,7 @@ export const App: React.FC = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isEnrichOpen, setIsEnrichOpen] = useState(false);
+  const [isBookplateOpen, setIsBookplateOpen] = useState(false);
 
   // Initial filter passed to LibraryView if navigated from another tab
   const [libraryFilter, setLibraryFilter] = useState<{ shelf?: string; rating?: number } | undefined>(
@@ -87,7 +104,53 @@ export const App: React.FC = () => {
   const loadInitialData = useCallback(async () => {
     setIsLoading(true);
     setLoadError(null);
+    setLoadingStatusText('Opening reading archive & observatory...');
+
     try {
+      // 1. Check for ?u=<id> or ?profile=<id> in URL query (B-02)
+      let uParam: string | null = null;
+      try {
+        const searchParams = new URLSearchParams(window.location.search);
+        uParam = searchParams.get('u') || searchParams.get('profile');
+      } catch {
+        // Safe URL query access
+      }
+
+      if (uParam && uParam.trim()) {
+        try {
+          setLoadingStatusText(`Connecting to public Goodreads profile (${uParam.trim()})...`);
+          const res = await fetchGoodreadsPublicLibrary(uParam.trim(), (progress) => {
+            setLoadingStatusText(progress.statusText);
+          });
+
+          setBundle(res.bundle);
+          setPublicProfileInfo({ userId: res.userId, profileName: res.profileName });
+
+          // Load local user overrides & cached enrichment
+          const [loadedUserState, loadedEnrichmentCache] = await Promise.all([
+            loadUserState(),
+            loadEnrichmentCache(),
+          ]);
+          setUserState(loadedUserState);
+
+          const mergedEnrichment = { ...loadedEnrichmentCache, ...res.enrichment };
+          setEnrichmentCache(mergedEnrichment);
+          saveEnrichmentBatch(res.enrichment).catch(console.error);
+
+          setIsLoading(false);
+          return;
+        } catch (rssErr: any) {
+          console.warn('Failed to load profile from URL ?u=, falling back to default archive:', rssErr);
+          setLoadingStatusText('Profile unavailable. Loading default archive...');
+          try {
+            window.history.replaceState({}, '', window.location.pathname);
+          } catch {
+            // Ignore history replacement issues
+          }
+        }
+      }
+
+      // 2. Default Archive Loading
       const inlineBundle = (
         window as unknown as { __EXLIBRIS_INLINE_BUNDLE__?: LibraryBundle }
       ).__EXLIBRIS_INLINE_BUNDLE__;
@@ -122,6 +185,7 @@ export const App: React.FC = () => {
       setBundle(bundleData);
       setUserState(loadedUserState);
       setEnrichmentCache(loadedEnrichmentCache);
+      setPublicProfileInfo(null);
     } catch (err: any) {
       console.error('Error loading library data:', err);
       setLoadError(err?.message || 'Could not load library bundle.');
@@ -151,6 +215,7 @@ export const App: React.FC = () => {
         if (e.key === '2') setActiveTab('library');
         if (e.key === '3') setActiveTab('oracle');
         if (e.key === '4') setActiveTab('observatory');
+        if (e.key === '5') setActiveTab('scriptorium');
       }
     };
 
@@ -192,6 +257,65 @@ export const App: React.FC = () => {
     });
   }, []);
 
+  // Toggle external discovery pick in local Want-List
+  const handleToggleWantList = useCallback((pick: ExternalDiscoveryPick) => {
+    setUserState((prev) => {
+      const existingList = prev.externalWantList || [];
+      const exists = existingList.some((item) => item.id === pick.id);
+      let nextList: ExternalWantListItem[];
+      if (exists) {
+        nextList = existingList.filter((item) => item.id !== pick.id);
+      } else {
+        nextList = [
+          {
+            id: pick.id,
+            title: pick.title,
+            author: pick.author,
+            engine: pick.engine,
+            provenance: pick.provenance,
+            addedAt: new Date().toISOString(),
+            yearPublished: pick.yearPublished,
+            coverUrl: pick.coverUrl,
+          },
+          ...existingList,
+        ];
+      }
+      const nextState: UserLocalState = {
+        ...prev,
+        externalWantList: nextList,
+        updatedAt: new Date().toISOString(),
+      };
+      saveUserState(nextState);
+      return nextState;
+    });
+  }, []);
+
+  const handleRemoveWantListItem = useCallback((id: string) => {
+    setUserState((prev) => {
+      const nextList = (prev.externalWantList || []).filter((item) => item.id !== id);
+      const nextState: UserLocalState = {
+        ...prev,
+        externalWantList: nextList,
+        updatedAt: new Date().toISOString(),
+      };
+      saveUserState(nextState);
+      return nextState;
+    });
+  }, []);
+
+  // Save custom Ex Libris bookplate seal config
+  const handleSaveBookplateConfig = useCallback((config: BookplateConfig) => {
+    setUserState((prev) => {
+      const nextState: UserLocalState = {
+        ...prev,
+        bookplateConfig: config,
+        updatedAt: new Date().toISOString(),
+      };
+      saveUserState(nextState);
+      return nextState;
+    });
+  }, []);
+
   // Handle incoming Kindle clippings (merges deduplicated by id)
   const handleClippingsImported = useCallback((incoming: KindleClipping[]) => {
     setUserState((prev) => {
@@ -207,6 +331,18 @@ export const App: React.FC = () => {
         ...prev,
         updatedAt: new Date().toISOString(),
         kindleClippings: mergedClippings,
+      };
+      saveUserState(nextState);
+      return nextState;
+    });
+  }, []);
+
+  const handleLetterboxdImported = useCallback((incoming: LetterboxdArchiveData) => {
+    setUserState((prev) => {
+      const nextState: UserLocalState = {
+        ...prev,
+        updatedAt: new Date().toISOString(),
+        letterboxdData: incoming,
       };
       saveUserState(nextState);
       return nextState;
@@ -294,6 +430,48 @@ export const App: React.FC = () => {
     setBundle(newBundle);
   }, []);
 
+  // Handle public profile loaded from ImportModal (B-02)
+  const handlePublicProfileLoaded = useCallback(
+    (payload: {
+      bundle: LibraryBundle;
+      enrichment: EnrichmentCacheMap;
+      userId: string;
+      profileName: string | null;
+    }) => {
+      setBundle(payload.bundle);
+      setPublicProfileInfo({ userId: payload.userId, profileName: payload.profileName });
+
+      // Merge enrichment cache
+      setEnrichmentCache((prev) => {
+        const merged = { ...prev, ...payload.enrichment };
+        saveEnrichmentBatch(payload.enrichment).catch(console.error);
+        return merged;
+      });
+
+      // Update URL query ?u=<id>
+      try {
+        const newUrl = `${window.location.pathname}?u=${encodeURIComponent(payload.userId)}`;
+        window.history.replaceState({}, '', newUrl);
+      } catch {
+        // Safe replaceState
+      }
+
+      setActiveTab('library');
+    },
+    []
+  );
+
+  // Reset to default archive (B-02)
+  const handleResetToDefaultArchive = useCallback(() => {
+    try {
+      window.history.replaceState({}, '', window.location.pathname);
+    } catch {
+      // Safe replaceState
+    }
+    setPublicProfileInfo(null);
+    loadInitialData();
+  }, [loadInitialData]);
+
   // Loading Screen
   if (isLoading) {
     return (
@@ -303,8 +481,8 @@ export const App: React.FC = () => {
             <BookOpen className="w-6 h-6 animate-pulse" />
           </div>
           <h2 className="font-serif-editorial text-xl font-bold">EX LIBRIS</h2>
-          <p className="text-xs text-[var(--text-muted)] mt-1 mb-4">
-            Opening reading archive &amp; observatory...
+          <p className="text-xs text-[var(--text-muted)] mt-1 mb-4 font-mono-tabular leading-relaxed">
+            {loadingStatusText}
           </p>
           <Loader2 className="w-5 h-5 text-[var(--accent-primary)] animate-spin" />
         </div>
@@ -345,13 +523,46 @@ export const App: React.FC = () => {
         onOpenSearch={() => setIsSearchOpen(true)}
         onOpenImport={() => setIsImportOpen(true)}
         onOpenEnrichModal={() => setIsEnrichOpen(true)}
+        onOpenBookplate={() => setIsBookplateOpen(true)}
         showCovers={userState.showCovers}
         onToggleCovers={handleToggleCovers}
         theme={theme}
         onToggleTheme={toggleTheme}
         totalBooks={bundle.books.length}
         enrichedCount={enrichedCount}
+        books={bundle.books}
+        userState={userState}
+        enrichmentCache={enrichmentCache}
       />
+
+      {/* Active Public Profile Banner Pill (B-02) */}
+      {publicProfileInfo && (
+        <aside
+          aria-label="Public Goodreads Profile Active"
+          className="bg-[var(--accent-gold)]/15 border-b border-[var(--accent-gold)]/30 px-4 py-2 text-xs font-mono-tabular transition-colors"
+        >
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[var(--accent-gold)] animate-pulse" />
+              <span className="text-[var(--text-ink)] font-semibold">
+                Viewing Public Library: {publicProfileInfo.profileName || `Goodreads User #${publicProfileInfo.userId}`}
+              </span>
+              <span className="text-[var(--text-muted)] text-[11px]">
+                ({bundle.books.length} volumes loaded via RSS)
+              </span>
+            </div>
+
+            <button
+              onClick={handleResetToDefaultArchive}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-[var(--bg-card)] border border-[var(--border-ledger)] hover:border-[var(--accent-primary)] text-[var(--text-ink)] text-xs font-semibold cursor-pointer shadow-2xs hover:bg-[var(--bg-surface)] transition-colors"
+              title="Return to your local archive and remove URL ?u= parameter"
+            >
+              <RotateCcw className="w-3 h-3 text-[var(--accent-primary)]" />
+              <span>Reset to Default Archive</span>
+            </button>
+          </div>
+        </aside>
+      )}
 
       {/* 2. Main Content Views Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -387,6 +598,8 @@ export const App: React.FC = () => {
             userState={userState}
             enrichmentCache={enrichmentCache}
             onOpenEnrichModal={() => setIsEnrichOpen(true)}
+            onToggleWantList={handleToggleWantList}
+            onRemoveWantListItem={handleRemoveWantListItem}
           />
         )}
 
@@ -398,6 +611,17 @@ export const App: React.FC = () => {
             userState={userState}
             enrichmentCache={enrichmentCache}
             onOpenEnrichModal={() => setIsEnrichOpen(true)}
+            onOpenBookplate={() => setIsBookplateOpen(true)}
+          />
+        )}
+
+        {activeTab === 'scriptorium' && (
+          <ScriptoriumView
+            bundle={bundle}
+            onSelectBook={handleSelectBook}
+            onSelectBookById={handleSelectBookById}
+            userState={userState}
+            enrichmentCache={enrichmentCache}
           />
         )}
       </main>
@@ -423,7 +647,7 @@ export const App: React.FC = () => {
               </kbd>
               –
               <kbd className="px-1 py-0.5 rounded bg-[var(--bg-card)] border border-[var(--border-ledger)] text-[10px]">
-                4
+                5
               </kbd>{' '}
               to Navigate
             </span>
@@ -468,6 +692,10 @@ export const App: React.FC = () => {
         currentBundle={bundle}
         onBundleUpdated={handleBundleUpdated}
         onClippingsImported={handleClippingsImported}
+        onLetterboxdImported={handleLetterboxdImported}
+        userState={userState}
+        enrichmentCache={enrichmentCache}
+        onPublicProfileLoaded={handlePublicProfileLoaded}
       />
 
       {/* 7. Metadata Enrichment Modal */}
@@ -479,6 +707,16 @@ export const App: React.FC = () => {
         userState={userState}
         onToggleCovers={handleToggleCovers}
         onBatchFlushed={handleEnrichmentBatch}
+      />
+
+      {/* 8. Broadside Reading Almanac & Ex Libris Woodcut Bookplate Modal (Aldus's Grant) */}
+      <BroadsideBookplateModal
+        isOpen={isBookplateOpen}
+        onClose={() => setIsBookplateOpen(false)}
+        bundle={bundle}
+        userState={userState}
+        enrichmentCache={enrichmentCache}
+        onSaveBookplateConfig={handleSaveBookplateConfig}
       />
     </div>
   );

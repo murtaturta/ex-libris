@@ -1,0 +1,4627 @@
+{
+  "1": {
+    "bookId": "1",
+    "fetchedAt": "2026-10-29T15:10:02.384Z",
+    "source": "openlibrary",
+    "synopsis": "Il était près de minuit et le Premier Ministre, assis seul dans son bureau, lisait un long rapport dont les mots lui traversaient l’esprit sans qu’il parvienne à en saisir le moindre sens.",
+    "communityRating": 4.37,
+    "ratingsCount": 220,
+    "subjects": [
+      "Orphans",
+      "Foster Homes",
+      "Romans",
+      "Magie",
+      "Adolescence",
+      "Quill Award Winner"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/10716273-M.jpg",
+    "detectedOriginalLanguage": "ZH"
+  },
+  "2": {
+    "bookId": "2",
+    "fetchedAt": "2026-10-29T15:10:03.386Z",
+    "source": "openlibrary",
+    "synopsis": "La journée la plus chaude de l’été, jusqu’à présent en tout cas, tirait à sa fin et un silence somnolent s’était installé sur les grandes maisons aux angles bien droits de Privet Drive.",
+    "communityRating": 4.23,
+    "ratingsCount": 326,
+    "subjects": [
+      "Children's Books",
+      "Ages 9-12 Fiction",
+      "Witches And Warlocks",
+      "Juvenile Audience",
+      "Juvenile Works",
+      "Magic"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/15158666-M.jpg",
+    "detectedOriginalLanguage": "ZH"
+  },
+  "5": {
+    "bookId": "5",
+    "fetchedAt": "2026-10-29T15:10:04.383Z",
+    "source": "openlibrary",
+    "synopsis": "Harry Potter was a highly unusual boy in many ways.",
+    "communityRating": 4.25,
+    "ratingsCount": 655,
+    "subjects": [
+      "Fantasy Fiction",
+      "Orphans",
+      "Foster Homes",
+      "Fantasy",
+      "Literature",
+      "Juvenile Fantasy Fiction"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/10580435-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "6": {
+    "bookId": "6",
+    "fetchedAt": "2026-10-29T15:10:03.386Z",
+    "source": "openlibrary",
+    "synopsis": "The villagers of Little Hangleton still called it \"the Riddle House,\" even though it had been many years since the Riddle family had lived there.",
+    "communityRating": 4.25,
+    "ratingsCount": 365,
+    "subjects": [
+      "Orphans",
+      "Foster Homes",
+      "Waisenkind",
+      "Intrige",
+      "Wiederbelebung",
+      "Bewährung"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12059372-M.jpg",
+    "detectedOriginalLanguage": "FR"
+  },
+  "11": {
+    "bookId": "11",
+    "fetchedAt": "2026-10-29T15:09:47.382Z",
+    "source": "openlibrary",
+    "synopsis": "The house stood on a slight rise just on the edge of the village.",
+    "communityRating": 4.51,
+    "ratingsCount": 178,
+    "subjects": [
+      "Comic Science Fiction",
+      "Vogons",
+      "Humorous Fiction",
+      "Imaginary Voyages",
+      "Wit And Humour",
+      "Science Fiction"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12986869-M.jpg",
+    "detectedOriginalLanguage": "IT"
+  },
+  "890": {
+    "bookId": "890",
+    "fetchedAt": "2026-10-29T15:10:14.438Z",
+    "source": "openlibrary",
+    "synopsis": "John Ernst Steinbeck was born on February 27, 1902 in Salinas, California.",
+    "communityRating": 4,
+    "ratingsCount": 309,
+    "subjects": [
+      "Contemporary Fiction",
+      "Literary Fiction",
+      "Classics",
+      "Labor Trilogy",
+      "Psychological Fiction",
+      "Male Friendship"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/14319003-M.jpg",
+    "detectedOriginalLanguage": "ZH"
+  },
+  "1381": {
+    "bookId": "1381",
+    "fetchedAt": "2026-10-29T15:10:25.490Z",
+    "source": "openlibrary",
+    "synopsis": "THIS IS THE STORY OF A MAN, ONE WHO WAS NEVER AT A loss.",
+    "communityRating": 4.05,
+    "ratingsCount": 168,
+    "subjects": [
+      "Great_books_of_the_western_world",
+      "Poetry",
+      "Fiction",
+      "Classical Literature",
+      "Juvenile Literature",
+      "Horses"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/9045853-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "1420": {
+    "bookId": "1420",
+    "fetchedAt": "2026-10-29T15:10:38.963Z",
+    "source": "openlibrary",
+    "synopsis": "Bernardo Who's there?",
+    "communityRating": 4.01,
+    "ratingsCount": 178,
+    "subjects": [
+      "Performing Arts",
+      "Stage History",
+      "Reyes, Reinas, Soberanos",
+      "Venganza",
+      "History And Criticism",
+      "Criticism And Interpretation"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/8281954-M.jpg",
+    "detectedOriginalLanguage": "FR"
+  },
+  "1885": {
+    "bookId": "1885",
+    "fetchedAt": "2026-10-29T15:10:23.277Z",
+    "source": "openlibrary",
+    "synopsis": "IT is a truth universally acknowledged that a single man in possession of a good fortune must be in want of a wife.",
+    "communityRating": 4.21,
+    "ratingsCount": 412,
+    "subjects": [
+      "Fiction, Romance, Historical, Regency",
+      "British And Irish Fiction (fictional Works by One Author",
+      "Brothers And Sisters",
+      "Courtship",
+      "Drama",
+      "English Fiction"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/14348537-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "1953": {
+    "bookId": "1953",
+    "fetchedAt": "2026-10-29T15:10:39.383Z",
+    "source": "openlibrary",
+    "synopsis": "It was the best of times, it was the worst of times, it was the age of wisdom, it was the age of foolishness, it was the spring of hope, it was the winter of despair, we had everything before us, we had nothing before us, we were all going direct to Heaven, we were all going direct the other way.",
+    "communityRating": 3.77,
+    "ratingsCount": 206,
+    "subjects": [
+      "British",
+      "British And Irish Fiction (fictional Works by One Author",
+      "Children's Fiction",
+      "Criticism And Interpretation",
+      "English Fiction",
+      "English Literature"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/13301713-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "2165": {
+    "bookId": "2165",
+    "fetchedAt": "2026-10-29T15:10:24.618Z",
+    "source": "openlibrary",
+    "synopsis": "Érase un viejo que solia ir de pesca solo en su bote en el Gulf Stream, y desde hace ya ochenta y cuatro dias no pescaba nada.",
+    "communityRating": 3.91,
+    "ratingsCount": 240,
+    "subjects": [
+      "American Sea Stories",
+      "Male Friendship",
+      "Fishers",
+      "Fiction",
+      "Ameriška Književnost",
+      "American Fiction"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/463307-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "2493": {
+    "bookId": "2493",
+    "fetchedAt": "2026-10-29T15:10:29.895Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/14525923-M.jpg",
+    "detectedOriginalLanguage": "FR"
+  },
+  "2657": {
+    "bookId": "2657",
+    "fetchedAt": "2026-10-29T15:10:22.956Z",
+    "source": "openlibrary",
+    "synopsis": "When he was nearly thirteen, my brother Jem got his arm badly broken at the elbow.",
+    "communityRating": 4.15,
+    "ratingsCount": 280,
+    "subjects": [
+      "Fiction",
+      "Fiction Classics",
+      "Contemporary Fiction",
+      "Racial Segregation",
+      "Mob Mentality",
+      "Southern Gothic"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/14351077-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "2932": {
+    "bookId": "2932",
+    "fetchedAt": "2026-10-29T15:10:37.597Z",
+    "source": "openlibrary",
+    "synopsis": "I was born in the year 1632, in the city of York, of a good family, though not of that country, my father being a foreigner, of Bremen, who settled first at Hull; he got a good estate by merchandise, and leaving off his trade, lived afterward at York; from whence he had married my mother, whose relations were named Robinson, a very good family in that country, and from whom I was called Robinson Kreutznaer; but, by the usual corruption of words in England, we are now called, nay, we call ourselves, and write our name \"Crusoe,\" and so my companions always called me.",
+    "communityRating": 4,
+    "ratingsCount": 30,
+    "subjects": [
+      "Crusoe, Robinson (fictitious Character), Fiction",
+      "British And Irish Fiction (fictional Works by One Author",
+      "Survival",
+      "Fiction",
+      "Dans la Littérature",
+      "Îles"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/368541-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "3836": {
+    "bookId": "3836",
+    "fetchedAt": "2026-10-29T15:09:09.386Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 4,
+    "ratingsCount": 1,
+    "subjects": [],
+    "coverUrl": null,
+    "detectedOriginalLanguage": "EN"
+  },
+  "4381": {
+    "bookId": "4381",
+    "fetchedAt": "2026-10-29T15:10:39.746Z",
+    "source": "openlibrary",
+    "synopsis": "It was a pleasure to burn.",
+    "communityRating": 3.98,
+    "ratingsCount": 456,
+    "subjects": [
+      "Mechanical Hound",
+      "Girl Next Door",
+      "Long Now Manual For Civilization",
+      "Terrorismo Estatal",
+      "Censura",
+      "Novela"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12993656-M.jpg",
+    "detectedOriginalLanguage": "ZH"
+  },
+  "4406": {
+    "bookId": "4406",
+    "fetchedAt": "2026-10-29T15:08:05.652Z",
+    "source": "openlibrary",
+    "synopsis": "THE SALINAS VALLEY is in Northern California.",
+    "communityRating": 4.1,
+    "ratingsCount": 100,
+    "subjects": [
+      "Migrant Labor",
+      "Historical Fiction",
+      "Domestic Fiction",
+      "Depravity",
+      "Beneficence",
+      "Love"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/11386937-M.jpg",
+    "detectedOriginalLanguage": "IT"
+  },
+  "4662": {
+    "bookId": "4662",
+    "fetchedAt": "2026-10-29T15:10:33.846Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 4,
+    "ratingsCount": 3,
+    "subjects": [
+      "American Short Stories",
+      "English Short Stories",
+      "Fiction",
+      "Social Life And Customs",
+      "Short Stories",
+      "Romance Norte Americano"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/4655966-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "4671": {
+    "bookId": "4671",
+    "fetchedAt": "2026-10-29T15:10:33.852Z",
+    "source": "openlibrary",
+    "synopsis": "In my younger and more vulnerable years my father gave me some advice that I've been turning over in my mind ever since.",
+    "communityRating": 3.99,
+    "ratingsCount": 256,
+    "subjects": [
+      "Married People, Fiction",
+      "American Fiction (fictional Works by One Author",
+      "Fiction, Psychological",
+      "Long Island (n.y.), Fiction",
+      "Fiction",
+      "Rich People"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/10590366-M.jpg",
+    "detectedOriginalLanguage": "PT"
+  },
+  "5107": {
+    "bookId": "5107",
+    "fetchedAt": "2026-10-29T15:10:25.041Z",
+    "source": "openlibrary",
+    "synopsis": "Se querem mesmo ouvir o que aconteceu, a primeira coisa que vão querer saber é onde eu nasci, como passei a porcaria da minha infância, o que meus pais faziam antes que eu nascesse, e toda essa lenga-lenga tipo David Copperfield, mas, para dizer a verdade, não estou com vontade de falar sobre isso.",
+    "communityRating": 3.61,
+    "ratingsCount": 412,
+    "subjects": [
+      "Fictional Works",
+      "Runaway Teenagers",
+      "Fiction",
+      "Adolescence",
+      "Teenage Boys",
+      "Runaway Teenagers in Literature"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/9273490-M.jpg",
+    "detectedOriginalLanguage": "IT"
+  },
+  "5129": {
+    "bookId": "5129",
+    "fetchedAt": "2026-10-29T15:10:33.114Z",
+    "source": "openlibrary",
+    "synopsis": "A squat grey building of only thirty-four stories.",
+    "communityRating": 3.97,
+    "ratingsCount": 483,
+    "subjects": [
+      "Utopias",
+      "Brainwashing",
+      "Moral And Ethical Aspects of Science",
+      "Fiction",
+      "Science And State",
+      "Social Problems"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/8231823-M.jpg",
+    "detectedOriginalLanguage": "ZH"
+  },
+  "5297": {
+    "bookId": "5297",
+    "fetchedAt": "2026-10-29T15:09:05.382Z",
+    "source": "openlibrary",
+    "synopsis": "The studio was filled with the rich odour of roses, and when the light summer wind stirred amidst the trees of the garden there came through the open door the heavy scent of the lilac, or the more delicate perfume of the pink-flowering thorn.",
+    "communityRating": 4.17,
+    "ratingsCount": 133,
+    "subjects": [
+      "British And Irish Fiction (fictional Works by One Author",
+      "Conduct of Life, Fiction",
+      "Fantasy Fiction",
+      "Appearance (Philosophy",
+      "Fiction",
+      "Conduct of Life"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/14314858-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "5470": {
+    "bookId": "5470",
+    "fetchedAt": "2026-10-29T15:08:35.642Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 4.67,
+    "ratingsCount": 15,
+    "subjects": [
+      "Totalitarianism",
+      "Fiction",
+      "Dystopias",
+      "Textbooks For Foreign Speakers",
+      "Lectures et Morceaux Choisis",
+      "Readers For New Literates"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/8745958-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "5805": {
+    "bookId": "5805",
+    "fetchedAt": "2026-10-29T15:08:54.973Z",
+    "source": "openlibrary",
+    "synopsis": "\"Good evening, London. It's nine o'clock and this is the Voice of Fate broadcasting on 275 and 285 in the medium wave...it is the fifth of the eleventh, nineteen-ninety-seven.\"",
+    "communityRating": 4.23,
+    "ratingsCount": 99,
+    "subjects": [
+      "Fiction",
+      "Graphic Novels",
+      "Comic Books, Strips",
+      "Politics And Government",
+      "Anarchism",
+      "England in Fiction"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12293384-M.jpg",
+    "detectedOriginalLanguage": "PT"
+  },
+  "6058": {
+    "bookId": "6058",
+    "fetchedAt": "2026-10-29T15:09:49.392Z",
+    "source": "openlibrary",
+    "synopsis": "The company is marching slowly, for we are tired and have wounded with us.",
+    "communityRating": 4.75,
+    "ratingsCount": 4,
+    "subjects": [
+      "World War, 1914-1918",
+      "Fiction",
+      "Continental European Fiction (fictional Works by One Author",
+      "Fiction, War & Military",
+      "World War, 1914-1918, Fiction",
+      "German Language Materials"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/291250-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "6185": {
+    "bookId": "6185",
+    "fetchedAt": "2026-10-29T15:09:48.386Z",
+    "source": "openlibrary",
+    "synopsis": "1801.-I have just returned from a visit to my landlord-the solitary neighbour that I shall be troubled with.",
+    "communityRating": 4.11,
+    "ratingsCount": 308,
+    "subjects": [
+      "Form:novel",
+      "Genre:tragedy",
+      "Genre:gothic",
+      "British And Irish Fiction (fictional Works by One Author",
+      "Children's Fiction",
+      "Classic Fiction"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12818862-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "6310": {
+    "bookId": "6310",
+    "fetchedAt": "2026-10-29T15:08:27.216Z",
+    "source": "openlibrary",
+    "synopsis": "THESE TWO VERY OLD PEOPLE are the father and mother of Mr. Bucket.",
+    "communityRating": 4.05,
+    "ratingsCount": 287,
+    "subjects": [
+      "Childrens Media Tie-In Books",
+      "Children's Middle Grade Action & Adventure Books",
+      "Children's Picture Books",
+      "Avarice",
+      "Behavior",
+      "Chocolat"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12459564-M.jpg",
+    "detectedOriginalLanguage": "PT"
+  },
+  "7144": {
+    "bookId": "7144",
+    "fetchedAt": "2026-10-29T15:10:26.836Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 5,
+    "ratingsCount": 1,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/13116014-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "7613": {
+    "bookId": "7613",
+    "fetchedAt": "2026-10-29T15:08:35.396Z",
+    "source": "openlibrary",
+    "synopsis": "MR. JONES, of the Manor Farm, had locked the hen-houses for the night, but was too drunk to remember to shut the popholes.",
+    "communityRating": 4.17,
+    "ratingsCount": 604,
+    "subjects": [
+      "British And Irish Fiction (fictional Works by One Author",
+      "Political Satire",
+      "Classic",
+      "Animal Drama",
+      "Fiction, Political",
+      "English Literature: Literary Criticism"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/11261770-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "7624": {
+    "bookId": "7624",
+    "fetchedAt": "2026-10-29T15:10:34.576Z",
+    "source": "openlibrary",
+    "synopsis": "The boy with fair hair lowered himself down the last few feet of rock and began to pick his way toward the lagoon.",
+    "communityRating": 3.68,
+    "ratingsCount": 403,
+    "subjects": [
+      "Fiction",
+      "Relationships",
+      "Adventure",
+      "Morality",
+      "Survival",
+      "Childhood"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/8684447-M.jpg",
+    "detectedOriginalLanguage": "IT"
+  },
+  "8908": {
+    "bookId": "8908",
+    "fetchedAt": "2026-10-29T15:09:03.392Z",
+    "source": "openlibrary",
+    "synopsis": "آن واقعه نام‌های بسیاری دارد: «دوران بحران»، «سال‌های سیاه»، «طاعون متحرک» و نیز نام‌هایی تازه‌تر و «جوان‌پسند»تر مانند «جنگ جهانی ز» یا «جنگ اول ز».",
+    "communityRating": 3.91,
+    "ratingsCount": 139,
+    "subjects": [
+      "Humor",
+      "Nyt:trade_fiction_paperback=2011-08-20",
+      "Fiction",
+      "New York Times Bestseller",
+      "Zombies",
+      "War"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/168106-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "10210": {
+    "bookId": "10210",
+    "fetchedAt": "2026-10-29T15:09:00.380Z",
+    "source": "openlibrary",
+    "synopsis": "THERE was no possibility of taking a walk that day.",
+    "communityRating": 4.04,
+    "ratingsCount": 189,
+    "subjects": [
+      "Fiction",
+      "Romance",
+      "Historical",
+      "Man-woman Relationships, Fiction",
+      "Charity Schools, Fiction",
+      "Married People, Fiction"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/8235363-M.jpg",
+    "detectedOriginalLanguage": "DE"
+  },
+  "10572": {
+    "bookId": "10572",
+    "fetchedAt": "2026-10-29T15:09:12.386Z",
+    "source": "openlibrary",
+    "synopsis": "The comet's tail spread across the dawn, a red slash that bled above the crags of Dragonstone like a wound in the pink and purple sky.",
+    "communityRating": 4.28,
+    "ratingsCount": 195,
+    "subjects": [
+      "Fantasy Fiction",
+      "Fiction",
+      "Fantasy",
+      "New York Times Bestseller",
+      "Nyt:trade_fiction_paperback=2011-12-31",
+      "Fiction - Fantasy"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/8231751-M.jpg",
+    "detectedOriginalLanguage": "IT"
+  },
+  "11566": {
+    "bookId": "11566",
+    "fetchedAt": "2026-10-29T15:08:14.812Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 4.31,
+    "ratingsCount": 113,
+    "subjects": [
+      "Horror Fiction",
+      "Fiction",
+      "Death Row Inmates",
+      "Prisons",
+      "Executions And Executioners",
+      "Jails"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/9334567-M.jpg",
+    "detectedOriginalLanguage": "IT"
+  },
+  "11588": {
+    "bookId": "11588",
+    "fetchedAt": "2026-10-29T15:09:07.384Z",
+    "source": "openlibrary",
+    "synopsis": "Jack Torrance thought: Officious little prick.",
+    "communityRating": 4.18,
+    "ratingsCount": 290,
+    "subjects": [
+      "Fiction",
+      "Horror Fiction",
+      "Demonology",
+      "Precognition",
+      "Authors",
+      "Hotelkeepers"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12376585-M.jpg",
+    "detectedOriginalLanguage": "DE"
+  },
+  "11987": {
+    "bookId": "11987",
+    "fetchedAt": "2026-10-29T15:10:35.367Z",
+    "source": "openlibrary",
+    "synopsis": "THERE is but one truly serious philosophical problem, and that is suicide.",
+    "communityRating": 4.3,
+    "ratingsCount": 10,
+    "subjects": [
+      "French Essays",
+      "Life",
+      "Suicide",
+      "Absurd (philosophy",
+      "Existentialism",
+      "Philosophy"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12726570-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "12067": {
+    "bookId": "12067",
+    "fetchedAt": "2026-10-29T15:10:00.392Z",
+    "source": "none",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": null,
+    "detectedOriginalLanguage": null
+  },
+  "13496": {
+    "bookId": "13496",
+    "fetchedAt": "2026-10-29T15:09:57.385Z",
+    "source": "openlibrary",
+    "synopsis": "“We should start back,” Gared urged as the woods began to grow dark around them.",
+    "communityRating": 4.22,
+    "ratingsCount": 766,
+    "subjects": [
+      "Adult",
+      "Action & Adventure",
+      "Fantasy",
+      "High Fantasy",
+      "Epic",
+      "Epic Fantasy"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/9269962-M.jpg",
+    "detectedOriginalLanguage": "IT"
+  },
+  "13497": {
+    "bookId": "13497",
+    "fetchedAt": "2026-10-29T15:09:13.386Z",
+    "source": "openlibrary",
+    "synopsis": "\"Dragons,\" said Mollander.",
+    "communityRating": 4.08,
+    "ratingsCount": 155,
+    "subjects": [
+      "New York Times Bestseller",
+      "Nyt:mass_market_paperback=2011-08-20",
+      "Seven Kingdoms (Imaginary Place",
+      "Fiction",
+      "Fantasy Fiction",
+      "Fantasy"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/6501256-M.jpg",
+    "detectedOriginalLanguage": "IT"
+  },
+  "15688": {
+    "bookId": "15688",
+    "fetchedAt": "2026-10-29T15:09:19.389Z",
+    "source": "openlibrary",
+    "synopsis": "The Stranger demanded of Camus the creation of a style at once literary and profoundly popular, an artistic sleight of hand that would make the complexities of a man’s life appear simple.",
+    "communityRating": 4.11,
+    "ratingsCount": 148,
+    "subjects": [
+      "Philosophical Novels",
+      "Murder",
+      "Fiction",
+      "Medicine in Literature",
+      "French",
+      "Novelas Francesas"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/13151269-M.jpg",
+    "detectedOriginalLanguage": "ZH"
+  },
+  "15881": {
+    "bookId": "15881",
+    "fetchedAt": "2026-10-29T15:10:05.394Z",
+    "source": "openlibrary",
+    "synopsis": "Não era a primeira vez que irrompia uma discussão à mesa do café da manhã na rua dos Alfeneiros número 4. O Sr. Válter Dursley fora acordado nas primeiras horas da manhã por um pio alto que vinha do quarto do seu sobrinho Harry.",
+    "communityRating": 4.18,
+    "ratingsCount": 465,
+    "subjects": [
+      "Series:Harry_Potter",
+      "Fantasy Fiction",
+      "School Stories",
+      "Fiction",
+      "Fantasy",
+      "Nestlé Smarties Book Prize Winner"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/15158664-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "16200": {
+    "bookId": "16200",
+    "fetchedAt": "2026-10-29T15:10:30.828Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 3.75,
+    "ratingsCount": 20,
+    "subjects": [
+      "Fables",
+      "Fiction",
+      "Fantasy",
+      "Communal Living",
+      "Islands",
+      "Humor (Fiction"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/243920-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "16299": {
+    "bookId": "16299",
+    "fetchedAt": "2026-10-29T15:09:08.388Z",
+    "source": "openlibrary",
+    "synopsis": "In the corner of a first-class smoking carriage, Mr. Justice Wargrave, lately retired from the bench, puffed at a cigar and ran an interested eye through the political news in the Times.",
+    "communityRating": 4.28,
+    "ratingsCount": 181,
+    "subjects": [
+      "Roman Policier",
+      "French Language Materials",
+      "Français (langue",
+      "Lectures et Morceaux Choisis",
+      "Cyanide Poisoning",
+      "Chloral Hydrate"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/11172296-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "16842": {
+    "bookId": "16842",
+    "fetchedAt": "2026-10-29T15:08:00.830Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 4.5,
+    "ratingsCount": 4,
+    "subjects": [
+      "Fiction",
+      "Gay Men",
+      "Loss (Psychology",
+      "Grief",
+      "Middle-aged Men",
+      "Fiction in English"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/615649-M.jpg",
+    "detectedOriginalLanguage": "ES"
+  },
+  "17214": {
+    "bookId": "17214",
+    "fetchedAt": "2026-10-29T15:07:28.683Z",
+    "source": "openlibrary",
+    "synopsis": "I always get the shakes before a drop.",
+    "communityRating": 3.78,
+    "ratingsCount": 64,
+    "subjects": [
+      "Fiction",
+      "Hugo Award Winner",
+      "Science Fiction",
+      "Space Warfare",
+      "Award:hugo_award=1960",
+      "Award:hugo_award=novel"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/14630746-M.jpg",
+    "detectedOriginalLanguage": "IT"
+  },
+  "17231": {
+    "bookId": "17231",
+    "fetchedAt": "2026-10-29T15:08:42.906Z",
+    "source": "openlibrary",
+    "synopsis": "MOON. GLORIOUS MOON. FULL, FAT, REDDISH moon, the night as light as day, the moonlight flooding down across the land and bringing joy, joy, joy.",
+    "communityRating": 4.47,
+    "ratingsCount": 15,
+    "subjects": [
+      "Serial Murderers",
+      "Vigilantes",
+      "Serial Murders",
+      "Fiction",
+      "Forensic Scientists",
+      "Dexter Morgan (Fictitious Character"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/5543843-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "17245": {
+    "bookId": "17245",
+    "fetchedAt": "2026-10-29T15:10:28.867Z",
+    "source": "openlibrary",
+    "synopsis": "How these papers have been placed in sequence will be made manifest in the reading of them.",
+    "communityRating": 4,
+    "ratingsCount": 254,
+    "subjects": [
+      "English Literature",
+      "Fiction",
+      "Horror",
+      "Horror Stories",
+      "Horror Tales",
+      "Monsters"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12216503-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "17492": {
+    "bookId": "17492",
+    "fetchedAt": "2026-10-29T15:10:13.208Z",
+    "source": "openlibrary",
+    "synopsis": "It was really most extraordinary.",
+    "communityRating": 3.86,
+    "ratingsCount": 7,
+    "subjects": [
+      "Children's Stories",
+      "Islands",
+      "Juvenile Fiction",
+      "Abandoned Mines",
+      "Tunnels",
+      "Adventure And Adventurers"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/14596605-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "17498": {
+    "bookId": "17498",
+    "fetchedAt": "2026-10-29T15:10:09.382Z",
+    "source": "openlibrary",
+    "synopsis": "In dem sonst so stillen Haus herrschte ein toller Lärm.",
+    "communityRating": 4.88,
+    "ratingsCount": 8,
+    "subjects": [
+      "Children's Stories",
+      "Kinderkrimi",
+      "Detective And Mystery Stories",
+      "Circus",
+      "Juvenile Fiction",
+      "Kidnapping"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/6817829-M.jpg",
+    "detectedOriginalLanguage": "DE"
+  },
+  "17650": {
+    "bookId": "17650",
+    "fetchedAt": "2026-10-29T15:08:27.870Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 3.67,
+    "ratingsCount": 3,
+    "subjects": [
+      "Fiction",
+      "Women",
+      "Friendship",
+      "Humorous Stories",
+      "Humorous Fiction",
+      "Fiction, Humorous"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/10595559-M.jpg",
+    "detectedOriginalLanguage": "ES"
+  },
+  "17690": {
+    "bookId": "17690",
+    "fetchedAt": "2026-10-29T15:10:38.093Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/14910748-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "18414": {
+    "bookId": "18414",
+    "fetchedAt": "2026-10-29T15:10:07.384Z",
+    "source": "openlibrary",
+    "synopsis": "THERE was recently a rather serious difference of opinion between that great expert in the art of government, His Invincible Majesty, King Henry the Eighth of England, and His Serene Highness, Prince Charles of Castile.",
+    "communityRating": 3.35,
+    "ratingsCount": 20,
+    "subjects": [
+      "Utopias",
+      "Proverbs",
+      "Bibliography",
+      "Utopías",
+      "Fiction",
+      "Miniature Books"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/7222976-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "22632": {
+    "bookId": "22632",
+    "fetchedAt": "2026-10-29T15:10:36.668Z",
+    "source": "openlibrary",
+    "synopsis": "Euthyphro: What are you doing at the courthouse, Socrates?",
+    "communityRating": 4.2,
+    "ratingsCount": 15,
+    "subjects": [
+      "Philosophers",
+      "Biography",
+      "Socrates",
+      "Socrates.",
+      "History of Ideas, Intellectual History",
+      "Body, Mind & Spirit"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/14390287-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "22904": {
+    "bookId": "22904",
+    "fetchedAt": "2026-10-29T15:08:19.348Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 3,
+    "ratingsCount": 1,
+    "subjects": [
+      "Fiction, Short Stories (single Author",
+      "English Fiction",
+      "Translations From German",
+      "German Fiction",
+      "Translations Into English"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/13274489-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "22911": {
+    "bookId": "22911",
+    "fetchedAt": "2026-10-29T15:08:20.682Z",
+    "source": "openlibrary",
+    "synopsis": "As Karl Rossmann, a poor boy of sixteen who had been packed off to America by his parents because a servant girl had seduced him and got herself a child by him, stood on the liner slowly entering the harbour of New York, a sudden burst of sunshine seemed to illumine the Statue of Liberty, so that he saw it in a new light, although he had sighted it long before.",
+    "communityRating": 4,
+    "ratingsCount": 16,
+    "subjects": [
+      "German Fiction",
+      "Translations Into English",
+      "Immigrants in Fiction",
+      "Adaptations",
+      "Fiction",
+      "Social Conditions"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/3080557-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "22995": {
+    "bookId": "22995",
+    "fetchedAt": "2026-10-29T15:09:42.385Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 5,
+    "ratingsCount": 3,
+    "subjects": [
+      "Spanish Language",
+      "Readers",
+      "Drama (dramatic Works by One Author"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/849745-M.jpg",
+    "detectedOriginalLanguage": "ES"
+  },
+  "28676": {
+    "bookId": "28676",
+    "fetchedAt": "2026-10-29T15:10:34.624Z",
+    "source": "openlibrary",
+    "synopsis": "ABANDON ALL HOPE YE WHO ENTER HERE is scrawled in blood red lettering on the side of the Chemical Bank near the corner of Eleventh and First and is in print large enough to be seen from the backseat of the cab as it lurches forward in the traffic leaving Wall Street and just as Timothy Price notices the words a bus pulls up, the advertisement for Les Miserables on its side blocking his view, but Price who is with Pierce & Pierce and twenty-six doesn't seem to care because he tells the driver he will give him five dollars to turn up the radio, \"Be My Baby\" on WYNN, and the driver, black, not American, does so.",
+    "communityRating": 3.83,
+    "ratingsCount": 104,
+    "subjects": [
+      "Gothic & Horror",
+      "Literary Fiction",
+      "Capitalism",
+      "Postmodernism",
+      "Schizophrenia",
+      "Consumerism"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/8401686-M.jpg",
+    "detectedOriginalLanguage": "DE"
+  },
+  "28877": {
+    "bookId": "28877",
+    "fetchedAt": "2026-10-29T15:08:41.883Z",
+    "source": "openlibrary",
+    "synopsis": "Will Graham installa Crawford ä une table de pique-nique entre la maison et l'océan, puis lui servit un verre de thé glacé.",
+    "communityRating": 4.28,
+    "ratingsCount": 36,
+    "subjects": [
+      "Novel",
+      "Psychiatrists",
+      "Cannibalism",
+      "Serial Killers",
+      "Offender Profiling",
+      "FBI"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/6997898-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "29044": {
+    "bookId": "29044",
+    "fetchedAt": "2026-10-29T15:09:35.387Z",
+    "source": "openlibrary",
+    "synopsis": "DOES SUCH a thing as \"the fatal flaw,\" that show dark crack running down the middle of a life, exist outside literature?",
+    "communityRating": 4.04,
+    "ratingsCount": 90,
+    "subjects": [
+      "Fiction",
+      "College Students",
+      "Teacher-student Relationships",
+      "Classicists",
+      "Murder",
+      "Murderers"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/744854-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "30289": {
+    "bookId": "30289",
+    "fetchedAt": "2026-10-29T15:10:06.380Z",
+    "source": "openlibrary",
+    "synopsis": "I went down to the Piraeus yesterday with Glaucon the son of Ariston, to offer a prayer to the goddess.",
+    "communityRating": 3.81,
+    "ratingsCount": 59,
+    "subjects": [
+      "Political Science",
+      "Early Works to 1800",
+      "Utopias",
+      "Ouvrages Avant 1800",
+      "Science Politique",
+      "Utopies"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/14418448-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "30735": {
+    "bookId": "30735",
+    "fetchedAt": "2026-10-29T15:10:22.395Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 4,
+    "ratingsCount": 5,
+    "subjects": [
+      "Translations Into Chinese",
+      "Philosophy",
+      "French Essays",
+      "Translations Into English",
+      "Montaigne, Michel De, 1533-1592",
+      "Great_books_of_the_western_world"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/104154-M.jpg",
+    "detectedOriginalLanguage": "ES"
+  },
+  "32585": {
+    "bookId": "32585",
+    "fetchedAt": "2026-10-29T15:08:25.694Z",
+    "source": "openlibrary",
+    "synopsis": "It was in those days when I wandered about hungry in Kristiania, that strange city which no one leaves before it has set its mark upon him. . . .",
+    "communityRating": 3.75,
+    "ratingsCount": 16,
+    "subjects": [
+      "Fiction Classics",
+      "Literary Fiction",
+      "Mental Depression",
+      "Norwegian Authors",
+      "Autobiographical Fiction",
+      "Fiction"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/10472647-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "38447": {
+    "bookId": "38447",
+    "fetchedAt": "2026-10-29T15:10:40.269Z",
+    "source": "openlibrary",
+    "synopsis": "We slept in what had once been the gymnasium.",
+    "communityRating": 3.95,
+    "ratingsCount": 141,
+    "subjects": [
+      "Brothels",
+      "Canadian Authors",
+      "Canadian Fantasy Fiction",
+      "Canadian Fiction (fictional Works by One Author",
+      "Christian Fundamentalism",
+      "Dystopian Fiction"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/8231851-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "41804": {
+    "bookId": "41804",
+    "fetchedAt": "2026-10-29T15:09:25.394Z",
+    "source": "openlibrary",
+    "synopsis": "Vous voulez connaître un cauchemar d'écrivain?",
+    "communityRating": 4.25,
+    "ratingsCount": 190,
+    "subjects": [
+      "Smear Campaigns",
+      "Supercomputers",
+      "Computers",
+      "Frankenstein Complex",
+      "Hyperspace",
+      "Heisenbugs"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12385229-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "41865": {
+    "bookId": "41865",
+    "fetchedAt": "2026-10-29T15:08:45.581Z",
+    "source": "openlibrary",
+    "synopsis": "First, Edward was a vampire.",
+    "communityRating": 3.69,
+    "ratingsCount": 452,
+    "subjects": [
+      "Series:Luz_e_Escuridão",
+      "Series:Twilight",
+      "New York Times Bestseller",
+      "Nyt:series_books=2008-03-15",
+      "School & Education",
+      "Vampires"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12641977-M.jpg",
+    "detectedOriginalLanguage": "ES"
+  },
+  "41913": {
+    "bookId": "41913",
+    "fetchedAt": "2026-10-29T15:07:25.980Z",
+    "source": "openlibrary",
+    "synopsis": "Early this morning, 1 January 2021, three minutes after midnight, the last human being to be born on earth was killed in a pub brawl in a suburb of Buenos Aires, aged twenty-five years, two months and twelve days.",
+    "communityRating": 3.36,
+    "ratingsCount": 14,
+    "subjects": [
+      "End of The World",
+      "Fiction",
+      "Male Infertility",
+      "Fiction, Science Fiction, General",
+      "England, Fiction",
+      "Fiction in Italian"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/3218320-M.jpg",
+    "detectedOriginalLanguage": "IT"
+  },
+  "45685": {
+    "bookId": "45685",
+    "fetchedAt": "2026-10-29T15:10:28.721Z",
+    "source": "openlibrary",
+    "synopsis": "When Mr. Hiram B. Otis, the American minister, bought Canterville Chase, every one told him he was doing a very foolish thing, as there was no doubt at all that the place was haunted.",
+    "communityRating": 4.63,
+    "ratingsCount": 8,
+    "subjects": [
+      "Fiction",
+      "Ghosts",
+      "Fairy Tales",
+      "Readers",
+      "German Language",
+      "British And Irish Fiction (fictional Works by One Author"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/6960817-M.jpg",
+    "detectedOriginalLanguage": "ES"
+  },
+  "46170": {
+    "bookId": "46170",
+    "fetchedAt": "2026-10-29T15:10:31.356Z",
+    "source": "openlibrary",
+    "synopsis": "Hallábase acostado de bruces, con la barbilla apoyada en sus brazos cruzados, sobre el suelo del bosque cubierto de hojarasca.",
+    "communityRating": 3.64,
+    "ratingsCount": 25,
+    "subjects": [
+      "Spain in Fiction",
+      "Fiction",
+      "History",
+      "Spanish Civil War",
+      "Americans",
+      "Open_syllabus_project"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/2560810-M.jpg",
+    "detectedOriginalLanguage": "IT"
+  },
+  "46571": {
+    "bookId": "46571",
+    "fetchedAt": "2026-10-29T15:10:00.392Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [
+      "Fiction"
+    ],
+    "coverUrl": null,
+    "detectedOriginalLanguage": null
+  },
+  "49455": {
+    "bookId": "49455",
+    "fetchedAt": "2026-10-29T15:09:37.389Z",
+    "source": "openlibrary",
+    "synopsis": "I AM A SICK MAN...I am a wicked man.",
+    "communityRating": 4.3,
+    "ratingsCount": 47,
+    "subjects": [
+      "Fiction",
+      "History",
+      "General",
+      "Officials And Employees",
+      "Employees",
+      "Fiction, Historical"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/10445973-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "51496": {
+    "bookId": "51496",
+    "fetchedAt": "2026-10-29T15:09:09.386Z",
+    "source": "openlibrary",
+    "synopsis": "Mr. UTTERSON the lawyer was a man of a rugged countenance that was never lighted by a smile; cold, scanty and embarrassed in discourse; backward in sentiment; lean, long, dusty, dreary and yet somehow lovable.",
+    "communityRating": 3.95,
+    "ratingsCount": 152,
+    "subjects": [
+      "Fiction",
+      "Physicians",
+      "Physicians in Fiction",
+      "Multiple Personality in Fiction",
+      "Multiple Personality",
+      "Self-experimentation in Medicine in Fiction"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/295773-M.jpg",
+    "detectedOriginalLanguage": "IT"
+  },
+  "58372": {
+    "bookId": "58372",
+    "fetchedAt": "2026-10-29T15:08:18.520Z",
+    "source": "openlibrary",
+    "synopsis": "Friday evening I was invited to a party at a colleague from work's house.",
+    "communityRating": 3.69,
+    "ratingsCount": 13,
+    "subjects": [
+      "Alienation (Social Psychology",
+      "Fiction",
+      "Computer Engineers",
+      "Romance Literature",
+      "Fiction, Humorous",
+      "Macht"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/981762-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "62291": {
+    "bookId": "62291",
+    "fetchedAt": "2026-10-29T15:09:13.385Z",
+    "source": "openlibrary",
+    "synopsis": "An east wind blew through his tangled hair, as soft and fragrant as Cersei's fingers.",
+    "communityRating": 4.44,
+    "ratingsCount": 108,
+    "subjects": [
+      "New York Times Bestseller",
+      "Nyt:mass_market_paperback=2011-06-04",
+      "Seven Kingdoms (Imaginary Place",
+      "Fiction",
+      "Fantasy Fiction",
+      "Imaginary Wars And Battles"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/15124196-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "67762": {
+    "bookId": "67762",
+    "fetchedAt": "2026-10-29T15:09:37.388Z",
+    "source": "openlibrary",
+    "synopsis": "SCENE -A great terrace in the Palace of Herod, set above the banqueting-hall.",
+    "communityRating": 3.4,
+    "ratingsCount": 15,
+    "subjects": [
+      "Drama",
+      "English Bible Plays",
+      "Fiction",
+      "British And Irish Drama (dramatic Works by One Author",
+      "English Drama",
+      "Art"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/8246115-M.jpg",
+    "detectedOriginalLanguage": "PT"
+  },
+  "68526": {
+    "bookId": "68526",
+    "fetchedAt": "2026-10-29T15:07:36.411Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 4,
+    "ratingsCount": 10,
+    "subjects": [
+      "Fiction",
+      "Historical Fiction",
+      "History",
+      "Vikings",
+      "Betrayal",
+      "Saxons"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/4935719-M.jpg",
+    "detectedOriginalLanguage": "DE"
+  },
+  "70535": {
+    "bookId": "70535",
+    "fetchedAt": "2026-10-29T15:10:32.163Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 4,
+    "ratingsCount": 1,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/15170836-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "72193": {
+    "bookId": "72193",
+    "fetchedAt": "2026-10-29T15:10:30.466Z",
+    "source": "openlibrary",
+    "synopsis": "Bhi conai ar mhuintir Dursley in uimhir a ceathair privet Drive, agus e le maiomh acu go raibh siad an-normalta go deo, agus iad brea sasta de.",
+    "communityRating": 4.22,
+    "ratingsCount": 1061,
+    "subjects": [
+      "Series:Harry_Potter",
+      "Ghosts",
+      "Monsters",
+      "Vampires",
+      "Witches",
+      "Challenges And Overcoming Obstacles"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/15155833-M.jpg",
+    "detectedOriginalLanguage": "FR"
+  },
+  "80571": {
+    "bookId": "80571",
+    "fetchedAt": "2026-10-29T15:08:42.814Z",
+    "source": "none",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": null,
+    "detectedOriginalLanguage": null
+  },
+  "80795": {
+    "bookId": "80795",
+    "fetchedAt": "2026-10-29T15:09:29.389Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 5,
+    "ratingsCount": 1,
+    "subjects": [
+      "History And Criticism",
+      "Literature",
+      "Reality in Literature",
+      "Mimesis in Literature",
+      "Realism in Literature",
+      "Mimesis"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/443140-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "90631": {
+    "bookId": "90631",
+    "fetchedAt": "2026-10-29T15:08:03.251Z",
+    "source": "openlibrary",
+    "synopsis": "Recently I met someone in an airport whom I hadn't seen for fifteen years.",
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [
+      "Work Ethic",
+      "Working Class",
+      "Labor",
+      "United States",
+      "Arbeid",
+      "Travail"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/247343-M.jpg",
+    "detectedOriginalLanguage": "ES"
+  },
+  "91203": {
+    "bookId": "91203",
+    "fetchedAt": "2026-10-29T15:09:48.386Z",
+    "source": "openlibrary",
+    "synopsis": "legs were off, but he didn't know that. He could not see it, because the bedclothes were supported on a wire cradle.",
+    "communityRating": 4.67,
+    "ratingsCount": 6,
+    "subjects": [
+      "Fiction",
+      "German Language",
+      "Readers",
+      "Sickness in Fiction",
+      "Chrestomathies And Readers",
+      "Continental European Fiction (fictional Works by One Author"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/6569785-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "110871": {
+    "bookId": "110871",
+    "fetchedAt": "2026-10-29T15:09:43.383Z",
+    "source": "openlibrary",
+    "synopsis": "THERESE RAQUIN is the earliest of Emile Zola's novels to have maintained a position as a literary work of some intrinsic value and not merely as one of his historically interesting juvenilia or worthless pot-boilers.",
+    "communityRating": 3.9,
+    "ratingsCount": 10,
+    "subjects": [
+      "Adultery",
+      "Adultery in Fiction",
+      "Fiction",
+      "French Literature",
+      "History And Criticism",
+      "Murder"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/979858-M.jpg",
+    "detectedOriginalLanguage": "DE"
+  },
+  "116511": {
+    "bookId": "116511",
+    "fetchedAt": "2026-10-29T15:08:23.956Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 5,
+    "ratingsCount": 1,
+    "subjects": [
+      "Correspondence",
+      "Austrian Authors",
+      "Kafka, Franz, 1883-1924"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/4126170-M.jpg",
+    "detectedOriginalLanguage": "DE"
+  },
+  "119322": {
+    "bookId": "119322",
+    "fetchedAt": "2026-10-29T15:08:52.294Z",
+    "source": "openlibrary",
+    "synopsis": "Lyra and her daemon moved through the darkening hall, taking care to keep to one side, out of sight of the kitchen.",
+    "communityRating": 3.93,
+    "ratingsCount": 230,
+    "subjects": [
+      "Political Theology",
+      "Polar Bears",
+      "Kidnapping",
+      "Adventure Stories",
+      "Children And Adults",
+      "Juvenile Fiction"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/8747028-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "122648": {
+    "bookId": "122648",
+    "fetchedAt": "2026-10-29T15:09:21.383Z",
+    "source": "openlibrary",
+    "synopsis": "Lawn in front of the terrace at Hunstanton.",
+    "communityRating": 4,
+    "ratingsCount": 6,
+    "subjects": [
+      "Fiction",
+      "Nonfiction",
+      "Essays",
+      "Drama (dramatic Works by One Author",
+      "British And Irish Drama (dramatic Works by One Author",
+      "Woman of no Importance (Wilde, Oscar"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/8245246-M.jpg",
+    "detectedOriginalLanguage": "ZH"
+  },
+  "123767": {
+    "bookId": "123767",
+    "fetchedAt": "2026-10-29T15:07:26.707Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 3.5,
+    "ratingsCount": 2,
+    "subjects": [
+      "French Fiction"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/980131-M.jpg",
+    "detectedOriginalLanguage": "FR"
+  },
+  "133518": {
+    "bookId": "133518",
+    "fetchedAt": "2026-10-29T15:08:17.759Z",
+    "source": "openlibrary",
+    "synopsis": "First Lieutenant Jimmy Cross carried letters from a girl named Martha, a junior at Mount Sebastian College in New Jersey.",
+    "communityRating": 4.33,
+    "ratingsCount": 42,
+    "subjects": [
+      "Reading Level-Grade 9",
+      "Reading Level-Grade 11",
+      "Reading Level-Grade 10",
+      "Reading Level-Grade 12",
+      "Fiction, Short Stories (single Author",
+      "Veterans, Fiction"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12639079-M.jpg",
+    "detectedOriginalLanguage": "ES"
+  },
+  "136251": {
+    "bookId": "136251",
+    "fetchedAt": "2026-10-29T15:10:02.383Z",
+    "source": "openlibrary",
+    "synopsis": "Les deux hommes surgirent de nulle part, à quelques mètres l’un de l’autre, sur le chemin étroit éclairé par la lune. Pendant un instant, ils restèrent parfaitement immobiles, chacun pointant sa baguette magique sur la poitrine de l’autre.",
+    "communityRating": 4.27,
+    "ratingsCount": 420,
+    "subjects": [
+      "The Elder Wand",
+      "Children's Books",
+      "Dementors",
+      "Good And Evil",
+      "Juvenile Literature",
+      "Juvenile Works"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/15158660-M.jpg",
+    "detectedOriginalLanguage": "ZH"
+  },
+  "153747": {
+    "bookId": "153747",
+    "fetchedAt": "2026-10-29T15:09:52.389Z",
+    "source": "openlibrary",
+    "synopsis": "CALL me Ishmael.",
+    "communityRating": 3.95,
+    "ratingsCount": 197,
+    "subjects": [
+      "American Sea Stories",
+      "Mentally Ill",
+      "Whaling",
+      "Science Fiction & Fantasy",
+      "Whales",
+      "Great_books_of_the_western_world"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/10544254-M.jpg",
+    "detectedOriginalLanguage": "ZH"
+  },
+  "157993": {
+    "bookId": "157993",
+    "fetchedAt": "2026-10-29T15:09:20.387Z",
+    "source": "openlibrary",
+    "synopsis": "ONCE WHEN I WAS six I saw a magnificent picture in a book about the jungle, called True Stories.",
+    "communityRating": 4.35,
+    "ratingsCount": 256,
+    "subjects": [
+      "Adventure",
+      "Fantasy",
+      "Friendship",
+      "Love",
+      "Childhood",
+      "Loss"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/10708272-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "187569": {
+    "bookId": "187569",
+    "fetchedAt": "2026-10-29T15:08:21.173Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 3.5,
+    "ratingsCount": 6,
+    "subjects": [
+      "Correspondence",
+      "Austrian Authors",
+      "Biography",
+      "Facsimiles",
+      "Manuscripts",
+      "German Literature"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/3177168-M.jpg",
+    "detectedOriginalLanguage": "PT"
+  },
+  "194808": {
+    "bookId": "194808",
+    "fetchedAt": "2026-10-29T15:10:14.683Z",
+    "source": "openlibrary",
+    "synopsis": "Day had broken cold and gray, exceeding cold and gray, when the man turned aside from the main Yukon trail and climbed the high earth bank, where a dim and little traveled trail led eastward through fat spruce timberland.",
+    "communityRating": 4.23,
+    "ratingsCount": 13,
+    "subjects": [
+      "Fiction",
+      "Adventure And Adventurers",
+      "Juvenile Fiction",
+      "Open_syllabus_project",
+      "Children's Fiction",
+      "Yukon, Fiction"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/734207-M.jpg",
+    "detectedOriginalLanguage": "FR"
+  },
+  "212934": {
+    "bookId": "212934",
+    "fetchedAt": "2026-10-29T15:08:56.386Z",
+    "source": "openlibrary",
+    "synopsis": "How MANY TIMES, since I left Lebanon in 1976 to live in France, have people asked me, with the best intentions in the world, whether I felt \"more French\" or \"more Lebanese\"?",
+    "communityRating": 4.2,
+    "ratingsCount": 5,
+    "subjects": [
+      "Group Identity",
+      "Ethnicity",
+      "Identity (Philosophical Concept",
+      "Ethnic Relations",
+      "Minorities",
+      "Identity (psychology"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/977614-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "216363": {
+    "bookId": "216363",
+    "fetchedAt": "2026-10-29T15:08:41.349Z",
+    "source": "openlibrary",
+    "synopsis": "For much of his writing life Philip K. Dick was considered by a coterie of devoted readers, writers and critics as an unrecognized genius, a visionary whose manic novels of fractured realities presented a future that, like all good science fiction, was less prescriptive of what was to come than descriptive of the present.",
+    "communityRating": 3.55,
+    "ratingsCount": 129,
+    "subjects": [
+      "Award:hugo_award=1963",
+      "Fiction",
+      "Hugo Award Winner",
+      "Science Fiction",
+      "Award:hugo_award=novel",
+      "Fiction, Alternative History"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/420452-M.jpg",
+    "detectedOriginalLanguage": "JA"
+  },
+  "220826": {
+    "bookId": "220826",
+    "fetchedAt": "2026-10-29T15:10:27.497Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 2,
+    "ratingsCount": 2,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/10848013-M.jpg",
+    "detectedOriginalLanguage": "TR"
+  },
+  "223380": {
+    "bookId": "223380",
+    "fetchedAt": "2026-10-29T15:08:43.713Z",
+    "source": "openlibrary",
+    "synopsis": "In memory of Brian Chiang and Jenna Felice.",
+    "communityRating": 4.44,
+    "ratingsCount": 94,
+    "subjects": [
+      "American Science Fiction",
+      "Fiction, Science Fiction, Short Stories",
+      "Nyt:trade-fiction-paperback=2016-12-04",
+      "New York Times Bestseller",
+      "Life Change Events",
+      "Fiction"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/524046-M.jpg",
+    "detectedOriginalLanguage": "IT"
+  },
+  "223403": {
+    "bookId": "223403",
+    "fetchedAt": "2026-10-29T15:08:05.412Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 4.33,
+    "ratingsCount": 3,
+    "subjects": [
+      "Education",
+      "Educational Sociology",
+      "Philosophy",
+      "Schulkritik",
+      "Éducation",
+      "Sociologie de L'éducation"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/5417356-M.jpg",
+    "detectedOriginalLanguage": "ES"
+  },
+  "227463": {
+    "bookId": "227463",
+    "fetchedAt": "2026-10-29T15:08:36.348Z",
+    "source": "openlibrary",
+    "synopsis": "'WHAT'S it going to be then, eh?'",
+    "communityRating": 4.01,
+    "ratingsCount": 69,
+    "subjects": [
+      "Bible",
+      "Aversion Therapy",
+      "Unintended Consequences",
+      "Beethoven's Fifth Symphony",
+      "Gang Rape",
+      "Psychiatric Hospitals"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/14430663-M.jpg",
+    "detectedOriginalLanguage": "DE"
+  },
+  "254308": {
+    "bookId": "254308",
+    "fetchedAt": "2026-10-29T15:09:41.387Z",
+    "source": "openlibrary",
+    "synopsis": "ILYA ILYICH OBLOMOV was lying in bed one morning in his flat in Gorokhovaya Street in one of those large houses which have as many inhabitants as a country town.",
+    "communityRating": 3.75,
+    "ratingsCount": 8,
+    "subjects": [
+      "Fiction",
+      "Readers",
+      "Russia in Fiction",
+      "Russian Language",
+      "Social Life And Customs",
+      "Fiction, General"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/5755397-M.jpg",
+    "detectedOriginalLanguage": "FR"
+  },
+  "256008": {
+    "bookId": "256008",
+    "fetchedAt": "2026-10-29T15:07:31.384Z",
+    "source": "openlibrary",
+    "synopsis": "WHEN AUGUSTUS CAME OUT on the porch the blue pigs were eating a rattlesnake-not a very big one.",
+    "communityRating": 4.33,
+    "ratingsCount": 51,
+    "subjects": [
+      "Fiction",
+      "Western Cattle Drives",
+      "Cowboys",
+      "Man-woman Relationships",
+      "Western Fiction",
+      "Historical Fiction"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/8376548-M.jpg",
+    "detectedOriginalLanguage": "ES"
+  },
+  "301282": {
+    "bookId": "301282",
+    "fetchedAt": "2026-10-29T15:09:27.391Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [
+      "Biography"
+    ],
+    "coverUrl": null,
+    "detectedOriginalLanguage": "EN"
+  },
+  "314207": {
+    "bookId": "314207",
+    "fetchedAt": "2026-10-29T15:08:11.642Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [
+      "Biography",
+      "Influence",
+      "Christian Saints",
+      "Women Heroes",
+      "Christian Women Saints",
+      "Saints Chrétiens"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/4356852-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "333538": {
+    "bookId": "333538",
+    "fetchedAt": "2026-10-29T15:08:22.087Z",
+    "source": "openlibrary",
+    "synopsis": "IT WAS late in the evening when K. arrived.",
+    "communityRating": 4.36,
+    "ratingsCount": 28,
+    "subjects": [
+      "Fiction",
+      "Bureaucracy",
+      "Castles",
+      "Criticism And Interpretation",
+      "German Literature",
+      "Classics"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12605605-M.jpg",
+    "detectedOriginalLanguage": "DE"
+  },
+  "352262": {
+    "bookId": "352262",
+    "fetchedAt": "2026-10-29T15:08:58.383Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 4.14,
+    "ratingsCount": 29,
+    "subjects": [
+      "Humorous Stories",
+      "Vikings",
+      "Juvenile Fiction",
+      "Dragons",
+      "Humorous Fiction",
+      "Fiction"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/190086-M.jpg",
+    "detectedOriginalLanguage": "FR"
+  },
+  "391724": {
+    "bookId": "391724",
+    "fetchedAt": "2026-10-29T15:09:11.383Z",
+    "source": "openlibrary",
+    "synopsis": "FOR the most wild, yet most homely narrative which I am about to open, I neither expect nor solicit belief.",
+    "communityRating": 4.1,
+    "ratingsCount": 21,
+    "subjects": [
+      "Fiction",
+      "Horror Fiction",
+      "Cats",
+      "Children's Fiction",
+      "Short Story",
+      "First-person Narrative"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/11709016-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "394535": {
+    "bookId": "394535",
+    "fetchedAt": "2026-10-29T15:09:52.388Z",
+    "source": "none",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": null,
+    "detectedOriginalLanguage": null
+  },
+  "457264": {
+    "bookId": "457264",
+    "fetchedAt": "2026-10-29T15:08:15.684Z",
+    "source": "openlibrary",
+    "synopsis": "Woman? Very simple, say the fanciers of simple formulas: she is a womb, an ovary; she is a female-this word is sufficient to define her.",
+    "communityRating": 4.11,
+    "ratingsCount": 18,
+    "subjects": [
+      "Women",
+      "Sex",
+      "Feminism",
+      "Sexual Behavior",
+      "Non-Fiction",
+      "Gender"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/78169-M.jpg",
+    "detectedOriginalLanguage": "ES"
+  },
+  "472331": {
+    "bookId": "472331",
+    "fetchedAt": "2026-10-29T15:08:26.468Z",
+    "source": "openlibrary",
+    "synopsis": "Diário de Rorschach 12 de Outubro de 1985",
+    "communityRating": 4.47,
+    "ratingsCount": 240,
+    "subjects": [
+      "Watchmen (Comic Strip",
+      "Graphic Novels",
+      "Comic Books, Strips",
+      "New York Times Bestseller",
+      "Nyt:paperback_graphic_books=2009-03-15",
+      "Comics & Graphic Novels, Science Fiction"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/7774899-M.jpg",
+    "detectedOriginalLanguage": "ES"
+  },
+  "485894": {
+    "bookId": "485894",
+    "fetchedAt": "2026-10-29T15:09:04.383Z",
+    "source": "openlibrary",
+    "synopsis": "A literary classic is a work of the highest excellence that has something important to say about life and/or the human condition and says it with great artistry.",
+    "communityRating": 4.14,
+    "ratingsCount": 189,
+    "subjects": [
+      "Fantasy Fiction",
+      "Children's Fiction",
+      "Lectures et Morceaux Choisis",
+      "Fantastique",
+      "Nouvelles",
+      "Métamorphose"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12820198-M.jpg",
+    "detectedOriginalLanguage": "FR"
+  },
+  "487479": {
+    "bookId": "487479",
+    "fetchedAt": "2026-10-29T15:10:13.140Z",
+    "source": "openlibrary",
+    "synopsis": "Two girls sat on a window-seat in their school study.",
+    "communityRating": 5,
+    "ratingsCount": 4,
+    "subjects": [
+      "Adventure And Adventurers",
+      "Fiction",
+      "Children's Stories",
+      "Castles",
+      "Juvenile Fiction",
+      "Adventure"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/14596540-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "519312": {
+    "bookId": "519312",
+    "fetchedAt": "2026-10-29T15:10:11.391Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 4.33,
+    "ratingsCount": 3,
+    "subjects": [
+      "Children's Stories",
+      "Ocean Travel",
+      "Juvenile Fiction",
+      "Treasure Troves",
+      "Brothers And Sisters",
+      "Criminals"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/11713057-M.jpg",
+    "detectedOriginalLanguage": "DE"
+  },
+  "550165": {
+    "bookId": "550165",
+    "fetchedAt": "2026-10-29T15:08:14.711Z",
+    "source": "openlibrary",
+    "synopsis": "The Times-Post is at last able to announce that William Weston, our top international affairs reporter, will spend six weeks in Ecotopia, beginning next week.",
+    "communityRating": 3.4,
+    "ratingsCount": 5,
+    "subjects": [
+      "Nature Conservation",
+      "Utopias",
+      "Literary Criticism",
+      "Fiction in English",
+      "Fiction",
+      "Environmentalism"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/8261185-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "581552": {
+    "bookId": "581552",
+    "fetchedAt": "2026-10-29T15:08:19.996Z",
+    "source": "none",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": null,
+    "detectedOriginalLanguage": "EN"
+  },
+  "588362": {
+    "bookId": "588362",
+    "fetchedAt": "2026-10-29T15:08:54.157Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 5,
+    "ratingsCount": 2,
+    "subjects": [
+      "Language And Languages",
+      "Linguistics",
+      "Lingüística",
+      "Linguistik",
+      "Dilbilim",
+      "Einführung"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/19766-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "636802": {
+    "bookId": "636802",
+    "fetchedAt": "2026-10-29T15:09:15.382Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 4,
+    "ratingsCount": 1,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12958080-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "689929": {
+    "bookId": "689929",
+    "fetchedAt": "2026-10-29T15:10:12.338Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 4.8,
+    "ratingsCount": 5,
+    "subjects": [
+      "Adventure Stories",
+      "Juvenile Fiction",
+      "Adventure And Adventurers",
+      "Fiction",
+      "Buried Treasure",
+      "Brothers And Sisters"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/14596582-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "735718": {
+    "bookId": "735718",
+    "fetchedAt": "2026-10-29T15:10:11.391Z",
+    "source": "openlibrary",
+    "synopsis": "In einem Auto, das eine steile Bergstraße hinauffuhr saßen vier Kinder und sangen aus voller Kehle.",
+    "communityRating": 5,
+    "ratingsCount": 2,
+    "subjects": [
+      "Children's Stories",
+      "Juvenile Fiction",
+      "Holidays",
+      "Adventure",
+      "Fiction",
+      "Adventure And Adventurers"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/14605251-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "804568": {
+    "bookId": "804568",
+    "fetchedAt": "2026-10-29T15:10:12.247Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 5,
+    "ratingsCount": 4,
+    "subjects": [
+      "Russian Art",
+      "Children's Fiction",
+      "Adventure And Adventurers, Fiction",
+      "Brothers And Sisters",
+      "Juvenile Fiction",
+      "Adventure Stories"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/14596526-M.jpg",
+    "detectedOriginalLanguage": "DE"
+  },
+  "955942": {
+    "bookId": "955942",
+    "fetchedAt": "2026-10-29T15:10:08.383Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 4,
+    "ratingsCount": 2,
+    "subjects": [
+      "Children's Stories",
+      "Adventure And Adventurers",
+      "Fiction",
+      "Brothers And Sisters",
+      "Juvenile Fiction",
+      "Parrots"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/14603095-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "966835": {
+    "bookId": "966835",
+    "fetchedAt": "2026-10-29T15:07:29.945Z",
+    "source": "openlibrary",
+    "synopsis": "I VISITED Naples in the year 1818.",
+    "communityRating": 3.5,
+    "ratingsCount": 8,
+    "subjects": [
+      "Fiction",
+      "Plague",
+      "Twenty-first Century",
+      "End of The World",
+      "British And Irish Fiction (fictional Works by One Author",
+      "Fiction, Fantasy, General"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/882662-M.jpg",
+    "detectedOriginalLanguage": "IT"
+  },
+  "1367034": {
+    "bookId": "1367034",
+    "fetchedAt": "2026-10-29T15:08:39.013Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/11663431-M.jpg",
+    "detectedOriginalLanguage": "FR"
+  },
+  "1525511": {
+    "bookId": "1525511",
+    "fetchedAt": "2026-10-29T15:07:29.816Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [
+      "Cognition"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/13897876-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "1838912": {
+    "bookId": "1838912",
+    "fetchedAt": "2026-10-29T15:08:56.386Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/7242934-M.jpg",
+    "detectedOriginalLanguage": "TR"
+  },
+  "2040424": {
+    "bookId": "2040424",
+    "fetchedAt": "2026-10-29T15:08:55.105Z",
+    "source": "none",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": null,
+    "detectedOriginalLanguage": null
+  },
+  "4455929": {
+    "bookId": "4455929",
+    "fetchedAt": "2026-10-29T15:08:30.934Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [
+      "Bibliography",
+      "Biography",
+      "History",
+      "Study And Teaching",
+      "Turcologists",
+      "Turkic Languages"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/4054195-M.jpg",
+    "detectedOriginalLanguage": "TR"
+  },
+  "4617457": {
+    "bookId": "4617457",
+    "fetchedAt": "2026-10-29T15:07:24.615Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [
+      "Fiction"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/7545822-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "4808763": {
+    "bookId": "4808763",
+    "fetchedAt": "2026-10-29T15:08:53.099Z",
+    "source": "openlibrary",
+    "synopsis": "The last question was asked for the first time, half in jest, on May 21, 2061, at a time when humanity first stepped into the light.",
+    "communityRating": 4.74,
+    "ratingsCount": 19,
+    "subjects": [
+      "Science Fiction & Fantasy",
+      "Science Fiction"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/14414350-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "5448281": {
+    "bookId": "5448281",
+    "fetchedAt": "2026-10-29T15:08:10.849Z",
+    "source": "openlibrary",
+    "synopsis": "My name is Uhtred.",
+    "communityRating": 4.09,
+    "ratingsCount": 22,
+    "subjects": [
+      "Fiction",
+      "History",
+      "Vikings",
+      "Historical Fiction",
+      "Nyt:e-book-fiction=2012-03-25",
+      "New York Times Bestseller"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/27716-M.jpg",
+    "detectedOriginalLanguage": "DE"
+  },
+  "6148028": {
+    "bookId": "6148028",
+    "fetchedAt": "2026-10-29T15:08:17.152Z",
+    "source": "openlibrary",
+    "synopsis": "I clasp the flask between my hands even though the warmth from the tea has long since leached into the frozen air.",
+    "communityRating": 4.14,
+    "ratingsCount": 306,
+    "subjects": [
+      "Action",
+      "Adventure",
+      "Fantasy",
+      "Teen Fiction",
+      "Juvenile Works",
+      "Interdependence"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12646539-M.jpg",
+    "detectedOriginalLanguage": "IT"
+  },
+  "6260806": {
+    "bookId": "6260806",
+    "fetchedAt": "2026-10-29T15:08:12.587Z",
+    "source": "openlibrary",
+    "synopsis": "In Greek mythology, Promotheus was the Titan charged with giving abilities to the animals of the earth.",
+    "communityRating": 3.96,
+    "ratingsCount": 228,
+    "subjects": [
+      "Frankenstein (Fictitious Character",
+      "Frankenstein's Monster (Fictitious Character",
+      "Fiction",
+      "Victor Frankenstein (Fictitious Character",
+      "Scientists",
+      "Monsters"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12356249-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "6324090": {
+    "bookId": "6324090",
+    "fetchedAt": "2026-10-29T15:10:38.328Z",
+    "source": "openlibrary",
+    "synopsis": "Alice was beginning to get very tired of sitting by her sister on the bank, and of having nothing to do: once or twice she had peeped into the book her sister was reading, but it had no pictures or conversations in it, and where is the use of a book, thought Alice, without pictures or conversations?",
+    "communityRating": 4.05,
+    "ratingsCount": 235,
+    "subjects": [
+      "Alice (fictitious Character : Carroll), Fiction",
+      "British And Irish Fiction (fictional Works by One Author",
+      "Fiction, Fantasy, General",
+      "JUVENILE FICTION",
+      "Classics",
+      "Fantasy & Magic"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/10527843-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "6361563": {
+    "bookId": "6361563",
+    "fetchedAt": "2026-10-29T15:10:22.005Z",
+    "source": "none",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": null,
+    "detectedOriginalLanguage": "TR"
+  },
+  "6382055": {
+    "bookId": "6382055",
+    "fetchedAt": "2026-10-29T15:09:55.382Z",
+    "source": "none",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": null,
+    "detectedOriginalLanguage": null
+  },
+  "6465707": {
+    "bookId": "6465707",
+    "fetchedAt": "2026-10-29T15:09:04.383Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 4.56,
+    "ratingsCount": 9,
+    "subjects": [
+      "Survivalism",
+      "Zombies",
+      "Comic Books, Strips",
+      "Comics & Graphic Novels, Horror",
+      "Nyt:paperback-graphic-books=2010-09-26",
+      "New York Times Bestseller"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/7760196-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "6468870": {
+    "bookId": "6468870",
+    "fetchedAt": "2026-10-29T15:08:44.646Z",
+    "source": "openlibrary",
+    "synopsis": "THE PLACE STANK.",
+    "communityRating": 3.8,
+    "ratingsCount": 5,
+    "subjects": [
+      "American Science Fiction",
+      "Fiction",
+      "Horror",
+      "Mystery",
+      "Science Fiction & Fantasy",
+      "Science Fiction"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/4745562-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "6496607": {
+    "bookId": "6496607",
+    "fetchedAt": "2026-10-29T15:10:17.758Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 5,
+    "ratingsCount": 1,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/10031524-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "6667916": {
+    "bookId": "6667916",
+    "fetchedAt": "2026-10-29T15:08:48.644Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 2.5,
+    "ratingsCount": 4,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/13287273-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "6669677": {
+    "bookId": "6669677",
+    "fetchedAt": "2026-10-29T15:07:34.725Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [
+      "Aeronautics",
+      "Airplanes",
+      "Piloting",
+      "Handbooks, Manuals"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/7544501-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "6779587": {
+    "bookId": "6779587",
+    "fetchedAt": "2026-10-29T15:08:34.966Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12310817-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "6791780": {
+    "bookId": "6791780",
+    "fetchedAt": "2026-10-29T15:09:32.385Z",
+    "source": "none",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": null,
+    "detectedOriginalLanguage": null
+  },
+  "6859294": {
+    "bookId": "6859294",
+    "fetchedAt": "2026-10-29T15:08:33.642Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12351700-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "7004266": {
+    "bookId": "7004266",
+    "fetchedAt": "2026-10-29T15:10:33.078Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12279266-M.jpg",
+    "detectedOriginalLanguage": "TR"
+  },
+  "7139340": {
+    "bookId": "7139340",
+    "fetchedAt": "2026-10-29T15:08:13.539Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12805203-M.jpg",
+    "detectedOriginalLanguage": "TR"
+  },
+  "7260188": {
+    "bookId": "7260188",
+    "fetchedAt": "2026-10-29T15:08:16.968Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 3.81,
+    "ratingsCount": 282,
+    "subjects": [
+      "New York Times Bestseller",
+      "Sci-fi",
+      "Young Adult",
+      "Nyt:series_books=2010-08-21",
+      "Science Fiction",
+      "Interpersonal Relations"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12646459-M.jpg",
+    "detectedOriginalLanguage": "IT"
+  },
+  "7712578": {
+    "bookId": "7712578",
+    "fetchedAt": "2026-10-29T15:10:23.763Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12273298-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "7723926": {
+    "bookId": "7723926",
+    "fetchedAt": "2026-10-29T15:08:18.406Z",
+    "source": "openlibrary",
+    "synopsis": "When I wake up, the other side of the bed is cold.",
+    "communityRating": 4.14,
+    "ratingsCount": 575,
+    "subjects": [
+      "Severe Poverty",
+      "Starvation",
+      "Oppression",
+      "Effects of War",
+      "Self-sacrifice",
+      "Science Fiction"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12646537-M.jpg",
+    "detectedOriginalLanguage": "ZH"
+  },
+  "7992363": {
+    "bookId": "7992363",
+    "fetchedAt": "2026-10-29T15:09:02.388Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 4,
+    "ratingsCount": 9,
+    "subjects": [
+      "Fiction",
+      "Assassination",
+      "World War, 1939-1945",
+      "Underground Movements",
+      "World War, 1939-1945, Fiction",
+      "Nazis, Fiction"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/13279649-M.jpg",
+    "detectedOriginalLanguage": "JA"
+  },
+  "8399007": {
+    "bookId": "8399007",
+    "fetchedAt": "2026-10-29T15:07:22.881Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 4,
+    "ratingsCount": 1,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/9404768-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "8530047": {
+    "bookId": "8530047",
+    "fetchedAt": "2026-10-29T15:08:00.738Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [
+      "Presidents",
+      "Biography",
+      "History"
+    ],
+    "coverUrl": null,
+    "detectedOriginalLanguage": "TR"
+  },
+  "8530147": {
+    "bookId": "8530147",
+    "fetchedAt": "2026-10-29T15:10:36.663Z",
+    "source": "none",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": null,
+    "detectedOriginalLanguage": null
+  },
+  "9269253": {
+    "bookId": "9269253",
+    "fetchedAt": "2026-10-29T15:09:40.388Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12320473-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "10234934": {
+    "bookId": "10234934",
+    "fetchedAt": "2026-10-29T15:09:30.387Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/10720854-M.jpg",
+    "detectedOriginalLanguage": "TR"
+  },
+  "10664113": {
+    "bookId": "10664113",
+    "fetchedAt": "2026-10-29T15:09:14.380Z",
+    "source": "openlibrary",
+    "synopsis": "The night was rank with the smell of man.",
+    "communityRating": 4.36,
+    "ratingsCount": 44,
+    "subjects": [
+      "New York Times Bestseller",
+      "Nyt:hardcover_fiction=2011-07-30",
+      "Seven Kingdoms (Imaginary Place",
+      "Fiction",
+      "Epic",
+      "Fantasy"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/11298743-M.jpg",
+    "detectedOriginalLanguage": "IT"
+  },
+  "11186746": {
+    "bookId": "11186746",
+    "fetchedAt": "2026-10-29T15:09:28.390Z",
+    "source": "openlibrary",
+    "synopsis": "When Mr. Bilbo Baggins of Bag End announced that he would shortly be celebrating his eleventy-first birthday with a party of special magnificence, there was much talk and excitement in Hobbiton.",
+    "communityRating": 4.34,
+    "ratingsCount": 405,
+    "subjects": [
+      "Elves",
+      "Dwarves",
+      "Evil",
+      "Fear",
+      "Hope",
+      "Young Adult Fiction"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/14627060-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "11481361": {
+    "bookId": "11481361",
+    "fetchedAt": "2026-10-29T15:08:07.274Z",
+    "source": "none",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": null,
+    "detectedOriginalLanguage": "EN"
+  },
+  "11501608": {
+    "bookId": "11501608",
+    "fetchedAt": "2026-10-29T15:09:34.386Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 5,
+    "ratingsCount": 1,
+    "subjects": [
+      "Comics & Graphic Novels, Fantasy",
+      "Comics & Graphic Novels, Superheroes"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/8765388-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "11806884": {
+    "bookId": "11806884",
+    "fetchedAt": "2026-10-29T15:07:35.338Z",
+    "source": "openlibrary",
+    "synopsis": "\"CHRISTMAS won't be Christmas without any presents,\" grumbled Jo, lying on the rug.",
+    "communityRating": 4.06,
+    "ratingsCount": 126,
+    "subjects": [
+      "Romans",
+      "Jeunes Filles",
+      "Soeurs",
+      "Sisters",
+      "Young Women",
+      "Fiction"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/8775559-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "11837559": {
+    "bookId": "11837559",
+    "fetchedAt": "2026-10-29T15:08:11.312Z",
+    "source": "openlibrary",
+    "synopsis": "These days I look at twenty-year-olds and think they are pathetically young, scarcely weaned from their mothers' tits, but when I was twenty I considered myself a full-grown man.",
+    "communityRating": 4.15,
+    "ratingsCount": 13,
+    "subjects": [
+      "Fiction",
+      "History",
+      "Vikings",
+      "Historical Fiction",
+      "Alfred, King of England, 849-899",
+      "Great Britain, Fiction"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/38813-M.jpg",
+    "detectedOriginalLanguage": "DE"
+  },
+  "11924046": {
+    "bookId": "11924046",
+    "fetchedAt": "2026-10-29T15:09:03.392Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 5,
+    "ratingsCount": 2,
+    "subjects": [
+      "Comics & Graphic Novels, Superheroes",
+      "Nyt:graphic-books-and-manga=2024-05-12",
+      "New York Times Bestseller"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/7735816-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "11984823": {
+    "bookId": "11984823",
+    "fetchedAt": "2026-10-29T15:08:53.870Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [
+      "Mythology, Turkish",
+      "Turkish Mythology"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/4160628-M.jpg",
+    "detectedOriginalLanguage": "TR"
+  },
+  "11984875": {
+    "bookId": "11984875",
+    "fetchedAt": "2026-10-29T15:08:53.470Z",
+    "source": "none",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": null,
+    "detectedOriginalLanguage": null
+  },
+  "12111823": {
+    "bookId": "12111823",
+    "fetchedAt": "2026-10-29T15:09:55.382Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [
+      "Fiction, Fantasy, Epic"
+    ],
+    "coverUrl": null,
+    "detectedOriginalLanguage": "EN"
+  },
+  "12280666": {
+    "bookId": "12280666",
+    "fetchedAt": "2026-10-29T15:08:36.519Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [
+      "Heroes",
+      "Comic Books, Strips",
+      "Good And Evil",
+      "Batman (fictitious Character), Fiction",
+      "Comics & Graphic Novels, Superheroes",
+      "Nyt:paperback-graphic-books=2012-04-08"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12975116-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "12351695": {
+    "bookId": "12351695",
+    "fetchedAt": "2026-10-29T15:08:03.510Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 5,
+    "ratingsCount": 2,
+    "subjects": [
+      "Family",
+      "Fiction",
+      "Mothers And Daughters",
+      "French Autobiographical Fiction",
+      "Fiction, Family Life, General",
+      "Mothers And Daughters, Fiction"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/13078969-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "12565133": {
+    "bookId": "12565133",
+    "fetchedAt": "2026-10-29T15:09:33.385Z",
+    "source": "none",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": null,
+    "detectedOriginalLanguage": "TR"
+  },
+  "12868204": {
+    "bookId": "12868204",
+    "fetchedAt": "2026-10-29T15:08:33.953Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 3.69,
+    "ratingsCount": 13,
+    "subjects": [
+      "Science Fiction",
+      "Fiction, Fantasy, General",
+      "Fiction, Action & Adventure",
+      "Fiction, Science Fiction, Action & Adventure",
+      "Reincarnation",
+      "Japanese Science Fiction"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/14339336-M.jpg",
+    "detectedOriginalLanguage": "JA"
+  },
+  "13283905": {
+    "bookId": "13283905",
+    "fetchedAt": "2026-10-29T15:09:50.391Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12294182-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "13575883": {
+    "bookId": "13575883",
+    "fetchedAt": "2026-10-29T15:09:44.384Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12295316-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "13582756": {
+    "bookId": "13582756",
+    "fetchedAt": "2026-10-29T15:10:29.732Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12279265-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "13634667": {
+    "bookId": "13634667",
+    "fetchedAt": "2026-10-29T15:08:30.684Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12359504-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "14563118": {
+    "bookId": "14563118",
+    "fetchedAt": "2026-10-29T15:08:44.647Z",
+    "source": "none",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": null,
+    "detectedOriginalLanguage": null
+  },
+  "14744381": {
+    "bookId": "14744381",
+    "fetchedAt": "2026-10-29T15:09:18.391Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 4.6,
+    "ratingsCount": 5,
+    "subjects": [
+      "Survivalism",
+      "Zombies",
+      "Comic Books, Strips",
+      "Comics & Graphic Novels, Horror",
+      "Nyt:paperback-graphic-books=2012-10-28",
+      "New York Times Bestseller"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/7740016-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "15844501": {
+    "bookId": "15844501",
+    "fetchedAt": "2026-10-29T15:08:32.855Z",
+    "source": "none",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": null,
+    "detectedOriginalLanguage": null
+  },
+  "17210428": {
+    "bookId": "17210428",
+    "fetchedAt": "2026-10-29T15:09:59.394Z",
+    "source": "none",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": null,
+    "detectedOriginalLanguage": null
+  },
+  "17274667": {
+    "bookId": "17274667",
+    "fetchedAt": "2026-10-29T15:08:48.921Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 4.06,
+    "ratingsCount": 18,
+    "subjects": [
+      "Air Raid Shelters",
+      "Subway Stations",
+      "Fiction"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/9931150-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "17382979": {
+    "bookId": "17382979",
+    "fetchedAt": "2026-10-29T15:09:19.388Z",
+    "source": "openlibrary",
+    "synopsis": "Gecəyarısı Nyu-Yorkdan Buenos-Ayresə yola düşən böyük sərnişin gəmisində son saatın adi çaxnaşması, get-gəli hökm sürürdü.",
+    "communityRating": 4.03,
+    "ratingsCount": 36,
+    "subjects": [
+      "Chess",
+      "Chrestomathies And Readers",
+      "Fiction",
+      "German Language",
+      "Readers",
+      "German Language, Readers"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/5548285-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "17563539": {
+    "bookId": "17563539",
+    "fetchedAt": "2026-10-29T15:08:30.223Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 4,
+    "ratingsCount": 2,
+    "subjects": [
+      "Science-Fiction",
+      "Fiction",
+      "Science Fiction"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/8445948-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "17665637": {
+    "bookId": "17665637",
+    "fetchedAt": "2026-10-29T15:07:36.047Z",
+    "source": "openlibrary",
+    "synopsis": "Vi três fotos daquele homem.",
+    "communityRating": 4.08,
+    "ratingsCount": 131,
+    "subjects": [
+      "Fiction",
+      "Near And Far Eastern Fiction (fictional Works by One Author",
+      "Literature",
+      "Men",
+      "Anxiety",
+      "Social Life And Customs"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/13190147-M.jpg",
+    "detectedOriginalLanguage": "JA"
+  },
+  "17933078": {
+    "bookId": "17933078",
+    "fetchedAt": "2026-10-29T15:08:47.255Z",
+    "source": "none",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": null,
+    "detectedOriginalLanguage": null
+  },
+  "18101127": {
+    "bookId": "18101127",
+    "fetchedAt": "2026-10-29T15:09:16.380Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 4.75,
+    "ratingsCount": 4,
+    "subjects": [
+      "Comics & Graphic Novels, Science Fiction",
+      "Nyt:graphic-books-and-manga=2024-05-12",
+      "New York Times Bestseller"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/9030048-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "18144590": {
+    "bookId": "18144590",
+    "fetchedAt": "2026-10-29T15:10:25.957Z",
+    "source": "openlibrary",
+    "synopsis": "El muchacho se llamaba Santiago.",
+    "communityRating": 3.81,
+    "ratingsCount": 485,
+    "subjects": [
+      "Translations Into Indonesian",
+      "Voyages And Travels",
+      "Fiction",
+      "Portuguese Fiction",
+      "Self-realization",
+      "Alchemists"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/7414780-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "18245960": {
+    "bookId": "18245960",
+    "fetchedAt": "2026-10-29T15:09:23.382Z",
+    "source": "openlibrary",
+    "synopsis": "Die braune Ameise hatte schon vergessen, dass sie hier einmal zu Hause gewesen war.",
+    "communityRating": 4.44,
+    "ratingsCount": 39,
+    "subjects": [
+      "Chinese Science Fiction",
+      "Fiction",
+      "Science Fiction",
+      "Fiction, Science Fiction, General",
+      "Human-alien Encounters",
+      "Imaginary Wars And Battles"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/10526598-M.jpg",
+    "detectedOriginalLanguage": "IT"
+  },
+  "18401393": {
+    "bookId": "18401393",
+    "fetchedAt": "2026-10-29T15:01:12.972Z",
+    "source": "openlibrary",
+    "synopsis": "Здаецца, я ў срацы.",
+    "communityRating": 4.4,
+    "ratingsCount": 337,
+    "subjects": [
+      "Science-Fiction",
+      "Science Fiction & Fantasy",
+      "Suspense & Thriller",
+      "Science Fiction",
+      "Amerikanisches Englisch",
+      "Astronauts"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/11447888-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "18760879": {
+    "bookId": "18760879",
+    "fetchedAt": "2026-10-29T15:09:32.386Z",
+    "source": "none",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": null,
+    "detectedOriginalLanguage": "EN"
+  },
+  "18910881": {
+    "bookId": "18910881",
+    "fetchedAt": "2026-10-29T15:08:47.439Z",
+    "source": "none",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": null,
+    "detectedOriginalLanguage": null
+  },
+  "19326217": {
+    "bookId": "19326217",
+    "fetchedAt": "2026-10-29T15:08:37.454Z",
+    "source": "none",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": null,
+    "detectedOriginalLanguage": null
+  },
+  "20749912": {
+    "bookId": "20749912",
+    "fetchedAt": "2026-10-29T15:09:18.391Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 3.63,
+    "ratingsCount": 8,
+    "subjects": [
+      "Translations Into Russian"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/1022090-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "20813135": {
+    "bookId": "20813135",
+    "fetchedAt": "2026-10-29T15:08:40.474Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 4.19,
+    "ratingsCount": 53,
+    "subjects": [
+      "Fiction",
+      "Science Fiction",
+      "Collections & Anthologies"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/5540875-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "20890543": {
+    "bookId": "20890543",
+    "fetchedAt": "2026-10-29T15:08:08.076Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 5,
+    "ratingsCount": 3,
+    "subjects": [
+      "Comics & Graphic Novels, Manga, Science Fiction",
+      "Space Warfare",
+      "Comic Books, Strips",
+      "Androids",
+      "Giants",
+      "Good And Evil"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/8819326-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "22500160": {
+    "bookId": "22500160",
+    "fetchedAt": "2026-10-29T15:08:04.668Z",
+    "source": "none",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": null,
+    "detectedOriginalLanguage": null
+  },
+  "23308496": {
+    "bookId": "23308496",
+    "fetchedAt": "2026-10-29T15:08:38.403Z",
+    "source": "openlibrary",
+    "synopsis": "Before the rule of Tiber Septim, all Tamriel was in chaos.",
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [
+      "Computer Adventure Games",
+      "Elder Scrolls (Game",
+      "Fantasy Games"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/15263271-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "23515727": {
+    "bookId": "23515727",
+    "fetchedAt": "2026-10-29T15:09:51.393Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 4.08,
+    "ratingsCount": 37,
+    "subjects": [
+      "Fiction",
+      "Drug Traffic",
+      "Sheriffs",
+      "Treasure-trove",
+      "Treasure Troves",
+      "Suspense Fiction"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/9296899-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "23692271": {
+    "bookId": "23692271",
+    "fetchedAt": "2026-10-29T15:09:12.385Z",
+    "source": "none",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": null,
+    "detectedOriginalLanguage": null
+  },
+  "23785283": {
+    "bookId": "23785283",
+    "fetchedAt": "2026-10-29T15:08:02.081Z",
+    "source": "none",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": null,
+    "detectedOriginalLanguage": null
+  },
+  "24801134": {
+    "bookId": "24801134",
+    "fetchedAt": "2026-10-29T15:08:33.273Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12351701-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "24832616": {
+    "bookId": "24832616",
+    "fetchedAt": "2026-10-29T15:07:22.785Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/10848927-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "24874303": {
+    "bookId": "24874303",
+    "fetchedAt": "2026-10-29T15:09:58.382Z",
+    "source": "openlibrary",
+    "synopsis": "TRUE! - nervous - very, very dreadfully nervous I had been and am; but why will you say that I am mad?",
+    "communityRating": 4.2,
+    "ratingsCount": 60,
+    "subjects": [
+      "Asesinato",
+      "Cuentos de Terror Estadounidenses",
+      "Ficción",
+      "American Horror Tales",
+      "American Literature",
+      "Children's Fiction"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/11851436-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "25163000": {
+    "bookId": "25163000",
+    "fetchedAt": "2026-10-29T15:10:17.004Z",
+    "source": "none",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": null,
+    "detectedOriginalLanguage": null
+  },
+  "25241993": {
+    "bookId": "25241993",
+    "fetchedAt": "2026-10-29T15:08:38.264Z",
+    "source": "openlibrary",
+    "synopsis": "Nords of Skyrim - My People, My Pride.",
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [
+      "Fantasy Games",
+      "The Elder Scrolls",
+      "Fantasy Fiction"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/15263276-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "25260066": {
+    "bookId": "25260066",
+    "fetchedAt": "2026-10-29T15:08:06.520Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 5,
+    "ratingsCount": 3,
+    "subjects": [
+      "Comics & Graphic Novels, Manga, Science Fiction",
+      "Space Warfare",
+      "Comic Books, Strips",
+      "Androids",
+      "Giants",
+      "Good And Evil"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/8819326-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "25343292": {
+    "bookId": "25343292",
+    "fetchedAt": "2026-10-29T15:08:49.584Z",
+    "source": "none",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": null,
+    "detectedOriginalLanguage": null
+  },
+  "25536846": {
+    "bookId": "25536846",
+    "fetchedAt": "2026-10-29T15:09:17.392Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 5,
+    "ratingsCount": 2,
+    "subjects": [
+      "Comic Books, Strips",
+      "Survivalism",
+      "Zombies",
+      "Fiction",
+      "Comics & Graphic Novels, Horror",
+      "Nyt:paperback-graphic-books=2015-11-01"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12720795-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "25734099": {
+    "bookId": "25734099",
+    "fetchedAt": "2026-10-29T15:08:37.610Z",
+    "source": "openlibrary",
+    "synopsis": "Form the First: Makest thou the Mana Fountain to be Primed with Pure Gold, for from Pure Gold only may the Humors be rectified, and the Pure Principles coaxed from the chaos of Pure Power.",
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [
+      "Video Games"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/15263279-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "25882478": {
+    "bookId": "25882478",
+    "fetchedAt": "2026-10-29T15:09:27.391Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12122893-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "26098210": {
+    "bookId": "26098210",
+    "fetchedAt": "2026-10-29T15:09:02.388Z",
+    "source": "openlibrary",
+    "synopsis": "V duplini pod zemljo je nekoč živel hobit.",
+    "communityRating": 4.3,
+    "ratingsCount": 505,
+    "subjects": [
+      "Fantasy",
+      "Arkenstone",
+      "Battle of Five Armies",
+      "Invisibility",
+      "Thrushes",
+      "Eagles"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/14627509-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "26156656": {
+    "bookId": "26156656",
+    "fetchedAt": "2026-10-29T15:08:50.462Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 4,
+    "ratingsCount": 1,
+    "subjects": [
+      "Abused Children",
+      "Fiction",
+      "Child Abuse",
+      "Family Violence",
+      "Witnesses"
+    ],
+    "coverUrl": null,
+    "detectedOriginalLanguage": "FR"
+  },
+  "26852117": {
+    "bookId": "26852117",
+    "fetchedAt": "2026-10-29T15:08:29.103Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/15169217-M.jpg",
+    "detectedOriginalLanguage": "FR"
+  },
+  "28439699": {
+    "bookId": "28439699",
+    "fetchedAt": "2026-10-29T15:08:06.293Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 5,
+    "ratingsCount": 3,
+    "subjects": [
+      "Comics & Graphic Novels, Manga, Science Fiction",
+      "Space Warfare",
+      "Comic Books, Strips",
+      "Androids",
+      "Giants",
+      "Good And Evil"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/8819326-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "28493290": {
+    "bookId": "28493290",
+    "fetchedAt": "2026-10-29T15:08:39.842Z",
+    "source": "none",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": null,
+    "detectedOriginalLanguage": null
+  },
+  "28493319": {
+    "bookId": "28493319",
+    "fetchedAt": "2026-10-29T15:09:46.381Z",
+    "source": "none",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": null,
+    "detectedOriginalLanguage": null
+  },
+  "29075452": {
+    "bookId": "29075452",
+    "fetchedAt": "2026-10-29T15:07:32.381Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 3.33,
+    "ratingsCount": 3,
+    "subjects": [
+      "Vampires",
+      "Fiction",
+      "Fiction, Horror",
+      "Dracula, Count (Fictitious Character",
+      "Transylvania (Romania",
+      "Whitby (England"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12425389-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "29610266": {
+    "bookId": "29610266",
+    "fetchedAt": "2026-10-29T15:09:40.387Z",
+    "source": "openlibrary",
+    "synopsis": "C'était une nuit de conte, ami lecteur, une de ces nuits qui ne peuvent guère survenir que dans notre jeunesse.",
+    "communityRating": 4.24,
+    "ratingsCount": 21,
+    "subjects": [
+      "Translations Into English",
+      "Fiction",
+      "Social Life And Customs",
+      "Russian Short Stories",
+      "Utopias",
+      "Utopies"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/3293338-M.jpg",
+    "detectedOriginalLanguage": "RU"
+  },
+  "30851529": {
+    "bookId": "30851529",
+    "fetchedAt": "2026-10-29T15:09:45.380Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 5,
+    "ratingsCount": 1,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12296371-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "32176672": {
+    "bookId": "32176672",
+    "fetchedAt": "2026-10-29T15:08:52.227Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [
+      "Death And Burial",
+      "Fiction"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/13287424-M.jpg",
+    "detectedOriginalLanguage": "FR"
+  },
+  "32862868": {
+    "bookId": "32862868",
+    "fetchedAt": "2026-10-29T15:09:30.387Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12234357-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "33113864": {
+    "bookId": "33113864",
+    "fetchedAt": "2026-10-29T15:08:48.151Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 3,
+    "ratingsCount": 3,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/10695757-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "33911382": {
+    "bookId": "33911382",
+    "fetchedAt": "2026-10-29T15:08:10.545Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 5,
+    "ratingsCount": 3,
+    "subjects": [
+      "Comics & Graphic Novels, Manga, Science Fiction",
+      "Space Warfare",
+      "Comic Books, Strips",
+      "Androids",
+      "Giants",
+      "Good And Evil"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/8819326-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "34928122": {
+    "bookId": "34928122",
+    "fetchedAt": "2026-10-29T15:08:02.437Z",
+    "source": "openlibrary",
+    "synopsis": "I bounded over the gray, dusty terrain toward the huge dome of Conrad bubble.",
+    "communityRating": 3.68,
+    "ratingsCount": 130,
+    "subjects": [
+      "Fiction",
+      "Science Fiction",
+      "Smuggling",
+      "Conspiracies",
+      "Fiction, Science Fiction, Hard Science Fiction",
+      "Fiction, Science Fiction, Action & Adventure"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/8235551-M.jpg",
+    "detectedOriginalLanguage": "ES"
+  },
+  "35521471": {
+    "bookId": "35521471",
+    "fetchedAt": "2026-10-29T15:08:01.329Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [
+      "Mystery",
+      "Fiction",
+      "Short Stories",
+      "Crime",
+      "Historical Fiction",
+      "Mystery Thriller"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/8565904-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "36236124": {
+    "bookId": "36236124",
+    "fetchedAt": "2026-10-29T15:09:07.384Z",
+    "source": "openlibrary",
+    "synopsis": "TYLER GETS ME a job as a waiter, after that Tyler's pushing a gun in my mouth and saying, the first step to eternal life is you have to die.",
+    "communityRating": 4,
+    "ratingsCount": 137,
+    "subjects": [
+      "Fiction",
+      "Millennialism",
+      "Young Men",
+      "Science Fiction",
+      "Open_syllabus_project",
+      "Hand-to-hand Fighting"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/7890578-M.jpg",
+    "detectedOriginalLanguage": "ES"
+  },
+  "36263331": {
+    "bookId": "36263331",
+    "fetchedAt": "2026-10-29T15:09:11.383Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12217834-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "36307195": {
+    "bookId": "36307195",
+    "fetchedAt": "2026-10-29T15:09:25.394Z",
+    "source": "none",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": null,
+    "detectedOriginalLanguage": null
+  },
+  "36319878": {
+    "bookId": "36319878",
+    "fetchedAt": "2026-10-29T15:08:57.385Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [
+      "Drama",
+      "Les Mouches"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/10126761-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "36348525": {
+    "bookId": "36348525",
+    "fetchedAt": "2026-10-29T15:07:26.057Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 3.82,
+    "ratingsCount": 22,
+    "subjects": [
+      "Epidemics",
+      "Fiction",
+      "Fiction, Satire",
+      "Fiction, Dystopian",
+      "New York (n.y.), Fiction",
+      "Literature"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/10622831-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "36401940": {
+    "bookId": "36401940",
+    "fetchedAt": "2026-10-29T15:08:13.365Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 4,
+    "ratingsCount": 3,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/13699100-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "36402034": {
+    "bookId": "36402034",
+    "fetchedAt": "2026-10-29T15:08:25.555Z",
+    "source": "openlibrary",
+    "synopsis": "irritability had risen, now; had become outright hostility. Iran said,\"Just those poor andys.\"",
+    "communityRating": 4.04,
+    "ratingsCount": 161,
+    "subjects": [
+      "Androids",
+      "Fiction",
+      "Rick Deckard (Fictitious Character",
+      "Science Fiction",
+      "Twenty-first Century",
+      "Open_syllabus_project"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/207515-M.jpg",
+    "detectedOriginalLanguage": "IT"
+  },
+  "36412288": {
+    "bookId": "36412288",
+    "fetchedAt": "2026-10-29T15:08:39.687Z",
+    "source": "openlibrary",
+    "synopsis": "HE HAD A LONG LIFE.",
+    "communityRating": 2.67,
+    "ratingsCount": 3,
+    "subjects": [
+      "Comics & Graphic Novels, Fantasy, General",
+      "Comics & Graphic Novels, Fantasy",
+      "Knights And Knighthood",
+      "Medieval Tournaments",
+      "Comic Books, Strips",
+      "Nyt:paperback-graphic-books=2013-11-24"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/960450-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "36412308": {
+    "bookId": "36412308",
+    "fetchedAt": "2026-10-29T15:08:34.600Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 3,
+    "ratingsCount": 2,
+    "subjects": [
+      "Comic Books, Strips, Etc.",
+      "Comics & Graphic Novels, Fantasy",
+      "Fiction, Action & Adventure",
+      "Knights And Knighthood",
+      "Medieval Tournaments",
+      "Comic Books, Strips"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/15126289-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "36412317": {
+    "bookId": "36412317",
+    "fetchedAt": "2026-10-29T15:08:16.448Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 4,
+    "ratingsCount": 1,
+    "subjects": [
+      "Knights And Knighthood",
+      "Imaginary Places",
+      "Comic Books, Strips",
+      "Comics & Graphic Novels, Fantasy",
+      "Imaginary Places, Fiction"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/11344525-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "36429011": {
+    "bookId": "36429011",
+    "fetchedAt": "2026-10-29T15:07:34.391Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12213779-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "36599123": {
+    "bookId": "36599123",
+    "fetchedAt": "2026-10-29T15:09:22.382Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12120349-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "36686275": {
+    "bookId": "36686275",
+    "fetchedAt": "2026-10-29T15:08:32.508Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12305105-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "37491885": {
+    "bookId": "37491885",
+    "fetchedAt": "2026-10-29T15:09:16.380Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 4.5,
+    "ratingsCount": 2,
+    "subjects": [
+      "Comics & Graphic Novels, Science Fiction"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/8809738-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "38896778": {
+    "bookId": "38896778",
+    "fetchedAt": "2026-10-29T15:09:29.389Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/13313339-M.jpg",
+    "detectedOriginalLanguage": "FR"
+  },
+  "39735861": {
+    "bookId": "39735861",
+    "fetchedAt": "2026-10-29T15:09:35.387Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [
+      "Family",
+      "Fathers And Sons",
+      "Famille",
+      "Pères et Fils",
+      "Authors, Biography",
+      "France, Biography"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/9333972-M.jpg",
+    "detectedOriginalLanguage": "IT"
+  },
+  "39943621": {
+    "bookId": "39943621",
+    "fetchedAt": "2026-10-29T15:09:57.385Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 3.94,
+    "ratingsCount": 50,
+    "subjects": [
+      "Fiction, Fantasy, Epic",
+      "Seven Kingdoms (imaginary Place), Fiction",
+      "Kings And Rulers",
+      "Magic",
+      "Monarchy",
+      "Fiction"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12063529-M.jpg",
+    "detectedOriginalLanguage": "DE"
+  },
+  "40556652": {
+    "bookId": "40556652",
+    "fetchedAt": "2026-10-29T15:09:14.381Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12126595-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "40603587": {
+    "bookId": "40603587",
+    "fetchedAt": "2026-10-29T15:08:12.460Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [
+      "Fiction, Fantasy, General"
+    ],
+    "coverUrl": null,
+    "detectedOriginalLanguage": "EN"
+  },
+  "40940121": {
+    "bookId": "40940121",
+    "fetchedAt": "2026-10-29T15:09:06.384Z",
+    "source": "openlibrary",
+    "synopsis": "\"Ba-room, ba-room, ba-room, baripity, baripity, bariptity, bariptity-Good. His dad had the pickup going.\"",
+    "communityRating": 4.12,
+    "ratingsCount": 59,
+    "subjects": [
+      "Amistad",
+      "Children's Stories",
+      "Death",
+      "Ficción Juvenil",
+      "Fiction",
+      "Friendship"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12627341-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "42284458": {
+    "bookId": "42284458",
+    "fetchedAt": "2026-10-29T15:08:31.965Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [
+      "Fiction",
+      "History",
+      "Tatars",
+      "Turkic Peoples"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12283916-M.jpg",
+    "detectedOriginalLanguage": "TR"
+  },
+  "42975172": {
+    "bookId": "42975172",
+    "fetchedAt": "2026-10-29T15:08:27.970Z",
+    "source": "openlibrary",
+    "synopsis": "Apenas os mortos têm permissão para ter estátuas, mas eu ganhei uma ainda em vida. Eu já estou petrificada.",
+    "communityRating": 4.25,
+    "ratingsCount": 12,
+    "subjects": [
+      "Science Fiction",
+      "Young Adult Fiction",
+      "Dystopian Fiction",
+      "Fiction, Dystopian",
+      "Fiction, Fantasy, General",
+      "Canadian Fiction (fictional Works by One Author"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12366815-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "43593617": {
+    "bookId": "43593617",
+    "fetchedAt": "2026-10-29T15:10:19.421Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/10750309-M.jpg",
+    "detectedOriginalLanguage": "FR"
+  },
+  "43890641": {
+    "bookId": "43890641",
+    "fetchedAt": "2026-10-29T15:07:33.390Z",
+    "source": "openlibrary",
+    "synopsis": "Un petit garçon descend un escalier.",
+    "communityRating": 4.13,
+    "ratingsCount": 15,
+    "subjects": [
+      "English Literature",
+      "Fiction, Historical",
+      "Fiction, Biographical",
+      "Fiction",
+      "Nyt:hardcover-fiction=2020-12-27",
+      "New York Times Bestseller"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/10306590-M.jpg",
+    "detectedOriginalLanguage": "IT"
+  },
+  "43909397": {
+    "bookId": "43909397",
+    "fetchedAt": "2026-10-29T15:09:42.384Z",
+    "source": "openlibrary",
+    "synopsis": "Vi três fotos daquele homem.",
+    "communityRating": 4.08,
+    "ratingsCount": 131,
+    "subjects": [
+      "Fiction",
+      "Near And Far Eastern Fiction (fictional Works by One Author",
+      "Literature",
+      "Men",
+      "Anxiety",
+      "Social Life And Customs"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/13190147-M.jpg",
+    "detectedOriginalLanguage": "JA"
+  },
+  "43913694": {
+    "bookId": "43913694",
+    "fetchedAt": "2026-10-29T15:09:34.386Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 3.6,
+    "ratingsCount": 5,
+    "subjects": [
+      "Drama (dramatic Works by One Author",
+      "British And Irish Drama (dramatic Works by One Author"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/14042084-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "44324133": {
+    "bookId": "44324133",
+    "fetchedAt": "2026-10-29T15:09:17.393Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 5,
+    "ratingsCount": 1,
+    "subjects": [
+      "Nyt:graphic-books-and-manga=2019-11-10",
+      "New York Times Bestseller"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/9405431-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "44439415": {
+    "bookId": "44439415",
+    "fetchedAt": "2026-10-29T15:09:54.383Z",
+    "source": "openlibrary",
+    "synopsis": "THE THREE people running northward through moon shadows in the Forbidden Forest were strung out along almost half a kilometer.",
+    "communityRating": 3.91,
+    "ratingsCount": 78,
+    "subjects": [
+      "American Science Fiction",
+      "Dune (imaginary Place), Fiction",
+      "Fiction, Science Fiction, General",
+      "Dune (Imaginary Place",
+      "Fiction",
+      "Science Fiction"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/6711531-M.jpg",
+    "detectedOriginalLanguage": "PL"
+  },
+  "44439416": {
+    "bookId": "44439416",
+    "fetchedAt": "2026-10-29T15:09:53.386Z",
+    "source": "openlibrary",
+    "synopsis": "When the ghola-baby was delivered from the first Bene Gesrit axlotl tank, mother Superior Darwi Odrade ordered a quiet celebration in her private dining room atop Central.",
+    "communityRating": 3.9,
+    "ratingsCount": 21,
+    "subjects": [
+      "Dune (Imaginary Place",
+      "Fiction",
+      "Science Fiction",
+      "Dune (imaginary Place), Fiction",
+      "Fiction, Science Fiction, General",
+      "Literature"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/5536140-M.jpg",
+    "detectedOriginalLanguage": "ES"
+  },
+  "44492286": {
+    "bookId": "44492286",
+    "fetchedAt": "2026-10-29T15:09:39.386Z",
+    "source": "openlibrary",
+    "synopsis": "A SPOT of light appeared on the deep red rug which covered the raw rock of the cave floor.",
+    "communityRating": 4,
+    "ratingsCount": 51,
+    "subjects": [
+      "Dune (Imaginary Place",
+      "Fiction",
+      "Fiction in English",
+      "Science Fiction",
+      "Dune (imaginary Place), Fiction",
+      "Fiction, Science Fiction, General"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/6976407-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "44492287": {
+    "bookId": "44492287",
+    "fetchedAt": "2026-10-29T15:09:53.386Z",
+    "source": "openlibrary",
+    "synopsis": "Taraza told you, did she not, that we have gone through eleven of these Duncan Idaho gholas?",
+    "communityRating": 3.85,
+    "ratingsCount": 55,
+    "subjects": [
+      "Science Fiction",
+      "Fiction",
+      "Dune (Imaginary Place",
+      "Anglais (langue",
+      "Roman Américain",
+      "Science-fiction Américaine"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/284530-M.jpg",
+    "detectedOriginalLanguage": "ES"
+  },
+  "44767458": {
+    "bookId": "44767458",
+    "fetchedAt": "2026-10-29T15:08:02.704Z",
+    "source": "openlibrary",
+    "synopsis": "In the week before their departure to Arrakis, when all the final scurrying about had reached a nearly unbearable frenzy, an old crone came to visit the mother of the boy, Paul.",
+    "communityRating": 4.31,
+    "ratingsCount": 455,
+    "subjects": [
+      "Dune (Imaginary Place",
+      "Fiction",
+      "Fiction, Science Fiction, General",
+      "Dune (imaginary Place), Fiction",
+      "New York Times Reviewed",
+      "Science Fiction"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/11481354-M.jpg",
+    "detectedOriginalLanguage": "PT"
+  },
+  "45856219": {
+    "bookId": "45856219",
+    "fetchedAt": "2026-10-29T15:10:32.186Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12264091-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "49515437": {
+    "bookId": "49515437",
+    "fetchedAt": "2026-10-29T15:10:17.440Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12243479-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "50357241": {
+    "bookId": "50357241",
+    "fetchedAt": "2026-10-29T15:08:09.513Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [
+      "Comics & Graphic Novels, Manga, Science Fiction"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/8849629-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "50902608": {
+    "bookId": "50902608",
+    "fetchedAt": "2026-10-29T15:07:27.366Z",
+    "source": "openlibrary",
+    "synopsis": "On those cloudy days, Robert Neville was never sure when sunset came, and sometimes they were in the streets before he could get back.",
+    "communityRating": 4.21,
+    "ratingsCount": 24,
+    "subjects": [
+      "Fiction, Horror",
+      "Fiction, Science Fiction, General",
+      "Vampires, Fiction",
+      "Vampires",
+      "Fiction",
+      "Epidemics"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/911109-M.jpg",
+    "detectedOriginalLanguage": "IT"
+  },
+  "51467628": {
+    "bookId": "51467628",
+    "fetchedAt": "2026-10-29T15:08:31.709Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/10850281-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "51901147": {
+    "bookId": "51901147",
+    "fetchedAt": "2026-10-29T15:08:51.522Z",
+    "source": "openlibrary",
+    "synopsis": "Coriolanus released the fistful of cabbage into the pot of boiling water and swore that one day it would never pass his lips again.",
+    "communityRating": 4.28,
+    "ratingsCount": 47,
+    "subjects": [
+      "Snow",
+      "Panem",
+      "Hunger Games",
+      "Young Adult Fiction, Science Fiction, General",
+      "Young Adult Fiction, Action & Adventure, Survival Stories",
+      "Young Adult Fiction, Dystopian"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/14421833-M.jpg",
+    "detectedOriginalLanguage": "ES"
+  },
+  "52113311": {
+    "bookId": "52113311",
+    "fetchedAt": "2026-10-29T15:10:21.646Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12263740-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "52233667": {
+    "bookId": "52233667",
+    "fetchedAt": "2026-10-29T15:10:18.199Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12296174-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "52382796": {
+    "bookId": "52382796",
+    "fetchedAt": "2026-10-29T15:09:06.384Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 4.75,
+    "ratingsCount": 4,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/10231097-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "52439531": {
+    "bookId": "52439531",
+    "fetchedAt": "2026-10-29T15:08:49.722Z",
+    "source": "openlibrary",
+    "synopsis": "When I was a kid, my mom constantly invented games.",
+    "communityRating": 4.25,
+    "ratingsCount": 69,
+    "subjects": [
+      "Children's Fiction",
+      "Nyt:young-adult-hardcover=2020-09-20",
+      "New York Times Bestseller",
+      "Young Adult Fiction, Social Themes, Class Differences",
+      "Young Adult Fiction, Romance, Contemporary",
+      "Young Adult Fiction, Thrillers & Suspense, General"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/10472357-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "53487237": {
+    "bookId": "53487237",
+    "fetchedAt": "2026-10-29T15:09:46.381Z",
+    "source": "openlibrary",
+    "synopsis": "For the last twenty years, at Syracuse University, I've been teaching a class in the ninteteenth-century Russian short story in translation.",
+    "communityRating": 5,
+    "ratingsCount": 3,
+    "subjects": [
+      "Criticism",
+      "Interpretation",
+      "Language Arts",
+      "Literary Criticism",
+      "Nonfiction",
+      "Russian Short Stories"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/10351216-M.jpg",
+    "detectedOriginalLanguage": "DE"
+  },
+  "54560268": {
+    "bookId": "54560268",
+    "fetchedAt": "2026-10-29T15:09:15.382Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12263956-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "54906250": {
+    "bookId": "54906250",
+    "fetchedAt": "2026-10-29T15:08:24.804Z",
+    "source": "openlibrary",
+    "synopsis": "\"What's two plus two?\"",
+    "communityRating": 4.53,
+    "ratingsCount": 190,
+    "subjects": [
+      "Hard Science-fiction",
+      "Science-fiction",
+      "Sci-fi",
+      "Hard Sci-fi",
+      "Nyt:hardcover-fiction=2021-05-23",
+      "New York Times Bestseller"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/11200092-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "55019161": {
+    "bookId": "55019161",
+    "fetchedAt": "2026-10-29T15:08:15.958Z",
+    "source": "openlibrary",
+    "synopsis": "Antes de mais nada, agradeço a meu amigo e editor, Jason Kaufman, por sua enorme dedicação a este projeto, e por entender verdadeiramente o que este livro significa.",
+    "communityRating": 3.92,
+    "ratingsCount": 196,
+    "subjects": [
+      "Suspense & Thriller",
+      "Spiritual Fiction",
+      "Hieros Gamos",
+      "Priory of Sion",
+      "Holy Grail",
+      "Vitruvian Man"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/9255229-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "55334463": {
+    "bookId": "55334463",
+    "fetchedAt": "2026-10-29T15:08:46.139Z",
+    "source": "none",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": null,
+    "detectedOriginalLanguage": null
+  },
+  "56262490": {
+    "bookId": "56262490",
+    "fetchedAt": "2026-10-29T15:07:37.660Z",
+    "source": "none",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": null,
+    "detectedOriginalLanguage": null
+  },
+  "56387804": {
+    "bookId": "56387804",
+    "fetchedAt": "2026-10-29T15:07:29.336Z",
+    "source": "none",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": null,
+    "detectedOriginalLanguage": null
+  },
+  "56445539": {
+    "bookId": "56445539",
+    "fetchedAt": "2026-10-29T15:08:37.019Z",
+    "source": "none",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": null,
+    "detectedOriginalLanguage": "TR"
+  },
+  "56694325": {
+    "bookId": "56694325",
+    "fetchedAt": "2026-10-29T15:10:16.063Z",
+    "source": "openlibrary",
+    "synopsis": "Morning-room in ALGERNON's flat in Half-Moon street.",
+    "communityRating": 4.14,
+    "ratingsCount": 65,
+    "subjects": [
+      "British And Irish Drama (dramatic Works by One Author",
+      "English Life",
+      "Readers",
+      "Etiquette",
+      "Love",
+      "Manners"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/1260453-M.jpg",
+    "detectedOriginalLanguage": "DE"
+  },
+  "56778712": {
+    "bookId": "56778712",
+    "fetchedAt": "2026-10-29T15:09:59.394Z",
+    "source": "none",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": null,
+    "detectedOriginalLanguage": null
+  },
+  "56936751": {
+    "bookId": "56936751",
+    "fetchedAt": "2026-10-29T15:08:09.298Z",
+    "source": "none",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": null,
+    "detectedOriginalLanguage": "EN"
+  },
+  "57443844": {
+    "bookId": "57443844",
+    "fetchedAt": "2026-10-29T15:10:13.950Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12255718-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "57693457": {
+    "bookId": "57693457",
+    "fetchedAt": "2026-10-29T15:08:51.038Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 4,
+    "ratingsCount": 9,
+    "subjects": [
+      "Human Cloning",
+      "Space Travel",
+      "Colonization",
+      "Science Fiction"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/11187690-M.jpg",
+    "detectedOriginalLanguage": "IT"
+  },
+  "59039413": {
+    "bookId": "59039413",
+    "fetchedAt": "2026-10-29T15:07:29.075Z",
+    "source": "openlibrary",
+    "synopsis": "Because he had enjoyed almost every advantage since birth, one of the few privileges denied to Benjamin Rask was that of a heroic rise: his was not a story of an unbreakable will forging a golden destiny for itself out of little more than dross.",
+    "communityRating": 4,
+    "ratingsCount": 4,
+    "subjects": [
+      "American Literature",
+      "Rich People",
+      "Fiction",
+      "Financial Services Industry",
+      "Truthfulness And Falsehood",
+      "Mental Illness"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12742248-M.jpg",
+    "detectedOriginalLanguage": "PL"
+  },
+  "60492088": {
+    "bookId": "60492088",
+    "fetchedAt": "2026-10-29T15:08:08.524Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 4.17,
+    "ratingsCount": 6,
+    "subjects": [
+      "Giants",
+      "Comic Books, Strips",
+      "Good And Evil"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12759274-M.jpg",
+    "detectedOriginalLanguage": "ZH"
+  },
+  "60784562": {
+    "bookId": "60784562",
+    "fetchedAt": "2026-10-29T15:07:38.530Z",
+    "source": "none",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": null,
+    "detectedOriginalLanguage": null
+  },
+  "60795162": {
+    "bookId": "60795162",
+    "fetchedAt": "2026-10-29T15:09:22.382Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 4,
+    "ratingsCount": 1,
+    "subjects": [
+      "Comics & Graphic Novels, Literary",
+      "American Short Stories",
+      "Cuentos Estadounidenses",
+      "Aging",
+      "Translations Into Chinese",
+      "Nineteen Twenties"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/7460537-M.jpg",
+    "detectedOriginalLanguage": "ZH"
+  },
+  "60805854": {
+    "bookId": "60805854",
+    "fetchedAt": "2026-10-29T15:08:46.459Z",
+    "source": "none",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": null,
+    "detectedOriginalLanguage": null
+  },
+  "61026364": {
+    "bookId": "61026364",
+    "fetchedAt": "2026-10-29T15:07:31.383Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [
+      "Fiction, General"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/13188680-M.jpg",
+    "detectedOriginalLanguage": "ES"
+  },
+  "61215372": {
+    "bookId": "61215372",
+    "fetchedAt": "2026-10-29T15:10:01.387Z",
+    "source": "openlibrary",
+    "synopsis": "Aragorn gravit rapidement la colline.",
+    "communityRating": 4.36,
+    "ratingsCount": 236,
+    "subjects": [
+      "Ents",
+      "Orcs",
+      "Hobbits",
+      "Magic",
+      "Ficción Fantástica Inglesa",
+      "Ficción"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/14627564-M.jpg",
+    "detectedOriginalLanguage": "ZH"
+  },
+  "61215384": {
+    "bookId": "61215384",
+    "fetchedAt": "2026-10-29T15:10:01.387Z",
+    "source": "openlibrary",
+    "synopsis": "Pippin risqua un coup d'œil hors de l'abri du manteau de Gandalf.",
+    "communityRating": 4.46,
+    "ratingsCount": 109,
+    "subjects": [
+      "Elves",
+      "Hobbits",
+      "The Lord of The Rings",
+      "Hope",
+      "Fear",
+      "Magic"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/14627062-M.jpg",
+    "detectedOriginalLanguage": "FR"
+  },
+  "61403877": {
+    "bookId": "61403877",
+    "fetchedAt": "2026-10-29T15:09:47.382Z",
+    "source": "openlibrary",
+    "synopsis": "Q: What led you to take your particular approach to a history of Muad’dib?",
+    "communityRating": 3.94,
+    "ratingsCount": 143,
+    "subjects": [
+      "American Science Fiction",
+      "Dune (Imaginary Place",
+      "Fiction",
+      "Imaginary Places",
+      "Science Fiction",
+      "Translations Into Russian"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/980253-M.jpg",
+    "detectedOriginalLanguage": "ES"
+  },
+  "63343829": {
+    "bookId": "63343829",
+    "fetchedAt": "2026-10-29T15:08:29.877Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/15262512-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "63835239": {
+    "bookId": "63835239",
+    "fetchedAt": "2026-10-29T15:09:38.387Z",
+    "source": "none",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": null,
+    "detectedOriginalLanguage": null
+  },
+  "63948907": {
+    "bookId": "63948907",
+    "fetchedAt": "2026-10-29T15:10:20.802Z",
+    "source": "openlibrary",
+    "synopsis": "It was the night before the day fixed for his coronation, and the young King was sitting alone in his beautiful chamber.",
+    "communityRating": 4,
+    "ratingsCount": 2,
+    "subjects": [
+      "Fairy Tales",
+      "Fiction",
+      "English Literature",
+      "Children's Fiction",
+      "British And Irish Drama (dramatic Works by One Author",
+      "1891,"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/764734-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "64009980": {
+    "bookId": "64009980",
+    "fetchedAt": "2026-10-29T15:10:20.420Z",
+    "source": "openlibrary",
+    "synopsis": "High above the city, on a tall column, stood the statue of the Happy Prince.",
+    "communityRating": 4.23,
+    "ratingsCount": 13,
+    "subjects": [
+      "Fairy Tales",
+      "Children's Fiction",
+      "Humour",
+      "Contes",
+      "Short Stories",
+      "Children's Stories, English"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/10608467-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "64311259": {
+    "bookId": "64311259",
+    "fetchedAt": "2026-10-29T15:09:24.382Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12242971-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "107381139": {
+    "bookId": "107381139",
+    "fetchedAt": "2026-10-29T15:10:18.568Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/12248032-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "108053500": {
+    "bookId": "108053500",
+    "fetchedAt": "2026-10-29T15:08:19.121Z",
+    "source": "none",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": null,
+    "detectedOriginalLanguage": null
+  },
+  "114557972": {
+    "bookId": "114557972",
+    "fetchedAt": "2026-10-29T15:10:15.738Z",
+    "source": "none",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": null,
+    "detectedOriginalLanguage": null
+  },
+  "120788541": {
+    "bookId": "120788541",
+    "fetchedAt": "2026-10-29T15:10:35.432Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/11190174-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "123228594": {
+    "bookId": "123228594",
+    "fetchedAt": "2026-10-29T15:10:18.950Z",
+    "source": "none",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": null,
+    "detectedOriginalLanguage": null
+  },
+  "125484660": {
+    "bookId": "125484660",
+    "fetchedAt": "2026-10-29T15:08:43.617Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 3,
+    "ratingsCount": 1,
+    "subjects": [],
+    "coverUrl": null,
+    "detectedOriginalLanguage": "EN"
+  },
+  "132080146": {
+    "bookId": "132080146",
+    "fetchedAt": "2026-10-29T15:08:28.483Z",
+    "source": "openlibrary",
+    "synopsis": "HABIA UNA VEZ CUATRO NINOS CUYOS nombres eran Pedro, Susana, Edmundo y Lucia.",
+    "communityRating": 4.13,
+    "ratingsCount": 123,
+    "subjects": [
+      "The Blitz",
+      "Fauns",
+      "Turkish Delight",
+      "Lions",
+      "English Children's Stories",
+      "Fantasy & Magic"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/8441376-M.jpg",
+    "detectedOriginalLanguage": null
+  },
+  "214333691": {
+    "bookId": "214333691",
+    "fetchedAt": "2026-10-29T15:08:40.520Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 4.62,
+    "ratingsCount": 26,
+    "subjects": [
+      "Dystopia",
+      "Young Adult",
+      "Fantasy",
+      "Fiction",
+      "Science Fiction",
+      "Romance"
+    ],
+    "coverUrl": "https://covers.openlibrary.org/b/id/14847912-M.jpg",
+    "detectedOriginalLanguage": "ES"
+  },
+  "214387887": {
+    "bookId": "214387887",
+    "fetchedAt": "2026-10-29T15:09:05.382Z",
+    "source": "openlibrary",
+    "synopsis": null,
+    "communityRating": 5,
+    "ratingsCount": 1,
+    "subjects": [
+      "Language And Languages"
+    ],
+    "coverUrl": null,
+    "detectedOriginalLanguage": "EN"
+  },
+  "228039857": {
+    "bookId": "228039857",
+    "fetchedAt": "2026-10-29T15:07:24.658Z",
+    "source": "openlibrary",
+    "synopsis": "On the fourteenth day of July 1924, when the tchinovniks of the Ministry of Winter came for me, on the evening of that day, on the eve of my Siberian odyssey, only then did I begin to suspect that I did not exist.",
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": "https://covers.openlibrary.org/b/id/15249506-M.jpg",
+    "detectedOriginalLanguage": "EN"
+  },
+  "228692723": {
+    "bookId": "228692723",
+    "fetchedAt": "2026-10-29T15:08:04.360Z",
+    "source": "none",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": null,
+    "detectedOriginalLanguage": null
+  },
+  "243650416": {
+    "bookId": "243650416",
+    "fetchedAt": "2026-10-29T15:07:36.932Z",
+    "source": "none",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": null,
+    "detectedOriginalLanguage": null
+  },
+  "244142896": {
+    "bookId": "244142896",
+    "fetchedAt": "2026-10-29T15:07:27.953Z",
+    "source": "none",
+    "synopsis": null,
+    "communityRating": null,
+    "ratingsCount": null,
+    "subjects": [],
+    "coverUrl": null,
+    "detectedOriginalLanguage": null
+  }
+}

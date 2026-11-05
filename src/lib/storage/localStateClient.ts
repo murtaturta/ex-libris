@@ -20,39 +20,101 @@ export const DEFAULT_USER_STATE: UserLocalState = {
   showCovers: false,
   bookOverrides: {},
   kindleClippings: [],
+  externalWantList: [],
 };
+
+/**
+ * Storage health status interface for local quota monitoring.
+ */
+export interface StorageHealthStatus {
+  available: boolean;
+  usedBytes: number;
+  quotaWarning: boolean;
+  lastError: string | null;
+}
+
+let lastStorageError: string | null = null;
+
+/**
+ * Measures approximate byte usage of exlibris_* keys in localStorage and checks quota health.
+ */
+export function getStorageHealth(): StorageHealthStatus {
+  let usedBytes = 0;
+  let available = false;
+  try {
+    const ls = (typeof window !== 'undefined' && window.localStorage) || (typeof localStorage !== 'undefined' ? localStorage : null);
+    if (ls) {
+      available = true;
+      for (let i = 0; i < ls.length; i++) {
+        const key = ls.key(i);
+        if (key && key.startsWith('exlibris_')) {
+          const val = ls.getItem(key);
+          if (val) {
+            usedBytes += (key.length + val.length) * 2; // UTF-16 approximate bytes
+          }
+        }
+      }
+    }
+  } catch (err: any) {
+    available = false;
+    lastStorageError = err?.message || String(err);
+  }
+
+  // Quota warning if usage exceeds 3.8 MB (typical localStorage quota is ~5 MB)
+  const quotaWarning = usedBytes > 3800000;
+
+  return {
+    available,
+    usedBytes,
+    quotaWarning,
+    lastError: lastStorageError,
+  };
+}
 
 /**
  * Safe localStorage reader that works in browser and Node/testing environments.
  */
 function getStorageItem(key: string): string | null {
   try {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      return window.localStorage.getItem(key);
+    const ls = (typeof window !== 'undefined' && window.localStorage) || (typeof localStorage !== 'undefined' ? localStorage : null);
+    if (ls) {
+      return ls.getItem(key);
     }
-    if (typeof localStorage !== 'undefined') {
-      return localStorage.getItem(key);
-    }
-  } catch {
-    // Restricted or quota error
+  } catch (err: any) {
+    lastStorageError = err?.message || String(err);
   }
   return null;
 }
 
 /**
- * Safe localStorage writer that fails silently on quota or permission errors.
+ * Safe localStorage writer that handles QuotaExceededError by evicting oversized redundant bundles.
  */
 function setStorageItem(key: string, value: string): void {
+  lastStorageError = null;
+  const getLs = () => (typeof window !== 'undefined' && window.localStorage) || (typeof localStorage !== 'undefined' ? localStorage : null);
+  const ls = getLs();
+  if (!ls) return;
+
   try {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      window.localStorage.setItem(key, value);
-      return;
+    ls.setItem(key, value);
+  } catch (err: any) {
+    lastStorageError = err?.message || String(err);
+    // Graceful QuotaExceededError recovery: evict oversized redundant library bundle cache
+    if (
+      err &&
+      (err.name === 'QuotaExceededError' ||
+        err.code === 22 ||
+        err.code === 1014 ||
+        (err.message && err.message.toLowerCase().includes('quota')))
+    ) {
+      try {
+        ls.removeItem(STORAGE_KEY_LIBRARY_BUNDLE);
+        ls.setItem(key, value);
+        lastStorageError = null; // recovered successfully
+      } catch (retryErr: any) {
+        lastStorageError = retryErr?.message || String(retryErr);
+      }
     }
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(key, value);
-    }
-  } catch {
-    // Quota exceeded or private-mode restrictions
   }
 }
 
@@ -71,9 +133,53 @@ export async function loadUserState(): Promise<UserLocalState> {
           version: data.version || DEFAULT_USER_STATE.version,
           updatedAt: data.updatedAt || new Date().toISOString(),
           showCovers: Boolean(data.showCovers),
-          bookOverrides: data.bookOverrides && typeof data.bookOverrides === 'object' ? data.bookOverrides : {},
+          bookOverrides:
+            data.bookOverrides && typeof data.bookOverrides === 'object' ? data.bookOverrides : {},
           kindleClippings: Array.isArray(data.kindleClippings) ? data.kindleClippings : [],
+          externalWantList: Array.isArray(data.externalWantList) ? data.externalWantList : [],
+          bookplateConfig:
+            data.bookplateConfig && typeof data.bookplateConfig === 'object'
+              ? data.bookplateConfig
+              : undefined,
+          writingTelemetry:
+            data.writingTelemetry && typeof data.writingTelemetry === 'object'
+              ? data.writingTelemetry
+              : undefined,
+          letterboxdData:
+            data.letterboxdData && typeof data.letterboxdData === 'object'
+              ? data.letterboxdData
+              : undefined,
         };
+
+        // Fallback to static writing telemetry if not yet saved on server or if dailyFiles is missing
+        if (!merged.writingTelemetry || !merged.writingTelemetry.dailyFiles || Object.keys(merged.writingTelemetry.dailyFiles).length === 0) {
+          try {
+            const staticRes = await fetch('./data/writing_telemetry.json');
+            if (staticRes.ok) {
+              const staticTelem = await staticRes.json();
+              merged.writingTelemetry = {
+                ...staticTelem,
+                ...(merged.writingTelemetry || {}),
+                dailyFiles: staticTelem.dailyFiles,
+              };
+            }
+          } catch {
+            // Ignore
+          }
+        }
+
+        // Fallback to static letterboxd data if not yet saved on server
+        if (!merged.letterboxdData) {
+          try {
+            const staticRes = await fetch('./data/letterboxd_data.json');
+            if (staticRes.ok) {
+              merged.letterboxdData = await staticRes.json();
+            }
+          } catch {
+            // Ignore
+          }
+        }
+
         // Mirror to localStorage for offline fallback
         setStorageItem(STORAGE_KEY_USER_STATE, JSON.stringify(merged));
         return merged;
@@ -88,23 +194,88 @@ export async function loadUserState(): Promise<UserLocalState> {
   if (localRaw) {
     try {
       const parsed = JSON.parse(localRaw) as Partial<UserLocalState>;
-      return {
+      const merged: UserLocalState = {
         version: parsed.version || DEFAULT_USER_STATE.version,
         updatedAt: parsed.updatedAt || new Date().toISOString(),
         showCovers: Boolean(parsed.showCovers),
-        bookOverrides: parsed.bookOverrides && typeof parsed.bookOverrides === 'object' ? parsed.bookOverrides : {},
+        bookOverrides:
+          parsed.bookOverrides && typeof parsed.bookOverrides === 'object' ? parsed.bookOverrides : {},
         kindleClippings: Array.isArray(parsed.kindleClippings) ? parsed.kindleClippings : [],
+        externalWantList: Array.isArray(parsed.externalWantList) ? parsed.externalWantList : [],
+        bookplateConfig:
+          parsed.bookplateConfig && typeof parsed.bookplateConfig === 'object'
+            ? parsed.bookplateConfig
+            : undefined,
+        writingTelemetry:
+          parsed.writingTelemetry && typeof parsed.writingTelemetry === 'object'
+            ? parsed.writingTelemetry
+            : undefined,
+        letterboxdData:
+          parsed.letterboxdData && typeof parsed.letterboxdData === 'object'
+            ? parsed.letterboxdData
+            : undefined,
       };
+
+      // If writingTelemetry or dailyFiles is missing in localStorage, attempt static fallback
+      if (!merged.writingTelemetry || !merged.writingTelemetry.dailyFiles || Object.keys(merged.writingTelemetry.dailyFiles).length === 0) {
+        try {
+          const staticRes = await fetch('./data/writing_telemetry.json');
+          if (staticRes.ok) {
+            const staticTelem = await staticRes.json();
+            merged.writingTelemetry = {
+              ...staticTelem,
+              ...(merged.writingTelemetry || {}),
+              dailyFiles: staticTelem.dailyFiles,
+            };
+          }
+        } catch {
+          // Ignore
+        }
+      }
+
+      // If letterboxdData is missing in localStorage, attempt static fallback
+      if (!merged.letterboxdData) {
+        try {
+          const staticRes = await fetch('./data/letterboxd_data.json');
+          if (staticRes.ok) {
+            merged.letterboxdData = await staticRes.json();
+          }
+        } catch {
+          // Ignore
+        }
+      }
+
+      return merged;
     } catch {
       // Corrupt localStorage entry
     }
   }
 
-  // 3. Fresh default state
-  return {
+  // 3. Fresh default state with static writing telemetry & letterboxd fallback
+  const fresh: UserLocalState = {
     ...DEFAULT_USER_STATE,
     updatedAt: new Date().toISOString(),
   };
+
+  try {
+    const staticRes = await fetch('./data/writing_telemetry.json');
+    if (staticRes.ok) {
+      fresh.writingTelemetry = await staticRes.json();
+    }
+  } catch {
+    // Ignore
+  }
+
+  try {
+    const staticRes = await fetch('./data/letterboxd_data.json');
+    if (staticRes.ok) {
+      fresh.letterboxdData = await staticRes.json();
+    }
+  } catch {
+    // Ignore
+  }
+
+  return fresh;
 }
 
 /**
@@ -153,16 +324,33 @@ export async function loadEnrichmentCache(): Promise<EnrichmentCacheMap> {
   }
 
   // Read server disk cache
+  let fetchedDisk = false;
   try {
     const res = await fetch('/api/enrichment-cache');
     if (res.ok) {
       const data = await res.json();
       if (data && typeof data === 'object') {
         diskCache = data as EnrichmentCacheMap;
+        fetchedDisk = true;
       }
     }
   } catch {
     // Dev server unavailable
+  }
+
+  // Static fallback for GitHub Pages or offline static deployments: `./data/enrichment_cache.json`
+  if (!fetchedDisk || Object.keys(diskCache).length === 0) {
+    try {
+      const staticRes = await fetch('./data/enrichment_cache.json');
+      if (staticRes.ok) {
+        const staticData = await staticRes.json();
+        if (staticData && typeof staticData === 'object') {
+          diskCache = { ...(staticData as EnrichmentCacheMap), ...diskCache };
+        }
+      }
+    } catch {
+      // Static fallback unavailable
+    }
   }
 
   // Merge both: disk cache + local cache

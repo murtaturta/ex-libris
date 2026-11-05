@@ -31,8 +31,29 @@ const IGNORED_SUBJECTS = new Set([
   'open library staff picks',
   'reading level',
   'open syllabus project',
+  'open_syllabus_project',
   'classic literature',
+  'new york times bestseller',
+  'nyt bestseller',
+  'nyt:bestseller',
+  'general',
+  'fiction',
+  'juvenile fiction',
+  'literature',
 ]);
+
+/**
+ * Polite fetch wrapper with a single backoff retry on HTTP 429 (rate-limited).
+ */
+async function fetchWithRetry(url: string, init?: RequestInit): Promise<Response> {
+  let res = await fetch(url, init);
+  if (res.status === 429) {
+    // 600ms backoff on HTTP 429
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    res = await fetch(url, init);
+  }
+  return res;
+}
 
 /**
  * Decodes standard HTML entities into text characters.
@@ -82,8 +103,23 @@ function cleanAndCapSubjects(subjects: string[]): string[] {
       part = part.trim().replace(/^["'([{]+|["')\]}]+$/g, '').trim();
       if (!part || part.length < 3 || /^\d+$/.test(part)) continue;
 
+      // Strip unclosed parenthesis / brackets (e.g. "(fictional Works by One Author")
+      const openParen = (part.match(/\(/g) || []).length;
+      const closeParen = (part.match(/\)/g) || []).length;
+      if (openParen !== closeParen) {
+        part = part.replace(/[()]/g, '').trim();
+      }
+
       const lower = part.toLowerCase();
-      if (IGNORED_SUBJECTS.has(lower)) continue;
+      if (
+        IGNORED_SUBJECTS.has(lower) ||
+        lower.includes('open_syllabus') ||
+        lower.includes('open syllabus') ||
+        lower.includes('new york times bestseller') ||
+        lower.includes('fictional works by')
+      ) {
+        continue;
+      }
       if (seen.has(lower)) continue;
 
       seen.add(lower);
@@ -213,7 +249,7 @@ export async function enrichSingleBook(
     if (cleanIsbn) {
       try {
         const isbnUrl = `https://www.googleapis.com/books/v1/volumes?q=isbn:${encodeURIComponent(cleanIsbn)}`;
-        const res = await fetch(isbnUrl, { signal });
+        const res = await fetchWithRetry(isbnUrl, { signal });
         if (res.ok) {
           const data = await res.json();
           if (data && data.totalItems > 0 && Array.isArray(data.items) && data.items.length > 0) {
@@ -239,7 +275,7 @@ export async function enrichSingleBook(
           ? `intitle:${encodeURIComponent(cleanTitle)}+inauthor:${encodeURIComponent(author)}`
           : `intitle:${encodeURIComponent(cleanTitle)}`;
         const searchUrl = `https://www.googleapis.com/books/v1/volumes?q=${query}&maxResults=3`;
-        const res = await fetch(searchUrl, { signal });
+        const res = await fetchWithRetry(searchUrl, { signal });
         if (res.ok) {
           const data = await res.json();
           if (data && data.totalItems > 0 && Array.isArray(data.items) && data.items.length > 0) {
@@ -284,7 +320,7 @@ export async function enrichSingleBook(
       if (cleanIsbn) {
         try {
           const olUrl = `https://openlibrary.org/search.json?isbn=${encodeURIComponent(cleanIsbn)}&fields=key,title,author_name,ratings_average,ratings_count,subject,language,cover_i,first_sentence&limit=3`;
-          const res = await fetch(olUrl, { signal });
+          const res = await fetchWithRetry(olUrl, { signal });
           if (res.ok) {
             const data = await res.json();
             if (data && Array.isArray(data.docs) && data.docs.length > 0) {
@@ -301,7 +337,7 @@ export async function enrichSingleBook(
         try {
           const authorParam = author ? `&author=${encodeURIComponent(author)}` : '';
           const olSearchUrl = `https://openlibrary.org/search.json?title=${encodeURIComponent(cleanTitle)}${authorParam}&fields=key,title,author_name,ratings_average,ratings_count,subject,language,cover_i,first_sentence&limit=3`;
-          const res = await fetch(olSearchUrl, { signal });
+          const res = await fetchWithRetry(olSearchUrl, { signal });
           if (res.ok) {
             const data = await res.json();
             if (data && Array.isArray(data.docs) && data.docs.length > 0) {

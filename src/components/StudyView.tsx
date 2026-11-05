@@ -10,11 +10,13 @@ import {
 import {
   computeNightstandDiagnostics,
   NightstandBookDiagnostic,
+  getSlumpIntermezzos,
 } from '../lib/analytics/engine';
 import {
   classifyBookLanguageAndFormat,
   FORMAT_LABELS,
 } from '../lib/classifiers/languageAndFormat';
+import { getGoodreadsBookUrl } from '../lib/links/goodreadsLinks';
 import {
   BookOpen,
   Bookmark,
@@ -35,6 +37,8 @@ import {
   UploadCloud,
   Check,
   Globe,
+  Zap,
+  ExternalLink,
 } from 'lucide-react';
 
 export interface StudyViewProps {
@@ -101,6 +105,17 @@ export const StudyView: React.FC<StudyViewProps> = ({
 
   const displayedDiagnostics =
     nightstandTab === 'active' ? activeDiagnostics : onHoldDiagnostics;
+
+  // B-07: Slump Intermezzo (<120p) Picks & Cognitive Drag awareness
+  const slumpIntermezzos = useMemo(
+    () => getSlumpIntermezzos(bundle, userState, 3),
+    [bundle, userState]
+  );
+
+  const hasActiveCognitiveDrag = useMemo(
+    () => activeDiagnostics.some((d) => d.hasCognitiveDrag),
+    [activeDiagnostics]
+  );
 
   // ------------------------------------------------------------------
   // 2. Kindle My Clippings.txt Highlights Vault
@@ -427,6 +442,17 @@ export const StudyView: React.FC<StudyViewProps> = ({
                           <Globe className="w-2.5 h-2.5 text-[var(--text-muted)]" />
                           <span>{profile.translationFlow}</span>
                         </span>
+
+                        {/* Cognitive Drag Badge (B-07) */}
+                        {diagnostic.hasCognitiveDrag && (
+                          <span
+                            className="flex items-center gap-1 text-[10px] font-mono-tabular px-2 py-0.5 rounded bg-amber-500/15 text-amber-800 dark:text-amber-200 border border-amber-500/30 font-semibold"
+                            title={diagnostic.cognitiveDragReason || 'Cognitive Drag: Book pace has slowed significantly'}
+                          >
+                            <Zap className="w-2.5 h-2.5 text-amber-600 dark:text-amber-400" />
+                            <span>Cognitive Drag</span>
+                          </span>
+                        )}
                       </div>
 
                       {/* State Toggle Button (Active <-> On Hold) */}
@@ -497,6 +523,40 @@ export const StudyView: React.FC<StudyViewProps> = ({
                       </div>
                     )}
 
+                    {/* Nightstand Stall Detector (Quiet prompt when stalled >40d or >25d on <25%) */}
+                    {diagnostic.isStalled && !isHibernatingCandidate && (
+                      <div className="mt-3 p-3 rounded-md bg-amber-500/10 border border-amber-500/30 text-xs">
+                        <div className="flex items-start gap-2">
+                          <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                          <div className="space-y-1.5 flex-1">
+                            <p className="text-[var(--text-ink)] font-serif-editorial italic leading-tight">
+                              Stalled on page {currentPage} for {idleDays} days. Shift to &apos;On Hold&apos; to clear desk space?
+                            </p>
+                            <div className="flex items-center gap-2 pt-0.5">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onUpdateBookOverride?.(book.id, { nightstandState: 'on-hold' });
+                                }}
+                                className="px-2.5 py-1 rounded bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-semibold transition-colors cursor-pointer shadow-xs"
+                              >
+                                Shift to &apos;On Hold&apos;
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onUpdateBookOverride?.(book.id, { nightstandState: 'active' });
+                                }}
+                                className="px-2 py-1 rounded bg-[var(--bg-card)] border border-[var(--border-ledger)] text-[11px] font-medium text-[var(--text-muted)] hover:text-[var(--text-ink)] cursor-pointer"
+                              >
+                                Keep on Desk
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Live Page Check-In & Progress Bar */}
                     <div className="mt-4 p-3 rounded-md bg-[var(--bg-surface)] border border-[var(--border-ledger)] space-y-2">
                       <div className="flex items-center justify-between text-xs">
@@ -554,31 +614,126 @@ export const StudyView: React.FC<StudyViewProps> = ({
                   </div>
 
                   {/* Format-Calibrated ETA Footer */}
-                  <div className="mt-4 pt-3 border-t border-[var(--border-ledger)]/70 text-[11px] font-mono-tabular text-[var(--text-muted)] flex items-center justify-between">
-                    {targetFinishDate && pagesPerDayForTarget !== null ? (
-                      <span className="text-[var(--accent-primary)] font-semibold truncate">
-                        🎯 Target: {pagesPerDayForTarget}p/day to finish by {targetFinishDate}
-                      </span>
-                    ) : projectedFinishDate ? (
-                      <span className="truncate">
-                        At {pacePagesPerDay}p/day ({FORMAT_LABELS[format]}), ~{daysRemaining ?? '?'}d left →{' '}
-                        <strong className="text-[var(--text-ink)]">{projectedFinishDate}</strong>
-                      </span>
-                    ) : (
-                      <span>Pace: {pacePagesPerDay}p/day calibrated</span>
-                    )}
+                  <div className="mt-4 pt-3 border-t border-[var(--border-ledger)]/70 text-[11px] font-mono-tabular text-[var(--text-muted)] flex items-center justify-between gap-2">
+                    <div className="truncate">
+                      {targetFinishDate && pagesPerDayForTarget !== null ? (
+                        <span className="text-[var(--accent-primary)] font-semibold truncate">
+                          🎯 Target: {pagesPerDayForTarget}p/day to finish by {targetFinishDate}
+                        </span>
+                      ) : projectedFinishDate ? (
+                        <span className="truncate">
+                          At {pacePagesPerDay}p/day ({FORMAT_LABELS[format]}), ~{daysRemaining ?? '?'}d left →{' '}
+                          <strong className="text-[var(--text-ink)]">{projectedFinishDate}</strong>
+                        </span>
+                      ) : (
+                        <span>Pace: {pacePagesPerDay}p/day calibrated</span>
+                      )}
+                    </div>
 
-                    <span
-                      onClick={() => onSelectBook(book)}
-                      className="cursor-pointer text-[var(--text-muted)] hover:text-[var(--accent-primary)] shrink-0 ml-1"
-                      title="Open full book dossier"
-                    >
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </span>
+                    <div className="flex items-center gap-1.5 shrink-0 ml-1">
+                      {/* Goodreads Letterpress Link (B-01) */}
+                      {(() => {
+                        const gr = getGoodreadsBookUrl(book);
+                        return (
+                          <a
+                            href={gr.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-[var(--border-ledger)] hover:border-[var(--accent-gold)]/60 bg-[var(--bg-surface)] hover:bg-[var(--accent-gold)]/10 text-[10px] font-mono-tabular text-[var(--text-muted)] hover:text-[var(--text-ink)] transition-colors"
+                            title={gr.label}
+                            aria-label={`Open ${book.cleanTitle || book.title} on Goodreads`}
+                          >
+                            <span>GR</span>
+                            <ExternalLink className="w-2.5 h-2.5 opacity-70" />
+                          </a>
+                        );
+                      })()}
+
+                      <span
+                        onClick={() => onSelectBook(book)}
+                        className="cursor-pointer text-[var(--text-muted)] hover:text-[var(--accent-primary)] p-0.5"
+                        title="Open full book dossier"
+                      >
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </span>
+                    </div>
                   </div>
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* B-07: Slump Intermezzo Strip (<120p Palate Cleansers) */}
+        {slumpIntermezzos.length > 0 && (
+          <div className="p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-[var(--border-ledger)]">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-[var(--accent-gold)]" />
+                <h3 className="font-serif-editorial text-base sm:text-lg font-bold text-[var(--text-ink)]">
+                  Need a Momentum Reset? &lt;120p Slump Intermezzos
+                </h3>
+                {hasActiveCognitiveDrag && (
+                  <span className="text-[10px] font-mono-tabular px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-200 border border-amber-500/30 font-semibold">
+                    Recommended for Drag
+                  </span>
+                )}
+              </div>
+              <span className="text-xs text-[var(--text-muted)] font-mono-tabular">
+                1-sitting palate-cleansers to reignite reading flow
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {slumpIntermezzos.map((item, sIdx) => {
+                const gr = getGoodreadsBookUrl(item.book);
+                return (
+                  <div
+                    key={item.book.id || sIdx}
+                    onClick={() => onSelectBook(item.book)}
+                    className="group p-4 rounded-lg bg-[var(--bg-surface)] hover:bg-[var(--bg-card)] border border-[var(--border-ledger)] hover:border-[var(--accent-gold)] transition-all cursor-pointer flex flex-col justify-between shadow-2xs"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-1 mb-2 text-[10px] font-mono-tabular">
+                        <span className="px-1.5 py-0.5 rounded bg-[var(--bg-card)] border border-[var(--border-ledger)] text-[var(--accent-gold)] font-bold">
+                          {item.pages} pp. · {item.formatLabel}
+                        </span>
+                        <a
+                          href={gr.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded hover:bg-[var(--accent-gold)]/15 text-[var(--text-muted)] hover:text-[var(--text-ink)] transition-colors"
+                          title={gr.label}
+                          aria-label={`Open ${item.book.cleanTitle || item.book.title} on Goodreads`}
+                        >
+                          <span>GR</span>
+                          <ExternalLink className="w-2.5 h-2.5 opacity-70" />
+                        </a>
+                      </div>
+
+                      <h4 className="font-serif-editorial text-sm font-bold text-[var(--text-ink)] group-hover:text-[var(--accent-primary)] transition-colors line-clamp-2 leading-snug">
+                        {item.book.cleanTitle || item.book.title}
+                      </h4>
+                      <p className="text-xs text-[var(--text-muted)] mt-0.5 font-medium">by {item.book.author}</p>
+
+                      <p className="mt-2 text-xs text-[var(--text-muted)] italic leading-relaxed line-clamp-2">
+                        &ldquo;{item.pitch}&rdquo;
+                      </p>
+                    </div>
+
+                    <div className="mt-3 pt-2 border-t border-[var(--border-ledger)]/60 flex items-center justify-between text-[11px] font-mono-tabular text-[var(--text-muted)]">
+                      <span>{item.translationFlow}</span>
+                      <span className="text-[var(--accent-primary)] group-hover:translate-x-0.5 transition-transform inline-flex items-center gap-1 font-semibold">
+                        <span>Inspect</span>
+                        <ArrowRight className="w-3 h-3" />
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
       </section>
@@ -661,8 +816,9 @@ export const StudyView: React.FC<StudyViewProps> = ({
                 The Marginalia Vault is Empty
               </h3>
               <p className="text-xs text-[var(--text-muted)] mt-1 max-w-sm mx-auto leading-relaxed">
-                Plug your Kindle into your computer via USB and drop your{' '}
-                <strong className="text-[var(--text-ink)]">My Clippings.txt</strong> file into the importer to view all your highlights, bookmarks, and reader notes paired with your library.
+                Drop your Kindle{' '}
+                <strong className="text-[var(--text-ink)]">Notebook.html</strong> (exported from the Kindle mobile/desktop app) or USB{' '}
+                <strong className="text-[var(--text-ink)]">My Clippings.txt</strong> file into the importer to pair all your highlights, chapters, and reader notes with your library.
               </p>
             </div>
             <button
@@ -670,7 +826,7 @@ export const StudyView: React.FC<StudyViewProps> = ({
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-[var(--accent-primary)] text-white text-xs font-semibold hover:opacity-90 transition-opacity cursor-pointer shadow-xs"
             >
               <UploadCloud className="w-3.5 h-3.5" />
-              <span>Import Kindle My Clippings.txt</span>
+              <span>Import Kindle Highlights (.html / .txt)</span>
             </button>
           </div>
         ) : filteredClippings.length === 0 ? (
@@ -750,13 +906,37 @@ export const StudyView: React.FC<StudyViewProps> = ({
                   </div>
 
                   {/* Stamp Footer */}
-                  <div className="mt-4 pt-3 border-t border-[var(--border-ledger)]/60 flex items-center justify-between text-[11px] font-mono-tabular text-[var(--text-muted)]">
-                    <span>
-                      {clipping.page ? `p. ${clipping.page}` : ''}
-                      {clipping.page && locationStamp ? ' · ' : ''}
-                      {locationStamp || ''}
-                    </span>
-                    {clipping.addedAt && <span>{clipping.addedAt.slice(0, 10)}</span>}
+                  <div className="mt-4 pt-3 border-t border-[var(--border-ledger)]/60 flex items-center justify-between gap-2 text-[11px] font-mono-tabular text-[var(--text-muted)]">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      {clipping.highlightColor && (
+                        <span
+                          className="inline-block w-2.5 h-2.5 rounded-full shrink-0 border border-black/15"
+                          style={{
+                            backgroundColor:
+                              clipping.highlightColor === 'pink'
+                                ? '#e879a0'
+                                : clipping.highlightColor === 'blue'
+                                ? '#60a5fa'
+                                : clipping.highlightColor === 'orange'
+                                ? '#fb923c'
+                                : '#facc15',
+                          }}
+                          title={`${clipping.highlightColor} highlight`}
+                        />
+                      )}
+                      {clipping.chapter && (
+                        <span className="truncate max-w-[140px] text-[var(--text-ink)] font-medium">
+                          {clipping.chapter}
+                          {clipping.page || locationStamp ? ' ·' : ''}
+                        </span>
+                      )}
+                      <span className="shrink-0">
+                        {clipping.page ? `p. ${clipping.page}` : ''}
+                        {clipping.page && locationStamp ? ' · ' : ''}
+                        {locationStamp || ''}
+                      </span>
+                    </div>
+                    {clipping.addedAt && <span className="shrink-0">{clipping.addedAt.slice(0, 10)}</span>}
                   </div>
                 </div>
               );

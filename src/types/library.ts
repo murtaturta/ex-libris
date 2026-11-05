@@ -66,6 +66,131 @@ export interface KindleClipping {
   addedAt: string | null;
   content: string;
   attachedNote?: string | null;
+  chapter?: string | null;
+  highlightColor?: 'yellow' | 'pink' | 'blue' | 'orange' | string | null;
+  sourceFormat?: 'clippings-txt' | 'notebook-html';
+}
+
+export type ExternalDiscoveryEngine =
+  | 'author-backlist'
+  | 'subject-dna'
+  | 'dsar-graph';
+
+export interface ExternalDiscoveryPick {
+  id: string;
+  engine: ExternalDiscoveryEngine;
+  title: string;
+  author: string | null;
+  yearPublished: number | null;
+  pageCount: number | null;
+  communityRating: number | null;
+  ratingsCount: number | null;
+  editionCount?: number | null;
+  subjects: string[];
+  synopsis: string | null;
+  coverUrl: string | null;
+  isbn?: string | null;
+  openLibraryKey?: string | null;
+  isSequel?: boolean;
+  seriesHint?: string | null;
+  anchorBookId?: string | null;
+  anchorBookTitle?: string | null;
+  anchorRating?: number | null;
+  anchorShelf?: ExclusiveShelf | null;
+  provenance: string;
+  reasons: string[];
+  score: number;
+}
+
+export interface ExternalWantListItem {
+  id: string;
+  title: string;
+  author: string | null;
+  engine: ExternalDiscoveryEngine;
+  provenance: string;
+  addedAt: string;
+  yearPublished?: number | null;
+  coverUrl?: string | null;
+}
+
+export interface BookplateConfig {
+  ownerName: string;
+  motto: string;
+  fleuron: 'aldine' | 'compass' | 'owl' | 'quill';
+  borderStyle: 'venetian' | 'modernist' | 'guild';
+}
+
+export interface VaultBookReview {
+  bookId: string;
+  bookTitle: string;
+  vaultFilePath: string;
+  wordsCount: number;
+  content: string;
+  obsidianUri: string;
+}
+
+export interface WritingProjectStat {
+  name: string;
+  words: number;
+  filesCount: number;
+  activeDaysCount: number;
+}
+
+export interface DraftedFileRecord {
+  filePath: string;
+  fileName: string;
+  folder: string;
+  words: number;
+}
+
+export interface WritingTelemetryData {
+  version: string;
+  updatedAt: string;
+  source: string;
+  totalWords: number;
+  totalChars: number;
+  dailyGoal: number;
+  completedGoalDaysCount: number;
+  completedGoalDates: string[];
+  activeDaysCount: number;
+  dailyTotals: Record<string, number>;
+  hourlyTotals: number[];
+  projects: WritingProjectStat[];
+  matchedReviews: Record<string, VaultBookReview>;
+  dailyFiles?: Record<string, DraftedFileRecord[]>;
+}
+
+export interface LetterboxdFilmWatch {
+  id: string;
+  name: string;
+  year: number;
+  uri: string;
+  rating: number | null; // 0.5 to 5.0
+  rewatch: boolean;
+  date: string; // YYYY-MM-DD (Watched Date or Date)
+  review?: string | null;
+  tags?: string[];
+  source: 'diary' | 'review' | 'watched';
+}
+
+export interface LetterboxdWatchlistItem {
+  name: string;
+  year: number;
+  uri: string;
+  dateAdded: string; // YYYY-MM-DD
+}
+
+export interface LetterboxdArchiveData {
+  version: string;
+  updatedAt: string;
+  totalWatchedCount: number;
+  totalDiaryCount: number;
+  totalReviewsCount: number;
+  totalWatchlistCount: number;
+  watches: LetterboxdFilmWatch[];
+  ratingsMap: Record<string, number>;
+  reviewsMap: Record<string, string>;
+  watchlist: LetterboxdWatchlistItem[];
 }
 
 export interface UserLocalState {
@@ -74,6 +199,10 @@ export interface UserLocalState {
   showCovers: boolean;
   bookOverrides: Record<string, BookUserOverride>;
   kindleClippings: KindleClipping[];
+  externalWantList?: ExternalWantListItem[];
+  bookplateConfig?: BookplateConfig;
+  writingTelemetry?: WritingTelemetryData;
+  letterboxdData?: LetterboxdArchiveData;
 }
 
 export interface EnrichedBookMetadata {

@@ -83,7 +83,49 @@ body {
   background: var(--text-muted);
 }
 
-/* Physical Book Spine Aesthetics */
+/* Physical Book Spine Aesthetics (Horizontal Top-to-Bottom Stacks) */
+.book-spine-horizontal {
+  position: relative;
+  transition:
+    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    filter 0.2s ease;
+  /* Cylindrical top-to-bottom lighting simulating a horizontal book back lying flat in a stack */
+  box-shadow:
+    inset 0 2px 3px rgba(255, 255, 255, 0.18),
+    inset 0 -4px 7px rgba(0, 0, 0, 0.38),
+    inset 3px 0 5px rgba(255, 255, 255, 0.06),
+    0 2px 5px rgba(0, 0, 0, 0.18);
+  border-radius: 4px 3px 3px 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+  user-select: none;
+}
+
+.book-spine-horizontal:hover {
+  transform: translateX(6px);
+  z-index: 20;
+  filter: brightness(1.07);
+  box-shadow:
+    inset 0 2px 4px rgba(255, 255, 255, 0.24),
+    inset 0 -4px 7px rgba(0, 0, 0, 0.32),
+    -4px 6px 14px rgba(0, 0, 0, 0.28);
+}
+
+.spine-band-vertical {
+  background: repeating-linear-gradient(
+    180deg,
+    rgba(235, 190, 92, 0.65) 0px,
+    rgba(235, 190, 92, 0.65) 2px,
+    rgba(92, 48, 18, 0.65) 2px,
+    rgba(92, 48, 18, 0.65) 4px
+  );
+  width: 4px;
+  align-self: stretch;
+  flex-shrink: 0;
+}
+
 .book-spine {
   position: relative;
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
@@ -223,4 +265,54 @@ body {
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   background: rgba(18, 19, 22, 0.55);
+}
+
+/* ==========================================================================
+   Broadside Reading Almanac & Bookplate Print Stylesheet
+   ========================================================================== */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #1c1b18 !important;
+  }
+
+  header,
+  nav,
+  .drawer-backdrop,
+  .no-print,
+  button {
+    display: none !important;
+  }
+
+  .broadside-modal-container {
+    position: static !important;
+    inset: auto !important;
+    padding: 0 !important;
+    background: transparent !important;
+    display: block !important;
+  }
+
+  .broadside-modal-dialog {
+    position: static !important;
+    max-height: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: #ffffff !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  .broadside-sheet {
+    background: #ffffff !important;
+    color: #1c1b18 !important;
+    border: 2px solid #1c1b18 !important;
+    box-shadow: none !important;
+    padding: 1.5cm !important;
+    margin: 0 auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    page-break-inside: avoid;
+  }
 }

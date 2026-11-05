@@ -3,18 +3,21 @@ import {
   Book,
   BookFormat,
   EnrichmentCacheMap,
+  ExternalDiscoveryPick,
   LanguageCode,
   LibraryBundle,
-  RecommendationItem,
   UserLocalState,
 } from '../types/library';
+import { ExternalDiscoverySection } from './ExternalDiscoverySection';
 import {
   OracleFilters,
   OracleCandidate,
+  ReadingFlight,
   getOracleCandidates,
   getUnfinishedSeries,
   getTrustedAuthorPicks,
   computeFormatVelocity,
+  generateReadingFlights,
 } from '../lib/analytics/engine';
 import {
   classifyBookLanguageAndFormat,
@@ -22,6 +25,7 @@ import {
   LANGUAGE_LABELS,
 } from '../lib/classifiers/languageAndFormat';
 import { formatPublicationYear } from '../lib/formatters';
+import { getGoodreadsBookUrl, getGoodreadsAuthorUrl } from '../lib/links/goodreadsLinks';
 import {
   Sparkles,
   Shuffle,
@@ -36,6 +40,7 @@ import {
   Globe,
   Languages,
   Zap,
+  ExternalLink,
 } from 'lucide-react';
 
 interface OracleViewProps {
@@ -45,6 +50,8 @@ interface OracleViewProps {
   userState: UserLocalState;
   enrichmentCache: EnrichmentCacheMap;
   onOpenEnrichModal: () => void;
+  onToggleWantList?: (pick: ExternalDiscoveryPick) => void;
+  onRemoveWantListItem?: (id: string) => void;
 }
 
 export const OracleView: React.FC<OracleViewProps> = ({
@@ -54,6 +61,8 @@ export const OracleView: React.FC<OracleViewProps> = ({
   userState,
   enrichmentCache,
   onOpenEnrichModal,
+  onToggleWantList,
+  onRemoveWantListItem,
 }) => {
   // Oracle Core Filters
   const [commitment, setCommitment] = useState<'any' | 'sprint' | 'deep' | 'epic'>('any');
@@ -65,11 +74,19 @@ export const OracleView: React.FC<OracleViewProps> = ({
   // v0.2 Language & Format filters
   const [editionLanguage, setEditionLanguage] = useState<LanguageCode | 'any'>('any');
   const [originalLanguage, setOriginalLanguage] = useState<LanguageCode | 'any'>('any');
-  const [translationMode, setTranslationMode] = useState<'any' | 'original' | 'translated'>('any');
+  const [translationMode, setTranslationMode] = useState<
+    'any' | 'original' | 'translated' | 'trusted-translator' | 'turkish-edition'
+  >('any');
   const [format, setFormat] = useState<BookFormat | 'any'>('any');
 
   const [isDealing, setIsDealing] = useState(false);
   const [dealSeed, setDealSeed] = useState(0);
+
+  // B-06: Curated 3-Book Reading Flights
+  const readingFlights = useMemo(
+    () => generateReadingFlights(bundle, userState, enrichmentCache),
+    [bundle, userState, enrichmentCache]
+  );
 
   // Format velocity cache
   const velocityMap = useMemo(() => {
@@ -146,28 +163,7 @@ export const OracleView: React.FC<OracleViewProps> = ({
     }
   }, [bundle]);
 
-  // Grouped recommendations
-  const groupedRecommendations = useMemo(() => {
-    const recs = bundle.recommendations || [];
-    const map = new Map<
-      string,
-      { sourceBookTitle: string; sourceBookId: string | null; items: RecommendationItem[] }
-    >();
-
-    for (const rec of recs) {
-      const key = rec.sourceBookTitle || 'Other Recommendations';
-      if (!map.has(key)) {
-        map.set(key, {
-          sourceBookTitle: key,
-          sourceBookId: rec.sourceBookId,
-          items: [],
-        });
-      }
-      map.get(key)!.items.push(rec);
-    }
-
-    return Array.from(map.values()).slice(0, 8);
-  }, [bundle.recommendations]);
+  // External Discovery is handled via ExternalDiscoverySection in Section 5
 
   const handleDeal = () => {
     setIsDealing(true);
@@ -320,9 +316,11 @@ export const OracleView: React.FC<OracleViewProps> = ({
                 onChange={(e) => setTranslationMode(e.target.value as any)}
                 className="w-full py-1.5 px-2 rounded-md bg-[var(--bg-surface)] border border-[var(--border-ledger)] text-xs text-[var(--text-ink)] font-medium cursor-pointer"
               >
-                <option value="any">Any Mode</option>
-                <option value="original">Read in Original</option>
-                <option value="translated">Read in Translation</option>
+                <option value="any">Any Voice / Mode</option>
+                <option value="original">Read in Original Voice</option>
+                <option value="translated">In Translation</option>
+                <option value="trusted-translator">Trusted Translators</option>
+                <option value="turkish-edition">Turkish Editions</option>
               </select>
             </div>
 
@@ -542,8 +540,28 @@ export const OracleView: React.FC<OracleViewProps> = ({
 
                   {/* Card Actions */}
                   <div className="mt-6 pt-4 border-t border-[var(--border-ledger)] flex items-center justify-between">
-                    <div className="text-xs font-mono-tabular text-[var(--text-muted)]">
-                      {book.pageCount ? `${book.pageCount} pp.` : 'Length unlisted'}
+                    <div className="flex items-center gap-2">
+                      <div className="text-xs font-mono-tabular text-[var(--text-muted)]">
+                        {book.pageCount ? `${book.pageCount} pp.` : 'Length unlisted'}
+                      </div>
+                      {/* Tactile Goodreads link (B-01) */}
+                      {(() => {
+                        const gr = getGoodreadsBookUrl(book);
+                        return (
+                          <a
+                            href={gr.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-[var(--border-ledger)] hover:border-[var(--accent-gold)]/60 bg-[var(--bg-surface)] hover:bg-[var(--accent-gold)]/10 text-[10px] font-mono-tabular text-[var(--text-muted)] hover:text-[var(--text-ink)] transition-colors"
+                            title={gr.label}
+                            aria-label={`Open ${book.cleanTitle || book.title} on Goodreads`}
+                          >
+                            <span>GR</span>
+                            <ExternalLink className="w-2.5 h-2.5 opacity-70" />
+                          </a>
+                        );
+                      })()}
                     </div>
 
                     <button
@@ -560,6 +578,121 @@ export const OracleView: React.FC<OracleViewProps> = ({
           </div>
         )}
       </section>
+
+      {/* B-06: Curated 3-Book Reading Flights */}
+      {readingFlights.length > 0 && (
+        <section aria-labelledby="reading-flights-heading" className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-[var(--border-ledger)]">
+            <div className="flex items-center gap-2">
+              <Compass className="w-5 h-5 text-[var(--accent-primary)]" />
+              <h2
+                id="reading-flights-heading"
+                className="font-serif-editorial text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-ink)]"
+              >
+                Curated Reading Flights
+              </h2>
+            </div>
+            <span className="text-xs text-[var(--text-muted)] font-mono-tabular">
+              Thematic 3-book narrative trajectories calibrated from your unread shelf
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {readingFlights.map((flight) => (
+              <div
+                key={flight.id}
+                className="p-5 sm:p-6 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] hover:border-[var(--accent-primary)]/50 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between"
+              >
+                <div>
+                  {/* Badges & Meta */}
+                  <div className="flex flex-wrap items-center gap-1.5 mb-2">
+                    {flight.badges.map((badge, bIdx) => (
+                      <span
+                        key={bIdx}
+                        className="px-2 py-0.5 rounded text-[10px] font-mono-tabular uppercase font-semibold bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] border border-[var(--accent-primary)]/20"
+                      >
+                        {badge}
+                      </span>
+                    ))}
+                    <span className="text-[11px] font-mono-tabular text-[var(--text-muted)] ml-auto">
+                      {flight.totalPages} pp. · ~{flight.estimatedDays} days
+                    </span>
+                  </div>
+
+                  {/* Title & Subtitle */}
+                  <h3 className="font-serif-editorial text-lg sm:text-xl font-bold text-[var(--text-ink)]">
+                    {flight.title}
+                  </h3>
+                  <p className="text-xs text-[var(--accent-secondary)] font-medium mt-0.5">
+                    {flight.subtitle}
+                  </p>
+
+                  {/* Curatorial Rationale */}
+                  <p className="text-xs text-[var(--text-muted)] italic leading-relaxed my-3 border-l-2 border-[var(--border-ledger)] pl-2.5">
+                    &ldquo;{flight.rationale}&rdquo;
+                  </p>
+
+                  {/* 3 Sequenced Books */}
+                  <div className="space-y-2.5 pt-2 border-t border-[var(--border-ledger)]/60">
+                    {flight.books.map((b, bIdx) => {
+                      const profile = classifyBookLanguageAndFormat(
+                        b,
+                        userState?.bookOverrides?.[b.id],
+                        enrichmentCache?.[b.id]
+                      );
+                      const gr = getGoodreadsBookUrl(b);
+                      return (
+                        <div
+                          key={b.id || bIdx}
+                          onClick={() => onSelectBook(b)}
+                          className="group p-2.5 rounded-lg bg-[var(--bg-surface)] hover:bg-[var(--bg-surface)]/80 border border-transparent hover:border-[var(--accent-primary)]/40 transition-all cursor-pointer flex items-center justify-between gap-3"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <span className="w-5 h-5 rounded-full bg-[var(--bg-card)] border border-[var(--border-ledger)] flex items-center justify-center font-mono-tabular text-[10px] font-bold text-[var(--accent-primary)] shrink-0">
+                              {bIdx + 1}
+                            </span>
+                            <div className="min-w-0">
+                              <h4 className="font-serif-editorial text-xs font-bold text-[var(--text-ink)] group-hover:text-[var(--accent-primary)] truncate transition-colors">
+                                {b.cleanTitle || b.title}
+                              </h4>
+                              <p className="text-[11px] text-[var(--text-muted)] truncate">
+                                by {b.author}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0">
+                            <div className="text-right text-[10px] font-mono-tabular">
+                              <span className="px-1.5 py-0.5 rounded bg-[var(--bg-card)] border border-[var(--border-ledger)] text-[var(--text-muted)]">
+                                {profile.translationFlow}
+                              </span>
+                              <div className="text-[var(--text-muted)] mt-0.5">
+                                {b.pageCount ? `${b.pageCount}p` : ''}
+                              </div>
+                            </div>
+
+                            <a
+                              href={gr.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="p-1 rounded hover:bg-[var(--accent-gold)]/15 text-[var(--text-muted)] hover:text-[var(--accent-gold)] transition-colors"
+                              title={gr.label}
+                              aria-label={`Open ${b.cleanTitle || b.title} on Goodreads`}
+                            >
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* 3. Unfinished Series on Your Shelf */}
       {unfinishedSeries.length > 0 && (
@@ -616,8 +749,26 @@ export const OracleView: React.FC<OracleViewProps> = ({
                         onClick={() => onSelectBook(nextBook)}
                         className="mt-3 p-2.5 rounded bg-[var(--bg-surface)] hover:bg-[var(--bg-surface)]/80 border border-transparent hover:border-[var(--accent-secondary)]/40 transition-colors cursor-pointer group"
                       >
-                        <div className="text-[10px] uppercase font-mono-tabular text-[var(--accent-secondary)] font-bold">
-                          Next In Sequence Waiting on TBR:
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="text-[10px] uppercase font-mono-tabular text-[var(--accent-secondary)] font-bold">
+                            Next In Sequence Waiting on TBR:
+                          </div>
+                          {(() => {
+                            const gr = getGoodreadsBookUrl(nextBook);
+                            return (
+                              <a
+                                href={gr.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="p-0.5 rounded hover:bg-[var(--accent-gold)]/15 text-[var(--text-muted)] hover:text-[var(--accent-gold)] transition-colors"
+                                title={gr.label}
+                                aria-label={`Open ${nextBook.cleanTitle || nextBook.title} on Goodreads`}
+                              >
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                            );
+                          })()}
                         </div>
                         <div className="font-serif-editorial text-sm font-semibold text-[var(--text-ink)] group-hover:text-[var(--accent-secondary)] transition-colors truncate">
                           {nextBook.cleanTitle || nextBook.title}
@@ -667,7 +818,16 @@ export const OracleView: React.FC<OracleViewProps> = ({
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <h3 className="font-serif-editorial text-base font-bold text-[var(--text-ink)]">
-                      {authorPick.author}
+                      <a
+                        href={getGoodreadsAuthorUrl(authorPick.author)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="hover:underline hover:text-[var(--accent-primary)] transition-colors"
+                        title={`Search ${authorPick.author} on Goodreads`}
+                      >
+                        {authorPick.author}
+                      </a>
                     </h3>
                     <span className="flex items-center gap-1 text-xs font-mono-tabular font-bold text-[var(--accent-gold)]">
                       <Star className="w-3.5 h-3.5 fill-[var(--accent-gold)]" />
@@ -685,15 +845,29 @@ export const OracleView: React.FC<OracleViewProps> = ({
                       <div className="text-[10px] uppercase font-mono-tabular text-[var(--text-muted)] font-semibold">
                         Waiting on TBR:
                       </div>
-                      {authorPick.toReadBooks.slice(0, 2).map((b) => (
-                        <div
-                          key={b.id}
-                          onClick={() => onSelectBook(b)}
-                          className="p-2 rounded bg-[var(--bg-surface)] text-xs text-[var(--text-ink)] hover:text-[var(--accent-primary)] cursor-pointer truncate transition-colors"
-                        >
-                          → {b.cleanTitle || b.title}
-                        </div>
-                      ))}
+                      {authorPick.toReadBooks.slice(0, 2).map((b) => {
+                        const gr = getGoodreadsBookUrl(b);
+                        return (
+                          <div
+                            key={b.id}
+                            onClick={() => onSelectBook(b)}
+                            className="p-2 rounded bg-[var(--bg-surface)] text-xs text-[var(--text-ink)] hover:text-[var(--accent-primary)] cursor-pointer transition-colors flex items-center justify-between gap-2"
+                          >
+                            <span className="truncate">→ {b.cleanTitle || b.title}</span>
+                            <a
+                              href={gr.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="shrink-0 p-0.5 rounded hover:bg-[var(--accent-gold)]/15 text-[var(--text-muted)] hover:text-[var(--accent-gold)] transition-colors"
+                              title={gr.label}
+                              aria-label={`Open ${b.cleanTitle || b.title} on Goodreads`}
+                            >
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -703,63 +877,16 @@ export const OracleView: React.FC<OracleViewProps> = ({
         </section>
       )}
 
-      {/* 5. Goodreads Recommendation Graph */}
-      {groupedRecommendations.length > 0 && (
-        <section aria-labelledby="recommendations-heading">
-          <div className="flex items-center justify-between mb-4 pb-2 border-b border-[var(--border-ledger)]">
-            <div className="flex items-center gap-2">
-              <Compass className="w-4 h-4 text-[var(--accent-gold)]" />
-              <h2
-                id="recommendations-heading"
-                className="font-serif-editorial text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-ink)]"
-              >
-                Goodreads Recommendation Graph
-              </h2>
-            </div>
-            <span className="text-xs text-[var(--text-muted)] hidden sm:inline">
-              Recommendations anchored to your highest-rated read volumes
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {groupedRecommendations.map((group, idx) => (
-              <div
-                key={idx}
-                className="p-4 rounded-lg bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs flex flex-col justify-between"
-              >
-                <div>
-                  <div className="text-[10px] uppercase font-mono-tabular text-[var(--text-muted)] font-semibold">
-                    Because you read:
-                  </div>
-                  <div
-                    onClick={() => onSelectBookById(group.sourceBookId, group.sourceBookTitle)}
-                    className="font-serif-editorial text-sm font-bold text-[var(--text-ink)] hover:text-[var(--accent-primary)] transition-colors cursor-pointer truncate mt-0.5"
-                    title={group.sourceBookTitle}
-                  >
-                    {group.sourceBookTitle}
-                  </div>
-
-                  <div className="mt-3 pt-2 border-t border-[var(--border-ledger)]/60 space-y-2">
-                    {group.items.slice(0, 3).map((item, itemIdx) => (
-                      <div
-                        key={itemIdx}
-                        className="text-xs text-[var(--text-ink)] bg-[var(--bg-surface)] p-2 rounded"
-                      >
-                        <div className="font-medium truncate">{item.recommendedTitle}</div>
-                        {item.shelf && (
-                          <span className="text-[10px] text-[var(--text-muted)] font-mono-tabular">
-                            Shelf: {item.shelf}
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+      {/* 5. The Acquisitions Desk · 3-Engine External Discovery ("Beyond Your Shelves") */}
+      <ExternalDiscoverySection
+        bundle={bundle}
+        enrichmentCache={enrichmentCache}
+        userState={userState}
+        showCovers={userState.showCovers}
+        onToggleWantList={onToggleWantList || (() => {})}
+        onRemoveWantListItem={onRemoveWantListItem}
+        onSelectBookById={onSelectBookById}
+      />
     </div>
   );
 };
