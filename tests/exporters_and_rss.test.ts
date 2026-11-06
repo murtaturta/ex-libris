@@ -93,6 +93,30 @@ describe('Markdown Note Exporter (B-03)', () => {
         attachedNote: 'Core mantra for focus.',
       },
     ],
+    letterboxdData: {
+      version: '1.0.0',
+      updatedAt: '2026-11-06T00:00:00Z',
+      totalWatchedCount: 1,
+      totalDiaryCount: 1,
+      totalReviewsCount: 1,
+      totalWatchlistCount: 0,
+      watches: [
+        {
+          id: 'watch-1',
+          name: 'Dune',
+          year: 2021,
+          uri: 'https://letterboxd.com/film/dune-2021/',
+          rating: 4.5,
+          rewatch: false,
+          date: '2024-04-10',
+          review: 'Stunning audiovisual realization of Arrakis.',
+          source: 'diary',
+        },
+      ],
+      ratingsMap: {},
+      reviewsMap: {},
+      watchlist: [],
+    },
   };
 
   it('sanitizes titles into clean filesystem filenames', () => {
@@ -118,7 +142,8 @@ describe('Markdown Note Exporter (B-03)', () => {
     expect(content).toContain('---');
     expect(content).toContain('title: "Dune"');
     expect(content).toContain('author: "Frank Herbert"');
-    expect(content).toContain('series: "Dune #1"');
+    expect(content).toContain('series: "Dune"');
+    expect(content).toContain('series_number: 1');
     expect(content).toContain('format: "prose"');
     expect(content).toContain('isbn13: "9780593099322"');
     expect(content).toContain('pages: 658');
@@ -127,12 +152,23 @@ describe('Markdown Note Exporter (B-03)', () => {
     expect(content).toContain('my_rating: 5');
     expect(content).toContain('community_rating: 4.27');
     expect(content).toContain('goodreads_url: "https://www.goodreads.com/book/show/44767458"');
+    expect(content).toContain('film_adaptation: "Dune"');
+    expect(content).toContain('film_year: 2021');
+    expect(content).toContain('film_rating: 4.5');
+    expect(content).toContain('film_letterboxd_url: "https://letterboxd.com/film/dune-2021/"');
+    expect(content).toContain('film_watched_date: "2024-04-10"');
+    expect(content).toContain('film_rewatch: false');
 
     // Body sections
     expect(content).toContain('# Dune');
     expect(content).toContain('*Dune #1*');
     expect(content).toContain('## Synopsis');
     expect(content).toContain('Set on the desert planet Arrakis');
+    expect(content).toContain('## Screen Adaptation · Letterboxd');
+    expect(content).toContain('**Film:** [Dune (2021)](https://letterboxd.com/film/dune-2021/)');
+    expect(content).toContain('**Rating:** ★★★★½ (4.5/5)');
+    expect(content).toContain('**Watched:** 2024-04-10');
+    expect(content).toContain('> **Diary Note:** *“Stunning audiovisual realization of Arrakis.”*');
     expect(content).toContain('## My Review');
     expect(content).toContain('A masterpiece of speculative ecology');
     expect(content).toContain('## Personal Notes');

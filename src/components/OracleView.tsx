@@ -18,7 +18,9 @@ import {
   getTrustedAuthorPicks,
   computeFormatVelocity,
   generateReadingFlights,
+  computeAdaptationBridge,
 } from '../lib/analytics/engine';
+import { formatStarRating } from '../lib/parsers/letterboxdParser';
 import {
   classifyBookLanguageAndFormat,
   FORMAT_LABELS,
@@ -41,6 +43,8 @@ import {
   Languages,
   Zap,
   ExternalLink,
+  Film,
+  BookmarkCheck,
 } from 'lucide-react';
 
 interface OracleViewProps {
@@ -85,6 +89,12 @@ export const OracleView: React.FC<OracleViewProps> = ({
   // B-06: Curated 3-Book Reading Flights
   const readingFlights = useMemo(
     () => generateReadingFlights(bundle, userState, enrichmentCache),
+    [bundle, userState, enrichmentCache]
+  );
+
+  // The Adaptation Oracle (Codex ⇄ Screen Bridge)
+  const adaptationBridges = useMemo(
+    () => computeAdaptationBridge(bundle, userState, enrichmentCache),
     [bundle, userState, enrichmentCache]
   );
 
@@ -690,6 +700,194 @@ export const OracleView: React.FC<OracleViewProps> = ({
                 </div>
               </div>
             ))}
+          </div>
+        </section>
+      )}
+
+      {/* 2B. The Adaptation Oracle · Codex ⇄ Screen */}
+      {(adaptationBridges.queuedOnWatchlist.length > 0 || adaptationBridges.fromScreenToNightstand.length > 0) && (
+        <section aria-labelledby="adaptation-oracle-heading" className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-[var(--border-ledger)]">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center border border-purple-500/30 shadow-2xs">
+                <Film className="w-4 h-4" />
+              </div>
+              <div>
+                <h2
+                  id="adaptation-oracle-heading"
+                  className="font-serif-editorial text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-ink)]"
+                >
+                  The Adaptation Oracle · Codex ⇄ Screen
+                </h2>
+                <p className="text-xs text-[var(--text-muted)]">
+                  Cross-referencing finished and shelved codex volumes with your Letterboxd cinema diary &amp; watchlist
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="font-mono-tabular text-xs text-[var(--text-muted)]">
+                {adaptationBridges.totalBridgesCount} Linked Adaptations
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Stream 1: Adaptations Queued on Watchlist */}
+            <div className="p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs space-y-4">
+              <div className="flex items-center justify-between pb-2 border-b border-[var(--border-ledger)]">
+                <div className="flex items-center gap-2">
+                  <BookmarkCheck className="w-4 h-4 text-purple-500" />
+                  <h3 className="font-serif-editorial text-base font-bold text-[var(--text-ink)]">
+                    Adaptations Waiting on Watchlist
+                  </h3>
+                </div>
+                <span className="font-mono-tabular text-xs text-purple-600 dark:text-purple-400 font-bold">
+                  {adaptationBridges.queuedOnWatchlist.length} Queued
+                </span>
+              </div>
+              <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+                Books you have completed or shelved whose cinematic adaptations are currently waiting on your Letterboxd watchlist:
+              </p>
+
+              <div className="space-y-3">
+                {adaptationBridges.queuedOnWatchlist.map((item) => (
+                  <div
+                    key={item.id}
+                    className="p-3.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] hover:border-purple-500/40 transition-all space-y-2.5 shadow-2xs group"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="text-[10px] uppercase font-mono-tabular tracking-wider text-[var(--text-muted)] flex items-center gap-1.5 mb-0.5">
+                          <span>Source Codex:</span>
+                          <span className="px-1.5 py-0.2 rounded bg-[var(--bg-card)] border border-[var(--border-ledger)] font-semibold text-[var(--text-ink)]">
+                            {item.bookShelf === 'read' ? 'Completed' : item.bookShelf}
+                          </span>
+                        </div>
+                        <h4
+                          onClick={() => {
+                            const b = bundle.books.find((x) => x.id === item.bookId);
+                            if (b) onSelectBook(b);
+                          }}
+                          className="font-serif-editorial font-bold text-sm text-[var(--text-ink)] hover:text-[var(--accent-primary)] cursor-pointer transition-colors"
+                        >
+                          {item.bookTitle}
+                          <span className="font-mono-tabular text-xs font-normal text-[var(--text-muted)] ml-1">
+                            by {item.bookAuthor}
+                          </span>
+                        </h4>
+                      </div>
+
+                      {item.filmUri && (
+                        <a
+                          href={item.filmUri}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-mono-tabular font-semibold text-purple-600 dark:text-purple-400 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 transition-colors shadow-2xs shrink-0"
+                          title="Open on Letterboxd"
+                        >
+                          <span>Watchlist</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs pt-1.5 border-t border-[var(--border-ledger)]/60 font-mono-tabular">
+                      <div className="flex items-center gap-2">
+                        <Film className="w-3.5 h-3.5 text-purple-500" />
+                        <span className="font-serif-editorial font-bold text-[var(--text-ink)]">
+                          {item.filmTitle} {item.filmYear ? `(${item.filmYear})` : ''}
+                        </span>
+                      </div>
+                      <span className="text-[11px] text-[var(--text-muted)] truncate max-w-[200px]">
+                        {item.rationale}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Stream 2: From Screen to Nightstand */}
+            <div className="p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs space-y-4">
+              <div className="flex items-center justify-between pb-2 border-b border-[var(--border-ledger)]">
+                <div className="flex items-center gap-2">
+                  <Star className="w-4 h-4 text-amber-500" />
+                  <h3 className="font-serif-editorial text-base font-bold text-[var(--text-ink)]">
+                    From Screen to Nightstand
+                  </h3>
+                </div>
+                <span className="font-mono-tabular text-xs text-amber-500 font-bold">
+                  {adaptationBridges.fromScreenToNightstand.length} Acclaimed
+                </span>
+              </div>
+              <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+                Films you rated ≥ 4★ or reviewed whose original literary source material is preserved in your library:
+              </p>
+
+              <div className="space-y-3">
+                {adaptationBridges.fromScreenToNightstand.map((item) => (
+                  <div
+                    key={item.id}
+                    className="p-3.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] hover:border-amber-500/40 transition-all space-y-2.5 shadow-2xs group"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <h4 className="font-serif-editorial font-bold text-sm text-[var(--text-ink)]">
+                            🎬 {item.filmTitle} {item.filmYear ? `(${item.filmYear})` : ''}
+                          </h4>
+                          {item.filmRating && (
+                            <span className="font-mono-tabular text-xs font-bold text-amber-500">
+                              {formatStarRating(item.filmRating)}
+                            </span>
+                          )}
+                          {item.filmRewatch && (
+                            <span className="px-1.5 py-0.2 rounded text-[9px] font-mono-tabular bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                              Rewatch
+                            </span>
+                          )}
+                        </div>
+
+                        {item.filmReview && (
+                          <p className="text-xs font-serif-editorial italic text-[var(--text-muted)] pl-2 border-l-2 border-purple-400/60 line-clamp-2 mt-1">
+                            &ldquo;{item.filmReview}&rdquo;
+                          </p>
+                        )}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const b = bundle.books.find((x) => x.id === item.bookId);
+                          if (b) onSelectBook(b);
+                        }}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-mono-tabular font-semibold text-[var(--accent-primary)] bg-[var(--accent-primary)]/10 hover:bg-[var(--accent-primary)]/20 border border-[var(--accent-primary)]/30 transition-colors shadow-2xs shrink-0 cursor-pointer"
+                        title="Inspect Book Dossier"
+                      >
+                        <span>Dossier</span>
+                        <ArrowRight className="w-3 h-3" />
+                      </button>
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs pt-1.5 border-t border-[var(--border-ledger)]/60 font-mono-tabular">
+                      <div className="flex items-center gap-1.5 truncate">
+                        <BookOpen className="w-3.5 h-3.5 text-[var(--accent-gold)] shrink-0" />
+                        <span className="text-[var(--text-ink)] font-medium truncate">
+                          {item.bookTitle}
+                        </span>
+                        <span className="text-[var(--text-muted)] text-[11px]">
+                          ({item.bookAuthor})
+                        </span>
+                      </div>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-mono-tabular bg-[var(--bg-card)] border border-[var(--border-ledger)] text-[var(--text-muted)] shrink-0">
+                        {item.bookShelf === 'read' ? 'Completed' : item.bookShelf === 'currently-reading' ? 'Active' : 'TBR Queue'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </section>
       )}

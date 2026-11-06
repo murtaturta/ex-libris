@@ -16,8 +16,10 @@ import {
 } from '../lib/classifiers/languageAndFormat';
 import {
   computeBookPacingArchetype,
+  findFilmAdaptationForBook,
   PacingArchetype,
 } from '../lib/analytics/engine';
+import { formatStarRating } from '../lib/parsers/letterboxdParser';
 import { formatPublicationYear, formatReviewHtml } from '../lib/formatters';
 import { getGoodreadsBookUrl, getGoodreadsAuthorUrl } from '../lib/links/goodreadsLinks';
 import { downloadSingleBookMarkdown } from '../lib/exporters/markdownNoteExporter';
@@ -50,6 +52,7 @@ import {
   ExternalLink,
   FileDown,
   FolderArchive,
+  Film,
 } from 'lucide-react';
 
 interface BookDossierDrawerProps {
@@ -160,6 +163,11 @@ export const BookDossierDrawer: React.FC<BookDossierDrawerProps> = ({
     if (!book) return null;
     return userState?.writingTelemetry?.matchedReviews?.[book.id] || null;
   }, [book, userState?.writingTelemetry]);
+
+  // Matched Letterboxd Screen Adaptation
+  const filmAdaptation = useMemo(() => {
+    return findFilmAdaptationForBook(book, userState);
+  }, [book, userState]);
 
   // Combined DSAR Kindle notes
   const combinedKindleNotes = useMemo(() => {
@@ -1099,6 +1107,82 @@ export const BookDossierDrawer: React.FC<BookDossierDrawerProps> = ({
                   <div className="font-serif-editorial text-sm sm:text-base leading-relaxed text-[var(--text-ink)] whitespace-pre-line space-y-2">
                     {vaultReview.content}
                   </div>
+                </div>
+              </section>
+            )}
+
+            {/* Letterboxd Screen Adaptation Card */}
+            {filmAdaptation && (
+              <section aria-labelledby="film-adaptation-heading" className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h3
+                    id="film-adaptation-heading"
+                    className="text-xs font-mono-tabular uppercase tracking-wider text-purple-600 dark:text-purple-400 font-bold flex items-center gap-1.5"
+                  >
+                    <Film className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                    <span>Screen Adaptation · Letterboxd</span>
+                  </h3>
+                  {filmAdaptation.uri && (
+                    <a
+                      href={filmAdaptation.uri}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-mono-tabular font-semibold text-purple-600 dark:text-purple-400 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 transition-colors shadow-2xs"
+                      title="Open on Letterboxd"
+                    >
+                      <span>View on Letterboxd</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
+                </div>
+
+                <div className="p-4 sm:p-5 rounded-xl bg-[var(--bg-card)] border border-purple-500/35 shadow-2xs space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h4 className="font-serif-editorial text-base sm:text-lg font-bold text-[var(--text-ink)] flex items-center gap-2">
+                        <span>{filmAdaptation.name}</span>
+                        {filmAdaptation.year ? (
+                          <span className="font-mono-tabular text-xs font-normal text-[var(--text-muted)]">
+                            ({filmAdaptation.year})
+                          </span>
+                        ) : null}
+                      </h4>
+                      {filmAdaptation.rating !== null && (
+                        <div className="flex items-center gap-2 mt-1 font-mono-tabular text-xs">
+                          <span className="text-amber-500 font-bold tracking-wider">
+                            {formatStarRating(filmAdaptation.rating)}
+                          </span>
+                          <span className="text-[var(--text-muted)] text-[11px]">
+                            ({filmAdaptation.rating.toFixed(1)} / 5)
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {filmAdaptation.rewatch && (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-mono-tabular bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 font-semibold">
+                          Rewatch
+                        </span>
+                      )}
+                      {filmAdaptation.date && (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-mono-tabular bg-[var(--bg-surface)] border border-[var(--border-ledger)] text-[var(--text-muted)]">
+                          {filmAdaptation.date}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {filmAdaptation.review && (
+                    <div className="pt-2 border-t border-[var(--border-ledger)]/60">
+                      <div className="text-[10px] uppercase font-mono-tabular tracking-wider text-[var(--text-muted)] mb-1">
+                        Your Letterboxd Diary Note:
+                      </div>
+                      <blockquote className="relative pl-3 border-l-2 border-purple-400 text-xs sm:text-sm text-[var(--text-ink)] font-serif-editorial italic leading-relaxed bg-[var(--bg-surface)]/60 p-2.5 rounded-r">
+                        &ldquo;{filmAdaptation.review}&rdquo;
+                      </blockquote>
+                    </div>
+                  )}
                 </div>
               </section>
             )}

@@ -178,7 +178,7 @@ const AUTHOR_SEEDS: Array<{ lang: LanguageCode; authors: string[] }> = [
   },
   {
     lang: 'PL',
-    authors: ['Jacek Dukaj', 'Andrzej Sapkowski'],
+    authors: ['Jacek Dukaj', 'Andrzej Sapkowski', 'Stanisław Lem', 'Stanislaw Lem'],
   },
   {
     lang: 'ZH',
@@ -274,6 +274,7 @@ const AUTHOR_SEEDS: Array<{ lang: LanguageCode; authors: string[] }> = [
       'George R.R. Martin',
       'Suzanne Collins',
       'Andy Weir',
+      'Ken Grimwood',
       'J.R.R. Tolkien',
       'Oscar Wilde',
       'Mary Wollstonecraft Shelley',
@@ -504,23 +505,20 @@ export function classifyBookLanguageAndFormat(
 
   if (override?.originalLanguageOverride) {
     originalLanguage = override.originalLanguageOverride;
+  } else if (lookupAuthorOriginalLanguage(book.author)) {
+    originalLanguage = lookupAuthorOriginalLanguage(book.author)!;
   } else if (enriched?.detectedOriginalLanguage) {
     originalLanguage = enriched.detectedOriginalLanguage;
   } else {
-    const mapped = lookupAuthorOriginalLanguage(book.author);
-    if (mapped) {
-      originalLanguage = mapped;
+    // Fallback: infer 'TR' if author has Turkish characters (ğ, ş, ı, İ),
+    // 'FR' if edition is 'FR' and no additionalAuthors, else editionLanguage
+    const authorHasTurkish = /[ğşıİĞŞI]/.test(book.author || '');
+    if (authorHasTurkish) {
+      originalLanguage = 'TR';
+    } else if (editionLanguage === 'FR' && (!book.additionalAuthors || book.additionalAuthors.length === 0)) {
+      originalLanguage = 'FR';
     } else {
-      // Fallback: infer 'TR' if author has Turkish characters (ğ, ş, ı, İ),
-      // 'FR' if edition is 'FR' and no additionalAuthors, else editionLanguage
-      const authorHasTurkish = /[ğşıİĞŞI]/.test(book.author || '');
-      if (authorHasTurkish) {
-        originalLanguage = 'TR';
-      } else if (editionLanguage === 'FR' && (!book.additionalAuthors || book.additionalAuthors.length === 0)) {
-        originalLanguage = 'FR';
-      } else {
-        originalLanguage = editionLanguage;
-      }
+      originalLanguage = editionLanguage;
     }
   }
 

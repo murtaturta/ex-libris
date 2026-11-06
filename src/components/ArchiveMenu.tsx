@@ -9,6 +9,8 @@ import {
   ChevronDown,
   Check,
   Loader2,
+  Quote,
+  FileCode2,
 } from 'lucide-react';
 import type { Book, EnrichmentCacheMap, UserLocalState } from '../types/library';
 import { bookHasAnnotations } from '../lib/exporters/markdownNoteExporter';
@@ -25,6 +27,8 @@ export interface ArchiveMenuProps {
   onOpenEnrichModal?: () => void;
   enrichedCount?: number;
   onOpenBookplate?: () => void;
+  onOpenCommonplace?: () => void;
+  onDownloadStandaloneHtml?: () => void;
   showCovers?: boolean;
   onToggleCovers?: () => void;
 }
@@ -42,6 +46,8 @@ export const ArchiveMenu: React.FC<ArchiveMenuProps> = ({
   onOpenEnrichModal,
   enrichedCount = 0,
   onOpenBookplate,
+  onOpenCommonplace,
+  onDownloadStandaloneHtml,
   showCovers = false,
   onToggleCovers,
 }) => {
@@ -256,6 +262,30 @@ export const ArchiveMenu: React.FC<ArchiveMenuProps> = ({
               )}
             </div>
 
+            {onDownloadStandaloneHtml && (
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setOpen(false);
+                  onDownloadStandaloneHtml();
+                }}
+                className="w-full flex items-center justify-between gap-2.5 px-2.5 py-2 rounded-md text-left hover:bg-[var(--accent-primary)]/10 hover:text-[var(--accent-primary)] transition-colors cursor-pointer group"
+              >
+                <div className="flex items-center gap-2.5">
+                  <FileCode2 className="w-4 h-4 text-[var(--accent-primary)] shrink-0" />
+                  <div>
+                    <div className="text-xs font-semibold text-[var(--text-ink)] group-hover:text-[var(--accent-primary)]">
+                      Standalone Archive (.html)
+                    </div>
+                    <div className="text-[10px] text-[var(--text-muted)]">
+                      Self-contained offline reading almanac &amp; dossier
+                    </div>
+                  </div>
+                </div>
+              </button>
+            )}
+
             {onOpenBookplate && (
               <button
                 type="button"
@@ -274,6 +304,30 @@ export const ArchiveMenu: React.FC<ArchiveMenuProps> = ({
                     </div>
                     <div className="text-[10px] text-[var(--text-muted)]">
                       Woodcut seal &amp; broadside reading almanac
+                    </div>
+                  </div>
+                </div>
+              </button>
+            )}
+
+            {onOpenCommonplace && (
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setOpen(false);
+                  onOpenCommonplace();
+                }}
+                className="w-full flex items-center justify-between gap-2.5 px-2.5 py-2 rounded-md text-left hover:bg-[var(--accent-gold)]/10 transition-colors cursor-pointer group"
+              >
+                <div className="flex items-center gap-2.5">
+                  <Quote className="w-4 h-4 text-[var(--accent-gold)] shrink-0" />
+                  <div>
+                    <div className="text-xs font-semibold text-[var(--text-ink)] group-hover:text-[var(--accent-gold)]">
+                      The Commonplace Book
+                    </div>
+                    <div className="text-[10px] text-[var(--text-muted)]">
+                      Curated Kindle passages &amp; broadside cards
                     </div>
                   </div>
                 </div>

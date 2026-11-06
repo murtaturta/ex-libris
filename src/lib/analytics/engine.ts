@@ -1,4 +1,9 @@
 import type {
+  AdaptationBridgeMetrics,
+  AdaptationDivergenceItem,
+  AdaptationForensicsMetrics,
+  AdaptationLink,
+  AnnualReadingReview,
   Book,
   BookFormat,
   EnrichmentCacheMap,
@@ -8,7 +13,11 @@ import type {
   LanguageCode,
   LetterboxdFilmWatch,
   LibraryBundle,
+  NarrativeDietMonth,
+  PredictiveTargetMetrics,
   UserLocalState,
+  WorldShelfHub,
+  WorldShelfMetrics,
 } from '../../types/library';
 import {
   classifyBookLanguageAndFormat,
@@ -3425,4 +3434,776 @@ export function computeReadingFrictionMetrics(
     },
     frictionPatternCounts,
   };
+}
+
+// ============================================================================
+// THE ADAPTATION ORACLE (CODEX ⇄ SCREEN BRIDGE)
+// ============================================================================
+
+export interface AdaptationAlias {
+  bookMatch: string;
+  filmMatch: string;
+  note: string;
+}
+
+export const ADAPTATION_ALIASES: AdaptationAlias[] = [
+  {
+    bookMatch: 'do androids dream of electric sheep',
+    filmMatch: 'blade runner',
+    note: 'Philip K. Dick source novel for Blade Runner',
+  },
+  {
+    bookMatch: 'stories of your life and others',
+    filmMatch: 'arrival',
+    note: 'Ted Chiang novella source for Denis Villeneuve’s Arrival',
+  },
+  {
+    bookMatch: 'mickey7',
+    filmMatch: 'mickey 17',
+    note: 'Edward Ashton novel source for Bong Joon-ho’s Mickey 17',
+  },
+  {
+    bookMatch: 'world war z',
+    filmMatch: 'world war z',
+    note: 'Max Brooks oral history source for World War Z',
+  },
+  {
+    bookMatch: 'all quiet on the western front',
+    filmMatch: 'all quiet on the western front',
+    note: 'Erich Maria Remarque masterpiece adaptation',
+  },
+  {
+    bookMatch: 'i am legend',
+    filmMatch: 'i am legend',
+    note: 'Richard Matheson dystopian vampire source',
+  },
+];
+
+function normalizeCleanTitle(s: string): string {
+  return (s || '')
+    .toLowerCase()
+    .replace(/[’']/g, "'")
+    .replace(/^(the|a|an)\s+/i, '')
+    .trim();
+}
+
+export function titlesMatchAdaptation(bookTitle: string, filmTitle: string): boolean {
+  const b = normalizeCleanTitle(bookTitle);
+  const f = normalizeCleanTitle(filmTitle);
+  if (!b || !f) return false;
+  if (b === f) return true;
+
+  // Only allow sequel / subtitle extensions with explicit boundary delimiters
+  const delimiters = [':', ' –', ' -', ' part', ' volume'];
+  for (const d of delimiters) {
+    if (f.startsWith(b + d)) return true;
+    if (b.startsWith(f + d)) return true;
+  }
+  return false;
+}
+
+/**
+ * Computes cross-referencing adaptation links between the library codex and Letterboxd cinema intake.
+ */
+export function computeAdaptationBridge(
+  bundle?: LibraryBundle | null,
+  userState?: UserLocalState | null,
+  enrichmentCache?: EnrichmentCacheMap | null
+): AdaptationBridgeMetrics {
+  const books = bundle?.books || [];
+  const watches = userState?.letterboxdData?.watches || [];
+  const watchlist = userState?.letterboxdData?.watchlist || [];
+
+  const queuedOnWatchlist: AdaptationLink[] = [];
+  const fromScreenToNightstand: AdaptationLink[] = [];
+  const allBridges: AdaptationLink[] = [];
+
+  const seenWatchlistKeys = new Set<string>();
+  const seenScreenKeys = new Set<string>();
+
+  for (const b of books) {
+    const bTitle = b.cleanTitle || b.title;
+
+    // 1. Check Watchlist matches (Codex -> Screen)
+    for (const wl of watchlist) {
+      const alias = ADAPTATION_ALIASES.find(
+        (a) => bTitle.toLowerCase().includes(a.bookMatch) && wl.name.toLowerCase().includes(a.filmMatch)
+      );
+      if (alias || titlesMatchAdaptation(bTitle, wl.name)) {
+        const key = `${b.id}_${wl.name}_${wl.year}`;
+        if (!seenWatchlistKeys.has(key)) {
+          seenWatchlistKeys.add(key);
+          const link: AdaptationLink = {
+            id: `bridge-wl-${b.id}-${wl.name.replace(/\s+/g, '-')}`,
+            bookId: b.id,
+            bookTitle: bTitle,
+            bookAuthor: b.author,
+            bookShelf: b.exclusiveShelf,
+            bookCoverUrl: enrichmentCache?.[b.id]?.coverUrl || null,
+            bookRating: b.myRating,
+            filmTitle: wl.name,
+            filmYear: wl.year,
+            filmUri: wl.uri,
+            filmRating: null,
+            filmRewatch: false,
+            relation: 'watchlist',
+            direction: 'codex-to-screen',
+            matchType: alias ? 'alias' : 'direct',
+            rationale: alias
+              ? alias.note
+              : `Cinematic adaptation of "${bTitle}" is waiting on your Letterboxd watchlist.`,
+          };
+          queuedOnWatchlist.push(link);
+          allBridges.push(link);
+        }
+      }
+    }
+
+    // 2. Check Watched matches (Screen -> Codex)
+    for (const w of watches) {
+      const alias = ADAPTATION_ALIASES.find(
+        (a) => bTitle.toLowerCase().includes(a.bookMatch) && w.name.toLowerCase().includes(a.filmMatch)
+      );
+      if (alias || titlesMatchAdaptation(bTitle, w.name)) {
+        const key = `${b.id}_${w.name}_${w.year}`;
+        if (!seenScreenKeys.has(key)) {
+          seenScreenKeys.add(key);
+          const isHighRated = (w.rating !== null && w.rating >= 4.0) || Boolean(w.review);
+          const link: AdaptationLink = {
+            id: `bridge-wt-${b.id}-${w.id || w.name.replace(/\s+/g, '-')}`,
+            bookId: b.id,
+            bookTitle: bTitle,
+            bookAuthor: b.author,
+            bookShelf: b.exclusiveShelf,
+            bookCoverUrl: enrichmentCache?.[b.id]?.coverUrl || null,
+            bookRating: b.myRating,
+            filmTitle: w.name,
+            filmYear: w.year,
+            filmUri: w.uri,
+            filmRating: w.rating,
+            filmRewatch: w.rewatch,
+            filmReview: w.review,
+            relation: 'watched',
+            direction: 'screen-to-codex',
+            matchType: alias ? 'alias' : 'direct',
+            rationale: alias
+              ? alias.note
+              : w.review
+              ? `You rated this adaptation ${w.rating ? w.rating + '★' : 'high'} with personal diary notes.`
+              : `Rated ${w.rating ? w.rating + '★' : 'acclaimed'} on Letterboxd. Source volume shelved as "${b.exclusiveShelf}".`,
+          };
+
+          if (isHighRated) {
+            fromScreenToNightstand.push(link);
+          }
+          allBridges.push(link);
+        }
+      }
+    }
+  }
+
+  // Sort watchlist bridges: completed books first, then alphabetically
+  queuedOnWatchlist.sort((a, b) => {
+    if (a.bookShelf === 'read' && b.bookShelf !== 'read') return -1;
+    if (b.bookShelf === 'read' && a.bookShelf !== 'read') return 1;
+    return a.filmTitle.localeCompare(b.filmTitle);
+  });
+
+  // Sort screen-to-nightstand bridges: highest film rating first, then reviews first
+  fromScreenToNightstand.sort((a, b) => {
+    if (a.filmReview && !b.filmReview) return -1;
+    if (!a.filmReview && b.filmReview) return 1;
+    const rA = a.filmRating || 0;
+    const rB = b.filmRating || 0;
+    return rB - rA;
+  });
+
+  return {
+    totalBridgesCount: allBridges.length,
+    watchedAdaptationsCount: allBridges.filter((b) => b.relation === 'watched').length,
+    watchlistAdaptationsCount: queuedOnWatchlist.length,
+    queuedOnWatchlist,
+    fromScreenToNightstand,
+    allBridges,
+  };
+}
+
+/**
+ * Finds the best matching Letterboxd film watch for a given book (for Book Dossier Drawer).
+ */
+export function findFilmAdaptationForBook(
+  book?: Book | null,
+  userState?: UserLocalState | null
+): LetterboxdFilmWatch | null {
+  if (!book || !userState?.letterboxdData?.watches) return null;
+  const watches = userState.letterboxdData.watches;
+  const bTitle = book.cleanTitle || book.title;
+
+  const matches: LetterboxdFilmWatch[] = [];
+  for (const w of watches) {
+    const alias = ADAPTATION_ALIASES.find(
+      (a) => bTitle.toLowerCase().includes(a.bookMatch) && w.name.toLowerCase().includes(a.filmMatch)
+    );
+    if (alias || titlesMatchAdaptation(bTitle, w.name)) {
+      matches.push(w);
+    }
+  }
+
+  if (matches.length === 0) return null;
+
+  // Prefer match with review, then highest rating, then latest year
+  matches.sort((a, b) => {
+    if (a.review && !b.review) return -1;
+    if (!a.review && b.review) return 1;
+    const rA = a.rating || 0;
+    const rB = b.rating || 0;
+    if (rB !== rA) return rB - rA;
+    return (b.year || 0) - (a.year || 0);
+  });
+
+  return matches[0];
+}
+
+/**
+ * Computes adaptation forensics comparing book ratings vs film ratings
+ * and monthly narrative diet rhythm (pages traversed vs films watched).
+ */
+export function computeAdaptationForensics(
+  bundle?: LibraryBundle | null,
+  userState?: UserLocalState | null,
+  enrichmentCache?: EnrichmentCacheMap | null
+): AdaptationForensicsMetrics {
+  const books = bundle?.books || [];
+  const watches = userState?.letterboxdData?.watches || [];
+  const bridge = computeAdaptationBridge(bundle, userState, enrichmentCache);
+
+  // 1. Adaptation Divergence Leaderboard
+  // Cross-reference watched links from adaptation bridge
+  const watchedBridges = bridge.allBridges.filter((b) => b.relation === 'watched');
+  const seenPairKeys = new Set<string>();
+  const divergenceItems: AdaptationDivergenceItem[] = [];
+
+  for (const link of watchedBridges) {
+    const pairKey = `${link.bookId}_${link.filmTitle}_${link.filmYear}`;
+    if (seenPairKeys.has(pairKey)) continue;
+    seenPairKeys.add(pairKey);
+
+    const bRating = link.bookRating ?? null;
+    const fRating = link.filmRating ?? null;
+
+    let delta: number | null = null;
+    let verdict: 'favors-book' | 'favors-film' | 'parity' | 'unrated' = 'unrated';
+
+    if (bRating !== null && fRating !== null) {
+      delta = Number((bRating - fRating).toFixed(1));
+      if (delta > 0) verdict = 'favors-book';
+      else if (delta < 0) verdict = 'favors-film';
+      else verdict = 'parity';
+    }
+
+    divergenceItems.push({
+      id: `div-${link.id}`,
+      bookId: link.bookId,
+      bookTitle: link.bookTitle,
+      bookAuthor: link.bookAuthor,
+      bookRating: bRating,
+      bookCoverUrl: link.bookCoverUrl,
+      filmTitle: link.filmTitle,
+      filmYear: link.filmYear,
+      filmRating: fRating,
+      filmUri: link.filmUri,
+      filmReview: link.filmReview,
+      delta,
+      verdict,
+    });
+  }
+
+  // Sort divergence items: pairs with both ratings first (highest absolute delta), then reviewed, then alphabetical
+  divergenceItems.sort((a, b) => {
+    const hasBothA = a.delta !== null ? 1 : 0;
+    const hasBothB = b.delta !== null ? 1 : 0;
+    if (hasBothA !== hasBothB) return hasBothB - hasBothA;
+
+    if (a.delta !== null && b.delta !== null) {
+      const absA = Math.abs(a.delta);
+      const absB = Math.abs(b.delta);
+      if (absA !== absB) return absB - absA;
+    }
+
+    if (a.filmReview && !b.filmReview) return -1;
+    if (!a.filmReview && b.filmReview) return 1;
+
+    return a.bookTitle.localeCompare(b.bookTitle);
+  });
+
+  const ratedPairs = divergenceItems.filter((d) => d.delta !== null);
+  const ratedPairsCount = ratedPairs.length;
+  const averageDelta =
+    ratedPairsCount > 0
+      ? Number((ratedPairs.reduce((sum, d) => sum + (d.delta || 0), 0) / ratedPairsCount).toFixed(2))
+      : null;
+
+  const favorsBookCount = divergenceItems.filter((d) => d.verdict === 'favors-book').length;
+  const favorsFilmCount = divergenceItems.filter((d) => d.verdict === 'favors-film').length;
+  const parityCount = divergenceItems.filter((d) => d.verdict === 'parity').length;
+
+  // 2. The Narrative Diet Timeline (Pages Traversed vs. Films Watched across 2024–2026)
+  // Aggregate pages and books by month
+  const monthlyPages: Record<string, number> = {};
+  const monthlyBooks: Record<string, number> = {};
+  for (const b of books) {
+    if (b.dateRead && typeof b.dateRead === 'string' && /^\d{4}-\d{2}/.test(b.dateRead)) {
+      const ym = b.dateRead.slice(0, 7);
+      monthlyPages[ym] = (monthlyPages[ym] || 0) + (b.pageCount || 300);
+      monthlyBooks[ym] = (monthlyBooks[ym] || 0) + 1;
+    }
+  }
+
+  // Aggregate films by month
+  const monthlyFilms: Record<string, number> = {};
+  for (const w of watches) {
+    if (w.date && typeof w.date === 'string' && /^\d{4}-\d{2}/.test(w.date)) {
+      const ym = w.date.slice(0, 7);
+      monthlyFilms[ym] = (monthlyFilms[ym] || 0) + 1;
+    }
+  }
+
+  // Generate continuous timeline from 2024-01 through 2026-12
+  const dietTimeline: NarrativeDietMonth[] = [];
+  const MONTH_NAMES = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+
+  let maxMonthlyPages = 0;
+  let maxMonthlyFilms = 0;
+  let totalDietPages = 0;
+  let totalDietFilms = 0;
+
+  for (let year = 2024; year <= 2026; year++) {
+    for (let month = 1; month <= 12; month++) {
+      const ym = `${year}-${String(month).padStart(2, '0')}`;
+      const pagesRead = monthlyPages[ym] || 0;
+      const booksRead = monthlyBooks[ym] || 0;
+      const filmsWatched = monthlyFilms[ym] || 0;
+
+      const isCinemaSurge = filmsWatched >= 4 && pagesRead < 350;
+
+      maxMonthlyPages = Math.max(maxMonthlyPages, pagesRead);
+      maxMonthlyFilms = Math.max(maxMonthlyFilms, filmsWatched);
+      totalDietPages += pagesRead;
+      totalDietFilms += filmsWatched;
+
+      dietTimeline.push({
+        yearMonth: ym,
+        label: `${MONTH_NAMES[month - 1]} '${String(year).slice(2)}`,
+        year,
+        month,
+        pagesRead,
+        booksRead,
+        filmsWatched,
+        isCinemaSurge,
+      });
+    }
+  }
+
+  return {
+    divergenceItems,
+    averageDelta,
+    ratedPairsCount,
+    favorsBookCount,
+    favorsFilmCount,
+    parityCount,
+    dietTimeline,
+    maxMonthlyPages,
+    maxMonthlyFilms,
+    totalDietPages,
+    totalDietFilms,
+  };
+}
+
+// ==========================================
+// SPRINT MANDATE #4: THE WORLD SHELF, PREDICTIVE TARGETS & ANNUAL REVIEWS
+// ==========================================
+
+export function computeWorldShelf(
+  bundle?: LibraryBundle | null,
+  userState?: UserLocalState | null,
+  enrichmentCache?: EnrichmentCacheMap | null
+): WorldShelfMetrics {
+  const books = bundle?.books || [];
+
+  const HUB_DEFINITIONS: Array<{
+    id: string;
+    name: string;
+    subtitle: string;
+    languages: LanguageCode[];
+  }> = [
+    {
+      id: 'anatolian',
+      name: 'Anatolian & Middle Eastern Modernism',
+      subtitle: 'Turkish & regional prose, social realism, Anatolian myth & letters',
+      languages: ['TR', 'KY'],
+    },
+    {
+      id: 'continental-europe',
+      name: 'Continental European Existentialism & Speculative',
+      subtitle: 'French, German, Polish, Russian, Spanish, and Italian literary movements',
+      languages: ['FR', 'DE', 'PL', 'RU', 'IT', 'ES'],
+    },
+    {
+      id: 'east-asian',
+      name: 'East Asian Speculative & Manga',
+      subtitle: 'Japanese cyber-fiction, existential modernism, Chinese hard speculative',
+      languages: ['JA', 'ZH'],
+    },
+    {
+      id: 'anglo-american',
+      name: 'Anglo-American Literature & Hard Sci-Fi',
+      subtitle: 'Speculative worldbuilding, British modernism, transatlantic drama',
+      languages: ['EN'],
+    },
+    {
+      id: 'antiquity-nordic',
+      name: 'Classical Antiquity & Nordic Heritage',
+      subtitle: 'Ancient Greek philosophy, classical drama, Scandinavian existential fiction',
+      languages: ['GRC', 'NO', 'IS'],
+    },
+    {
+      id: 'other',
+      name: 'Other Global Spheres',
+      subtitle: 'Portuguese, global diasporas, and unclassified literary traditions',
+      languages: ['PT', 'OTHER'],
+    },
+  ];
+
+  const classifiedBooks = books.map((b) => {
+    const profile = classifyBookLanguageAndFormat(
+      b,
+      userState?.bookOverrides?.[b.id],
+      enrichmentCache?.[b.id]
+    );
+    return {
+      book: b,
+      profile,
+    };
+  });
+
+  const hubs: WorldShelfHub[] = HUB_DEFINITIONS.map((def) => {
+    const hubBooks = classifiedBooks.filter((item) =>
+      def.languages.includes(item.profile.originalLanguage)
+    );
+
+    let totalPages = 0;
+    let ratingSum = 0;
+    let ratedCount = 0;
+    const flowCounts = new Map<string, number>();
+
+    for (const item of hubBooks) {
+      const b = item.book;
+      totalPages += b.pageCount || 0;
+      if (b.myRating && b.myRating > 0) {
+        ratingSum += b.myRating;
+        ratedCount++;
+      }
+      const flow = item.profile.translationFlow;
+      flowCounts.set(flow, (flowCounts.get(flow) || 0) + 1);
+    }
+
+    const averageRating = ratedCount > 0 ? Math.round((ratingSum / ratedCount) * 10) / 10 : null;
+
+    // Pick top 3 signature works (5★ first, then 4★, then highest pages)
+    const sortedWorks = [...hubBooks].sort((a, b) => {
+      const rA = a.book.myRating || 0;
+      const rB = b.book.myRating || 0;
+      if (rB !== rA) return rB - rA;
+      return (b.book.pageCount || 0) - (a.book.pageCount || 0);
+    });
+
+    const signatureWorks = sortedWorks.slice(0, 3).map((item) => ({
+      id: item.book.id,
+      title: item.book.cleanTitle || item.book.title,
+      author: item.book.author,
+      myRating: item.book.myRating,
+      coverUrl: enrichmentCache?.[item.book.id]?.coverUrl || null,
+    }));
+
+    const translationFlows = Array.from(flowCounts.entries())
+      .map(([flow, count]) => ({ flow, count }))
+      .sort((a, b) => b.count - a.count);
+
+    return {
+      id: def.id,
+      name: def.name,
+      subtitle: def.subtitle,
+      languages: def.languages,
+      volumeCount: hubBooks.length,
+      totalPages,
+      averageRating,
+      signatureWorks,
+      translationFlows,
+    };
+  });
+
+  const hubsWithBooks = hubs.filter((h) => h.volumeCount > 0);
+  const topHub = [...hubs].sort((a, b) => b.volumeCount - a.volumeCount)[0] || null;
+
+  return {
+    hubs,
+    totalVolumes: books.length,
+    totalHubsWithBooks: hubsWithBooks.length,
+    topHub,
+  };
+}
+
+export function computePredictiveTargets(
+  bundle?: LibraryBundle | null,
+  userState?: UserLocalState | null,
+  enrichmentCache?: EnrichmentCacheMap | null
+): PredictiveTargetMetrics {
+  const books = bundle?.books || [];
+  const now = new Date();
+  const currentYear = now.getFullYear();
+
+  // Find user's reading goal for current year or fallback
+  const activeGoal = bundle?.readingGoals?.find(
+    (g) =>
+      (g.createDate && g.createDate.startsWith(currentYear.toString())) ||
+      (g.lastModifiedDate && g.lastModifiedDate.startsWith(currentYear.toString()))
+  ) || bundle?.readingGoals?.[0];
+  const goalTarget = activeGoal?.goalValue || 20;
+
+  // Completed books in current year
+  const completedInYear = books.filter((b) => {
+    if (b.exclusiveShelf !== 'read') return false;
+    const dr = b.dateRead || '';
+    if (dr.startsWith(currentYear.toString())) return true;
+    if (!dr && b.dateAdded && b.dateAdded.startsWith(currentYear.toString())) return true;
+    return false;
+  });
+
+  const completedCount = completedInYear.length;
+  const percentComplete = goalTarget > 0 ? Math.min(100, Math.round((completedCount / goalTarget) * 100)) : 100;
+
+  // Day of year calculation
+  const startOfYear = new Date(currentYear, 0, 1);
+  const diffDays = Math.max(1, Math.floor((now.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24)));
+  const daysInYear = ((currentYear % 4 === 0 && currentYear % 100 !== 0) || currentYear % 400 === 0) ? 366 : 365;
+
+  // 30-day and 90-day cadence
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+
+  let books30 = 0;
+  let pages30 = 0;
+  let books90 = 0;
+  let pages90 = 0;
+
+  for (const b of completedInYear) {
+    if (!b.dateRead) continue;
+    const d = new Date(b.dateRead);
+    if (!isNaN(d.getTime())) {
+      if (d >= thirtyDaysAgo) {
+        books30++;
+        pages30 += b.pageCount || 0;
+      }
+      if (d >= ninetyDaysAgo) {
+        books90++;
+        pages90 += b.pageCount || 0;
+      }
+    }
+  }
+
+  // If sparse dateRead data, extrapolate from completedInYear
+  if (books30 === 0 && completedCount > 0) {
+    books30 = Math.max(1, Math.round(completedCount / Math.max(1, diffDays / 30)));
+    const avgPages = completedInYear.reduce((acc, b) => acc + (b.pageCount || 280), 0) / completedCount;
+    pages30 = Math.round(books30 * avgPages);
+  }
+  if (books90 === 0 && completedCount > 0) {
+    books90 = Math.max(1, Math.round(completedCount / Math.max(1, diffDays / 90)));
+    const avgPages = completedInYear.reduce((acc, b) => acc + (b.pageCount || 280), 0) / completedCount;
+    pages90 = Math.round(books90 * avgPages);
+  }
+
+  const pagesPerDay30 = Math.round((pages30 / 30) * 10) / 10;
+  const pagesPerDay90 = Math.round((pages90 / 90) * 10) / 10;
+
+  // Pace projection
+  const booksPerDayRate = completedCount / diffDays;
+  const projectedYearEndFinish = Math.max(completedCount, Math.round(booksPerDayRate * daysInYear));
+
+  const expectedProgressAtToday = (goalTarget * diffDays) / daysInYear;
+  const paceDeltaBooks = Math.round((completedCount - expectedProgressAtToday) * 10) / 10;
+  const isAheadOfPace = completedCount >= expectedProgressAtToday || completedCount >= goalTarget;
+
+  // Projected date of achieving target
+  let projectedTargetAchievedDate: string | null = null;
+  if (completedCount >= goalTarget) {
+    projectedTargetAchievedDate = 'Target Achieved!';
+  } else if (booksPerDayRate > 0) {
+    const booksRemaining = goalTarget - completedCount;
+    const daysRemaining = Math.ceil(booksRemaining / booksPerDayRate);
+    const targetDate = new Date(now.getTime() + daysRemaining * 24 * 60 * 60 * 1000);
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    projectedTargetAchievedDate = `${months[targetDate.getMonth()]} ${targetDate.getDate()}, ${targetDate.getFullYear()}`;
+  }
+
+  // Required pace
+  const daysLeftInYear = Math.max(1, daysInYear - diffDays);
+  const monthsLeftInYear = Math.max(0.5, daysLeftInYear / 30.4);
+  const booksRemaining = Math.max(0, goalTarget - completedCount);
+  const requiredPacePerMonth = Math.round((booksRemaining / monthsLeftInYear) * 10) / 10;
+  const avgBookPages = completedInYear.length > 0
+    ? Math.round(completedInYear.reduce((acc, b) => acc + (b.pageCount || 280), 0) / completedInYear.length)
+    : 320;
+  const requiredPacePagesPerDay = Math.round((booksRemaining * avgBookPages) / daysLeftInYear);
+
+  // Oracle Sprint Suggestions: short TBR books (< 260 pp)
+  const tbrBooks = books.filter(
+    (b) => b.exclusiveShelf === 'to-read' && b.pageCount && b.pageCount > 0 && b.pageCount <= 260
+  );
+
+  const sprintSuggestions = tbrBooks
+    .map((b) => {
+      const ratingScore = (b.averageRating || 3.8) * 15;
+      const brevityBonus = Math.max(0, (260 - (b.pageCount || 200)) * 0.15);
+      const oracleScore = Math.min(99, Math.round(ratingScore + brevityBonus));
+      return {
+        id: b.id,
+        title: b.cleanTitle || b.title,
+        author: b.author,
+        pageCount: b.pageCount || 200,
+        oracleScore,
+        coverUrl: enrichmentCache?.[b.id]?.coverUrl || null,
+      };
+    })
+    .sort((a, b) => b.oracleScore - a.oracleScore)
+    .slice(0, 3);
+
+  return {
+    targetYear: currentYear,
+    goalTarget,
+    completedCount,
+    percentComplete,
+    recentCadence30Days: {
+      booksRead: books30,
+      pagesRead: pages30,
+      pagesPerDay: pagesPerDay30,
+    },
+    recentCadence90Days: {
+      booksRead: books90,
+      pagesRead: pages90,
+      pagesPerDay: pagesPerDay90,
+    },
+    projectedYearEndFinish,
+    projectedTargetAchievedDate,
+    isAheadOfPace,
+    paceDeltaBooks,
+    requiredPacePerMonth,
+    requiredPacePagesPerDay,
+    sprintSuggestions,
+  };
+}
+
+export function computeAnnualReadingReviews(
+  bundle?: LibraryBundle | null,
+  userState?: UserLocalState | null,
+  enrichmentCache?: EnrichmentCacheMap | null
+): AnnualReadingReview[] {
+  const books = bundle?.books || [];
+  const watches = userState?.letterboxdData?.watches || [];
+
+  const years = [2026, 2025, 2024];
+
+  return years.map((year) => {
+    const yearStr = year.toString();
+
+    const yearBooks = books.filter((b) => {
+      if (b.exclusiveShelf !== 'read') return false;
+      return (
+        (b.dateRead && b.dateRead.startsWith(yearStr)) ||
+        (!b.dateRead && b.dateAdded && b.dateAdded.startsWith(yearStr))
+      );
+    });
+
+    const yearFilms = watches.filter((w) => w.date && w.date.startsWith(yearStr));
+
+    let pagesRead = 0;
+    let ratingSum = 0;
+    let ratedCount = 0;
+
+    for (const b of yearBooks) {
+      pagesRead += b.pageCount || 0;
+      if (b.myRating && b.myRating > 0) {
+        ratingSum += b.myRating;
+        ratedCount++;
+      }
+    }
+
+    const averageRating = ratedCount > 0 ? Math.round((ratingSum / ratedCount) * 10) / 10 : null;
+
+    // 5★ canon books
+    const canon5StarBooks = yearBooks
+      .filter((b) => b.myRating === 5)
+      .map((b) => ({
+        id: b.id,
+        title: b.cleanTitle || b.title,
+        author: b.author,
+        myRating: 5,
+        coverUrl: enrichmentCache?.[b.id]?.coverUrl || null,
+      }));
+
+    // Fastest sprint (shortest read with pages > 0) vs Deepest savor (highest page count)
+    const booksWithPages = yearBooks.filter((b) => b.pageCount && b.pageCount > 0);
+    const sortedByPages = [...booksWithPages].sort((a, b) => (a.pageCount || 0) - (b.pageCount || 0));
+
+    const fastestSprintBook = sortedByPages.length > 0
+      ? {
+          id: sortedByPages[0].id,
+          title: sortedByPages[0].cleanTitle || sortedByPages[0].title,
+          author: sortedByPages[0].author,
+          pageCount: sortedByPages[0].pageCount || 0,
+        }
+      : null;
+
+    const deepestSavorBook = sortedByPages.length > 0
+      ? {
+          id: sortedByPages[sortedByPages.length - 1].id,
+          title: sortedByPages[sortedByPages.length - 1].cleanTitle || sortedByPages[sortedByPages.length - 1].title,
+          author: sortedByPages[sortedByPages.length - 1].author,
+          pageCount: sortedByPages[sortedByPages.length - 1].pageCount || 0,
+        }
+      : null;
+
+    const medianDaysPerBook = yearBooks.length > 0
+      ? Math.max(5, Math.round(365 / Math.max(1, yearBooks.length)))
+      : null;
+
+    return {
+      year,
+      volumesRead: yearBooks.length,
+      pagesRead,
+      averageRating,
+      medianDaysPerBook,
+      canon5StarBooks,
+      fastestSprintBook,
+      deepestSavorBook,
+      narrativeDiet: {
+        booksRead: yearBooks.length,
+        filmsWatched: yearFilms.length,
+        pagesRead,
+      },
+    };
+  });
 }

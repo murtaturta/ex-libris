@@ -11,6 +11,8 @@ import {
 } from '../classifiers/languageAndFormat';
 import { formatPublicationYear, formatReviewHtml } from '../formatters';
 import { getGoodreadsBookUrl } from '../links/goodreadsLinks';
+import { findFilmAdaptationForBook } from '../analytics/engine';
+import { formatStarRating } from '../parsers/letterboxdParser';
 
 /**
  * Sanitizes a book title for use as a filesystem filename.
@@ -89,13 +91,11 @@ export function bookHasAnnotations(book: Book, userState?: UserLocalState): bool
  */
 /**
  * Optional Obsidian vault link targets. When supplied, the note emits `[[wikilinks]]`
- * to the Author / Series hub notes (in both YAML properties and the body).
+ * to the Author hub note (in both YAML properties and the body).
  */
 export interface VaultLinkTargets {
   /** Note name (filename without `.md`) of the author hub note. */
   authorNote: string;
-  /** Note name of the series hub note, or null when the book is standalone. */
-  seriesNote?: string | null;
 }
 
 /** Builds an Obsidian wikilink, adding a `|display` alias only when needed. */
@@ -115,21 +115,19 @@ export function generateBookMarkdownNote(
     enrichment
   );
 
-  const seriesString = book.seriesName
-    ? `${book.seriesName}${book.seriesNumber ? ` #${book.seriesNumber}` : ''}`
+  const seriesNameClean = book.seriesName ? book.seriesName.trim() : null;
+  const seriesString = seriesNameClean
+    ? `${seriesNameClean}${book.seriesNumber ? ` #${book.seriesNumber}` : ''}`
     : null;
 
   const authorLink = vaultLinks ? wikilink(vaultLinks.authorNote, book.author || 'Unknown') : null;
-  const seriesLink =
-    vaultLinks?.seriesNote && book.seriesName
-      ? wikilink(vaultLinks.seriesNote, book.seriesName.trim())
-      : null;
   const seriesNumberNum = book.seriesNumber ? parseFloat(book.seriesNumber) : NaN;
 
   const goodreadsInfo = getGoodreadsBookUrl(book);
   const communityRating = book.averageRating ?? enrichment?.communityRating ?? null;
   const pubYear = book.originalPublicationYear || book.yearPublished || null;
   const override = userState?.bookOverrides?.[book.id];
+  const filmAdaptation = findFilmAdaptationForBook(book, userState);
 
   // ==========================================
   // 1. YAML Frontmatter (Obsidian / PKM standard)
@@ -141,9 +139,7 @@ export function generateBookMarkdownNote(
     book.additionalAuthors && book.additionalAuthors.length > 0
       ? `additional_authors:\n${book.additionalAuthors.map((a) => `  - ${yamlEscape(a)}`).join('\n')}`
       : '',
-    seriesLink
-      ? `series: ${yamlEscape(seriesLink)}`
-      : `series: ${seriesString ? yamlEscape(seriesString) : 'null'}`,
+    `series: ${seriesNameClean ? yamlEscape(seriesNameClean) : 'null'}`,
     `series_number: ${Number.isFinite(seriesNumberNum) ? seriesNumberNum : 'null'}`,
     profile.translators.length > 0
       ? `translators:\n${profile.translators.map((t) => `  - ${yamlEscape(t)}`).join('\n')}`
@@ -164,6 +160,16 @@ export function generateBookMarkdownNote(
     `date_added: ${book.dateAdded ? yamlEscape(book.dateAdded) : 'null'}`,
     `read_count: ${book.readCount ?? 0}`,
     `goodreads_url: ${yamlEscape(goodreadsInfo.url)}`,
+    filmAdaptation ? `film_adaptation: ${yamlEscape(filmAdaptation.name)}` : '',
+    filmAdaptation ? `film_year: ${filmAdaptation.year}` : '',
+    filmAdaptation
+      ? `film_rating: ${filmAdaptation.rating !== null && filmAdaptation.rating !== undefined ? filmAdaptation.rating : 'null'}`
+      : '',
+    filmAdaptation ? `film_letterboxd_url: ${yamlEscape(filmAdaptation.uri)}` : '',
+    filmAdaptation
+      ? `film_watched_date: ${filmAdaptation.date ? yamlEscape(filmAdaptation.date) : 'null'}`
+      : '',
+    filmAdaptation ? `film_rewatch: ${filmAdaptation.rewatch ? 'true' : 'false'}` : '',
     '---',
   ].filter(Boolean);
 
@@ -174,9 +180,7 @@ export function generateBookMarkdownNote(
 
   // Header & Title
   bodyParts.push(`# ${book.cleanTitle || book.title || 'Untitled'}`);
-  if (seriesLink) {
-    bodyParts.push(`*${seriesLink}${book.seriesNumber ? ` #${book.seriesNumber}` : ''}*`);
-  } else if (seriesString) {
+  if (seriesString) {
     bodyParts.push(`*${seriesString}*`);
   }
 
@@ -195,6 +199,31 @@ export function generateBookMarkdownNote(
   // Enriched Synopsis
   if (enrichment?.synopsis && enrichment.synopsis.trim().length > 0) {
     bodyParts.push(`## Synopsis\n\n${enrichment.synopsis.trim()}`);
+  }
+
+  // Screen Adaptation · Letterboxd
+  if (filmAdaptation) {
+    const starStr = formatStarRating(filmAdaptation.rating);
+    const metaParts = [
+      `**Film:** [${filmAdaptation.name} (${filmAdaptation.year})](${filmAdaptation.uri})`,
+      filmAdaptation.rating !== null && filmAdaptation.rating !== undefined
+        ? `**Rating:** ${starStr} (${filmAdaptation.rating}/5)`
+        : null,
+      filmAdaptation.date ? `**Watched:** ${filmAdaptation.date}` : null,
+      filmAdaptation.rewatch ? '**Rewatch**' : null,
+    ].filter(Boolean);
+
+    const lines = [
+      '## Screen Adaptation · Letterboxd',
+      '',
+      `> ${metaParts.join(' · ')}`,
+    ];
+
+    if (filmAdaptation.review && filmAdaptation.review.trim().length > 0) {
+      lines.push('', `> **Diary Note:** *“${filmAdaptation.review.trim()}”*`);
+    }
+
+    bodyParts.push(lines.join('\n'));
   }
 
   // My Review

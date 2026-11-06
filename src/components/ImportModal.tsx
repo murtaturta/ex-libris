@@ -29,7 +29,11 @@ import {
   importLetterboxdZip,
   mergeSingleLetterboxdCsv,
 } from '../lib/parsers/letterboxdParser';
-import type { LetterboxdArchiveData } from '../types/library';
+import {
+  isKeepTheRhythmJson,
+  parseKeepTheRhythmJson,
+} from '../lib/parsers/writingTelemetryParser';
+import type { LetterboxdArchiveData, WritingTelemetryData } from '../types/library';
 import {
   UploadCloud,
   CheckCircle2,
@@ -56,6 +60,7 @@ export interface ImportModalProps {
   onBundleUpdated: (newBundle: LibraryBundle) => void;
   onClippingsImported?: (clippings: KindleClipping[]) => void;
   onLetterboxdImported?: (data: LetterboxdArchiveData) => void;
+  onWritingTelemetryImported?: (data: WritingTelemetryData) => void;
   userState?: UserLocalState;
   enrichmentCache?: EnrichmentCacheMap;
   onPublicProfileLoaded?: (payload: {
@@ -73,6 +78,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
   onBundleUpdated,
   onClippingsImported,
   onLetterboxdImported,
+  onWritingTelemetryImported,
   userState,
   enrichmentCache,
   onPublicProfileLoaded,
@@ -209,9 +215,26 @@ export const ImportModal: React.FC<ImportModalProps> = ({
             `Non-destructively synced ${incomingBooks.length} CSV records from ${file.name}. Library now catalogs ${updatedBundle.books.length} volumes.`
           );
         }
+      }
+      // 4. JSON: Obsidian Keep the Rhythm data.json or Writing Telemetry (.json)
+      else if (fileName.endsWith('.json')) {
+        const text = await file.text();
+        if (isKeepTheRhythmJson(text)) {
+          setStatusMessage(`Parsing Obsidian Keep the Rhythm writing telemetry from ${file.name}...`);
+          const writingData = parseKeepTheRhythmJson(text, userState?.writingTelemetry);
+          onWritingTelemetryImported?.(writingData);
+          setStatus('success');
+          setStatusMessage(
+            `Synced Obsidian Keep the Rhythm telemetry from ${file.name}: ${writingData.totalWords.toLocaleString()} words drafted across ${writingData.activeDaysCount} active days (${writingData.projects.length} projects). Scriptorium matrix updated!`
+          );
+        } else {
+          throw new Error(
+            `${file.name} does not match Obsidian Keep the Rhythm format. Expected a plugin data.json with dailyActivity or vault drafting telemetry.`
+          );
+        }
       } else {
         throw new Error(
-          'Unsupported format. Please select a Goodreads .csv, Letterboxd .csv/.zip, full export .zip, Kindle Notebook .html, or My Clippings.txt file.'
+          'Unsupported format. Please select a Goodreads .csv, Letterboxd .csv/.zip, Keep the Rhythm data.json, full export .zip, Kindle Notebook .html, or My Clippings.txt file.'
         );
       }
     } catch (err: any) {
@@ -505,13 +528,13 @@ export const ImportModal: React.FC<ImportModalProps> = ({
                     type="button"
                     className="mt-3 px-4 py-1.5 rounded-md bg-[var(--bg-surface)] border border-[var(--border-ledger)] text-xs font-semibold text-[var(--text-ink)] hover:border-[var(--accent-primary)] transition-colors shadow-2xs cursor-pointer"
                   >
-                    Browse Files (.csv, .zip, .html, .txt)
+                    Browse Files (.csv, .zip, .html, .txt, .json)
                   </button>
 
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept=".csv,.zip,.txt,.html,.htm"
+                    accept=".csv,.zip,.txt,.html,.htm,.json"
                     onChange={handleFileChange}
                     className="hidden"
                   />

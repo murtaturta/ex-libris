@@ -6,8 +6,13 @@ import {
   isLetterboxdCsv,
   mergeSingleLetterboxdCsv,
 } from '../src/lib/parsers/letterboxdParser';
-import { computeKindleReadingHeatmap } from '../src/lib/analytics/engine';
-import type { UserLocalState, Book } from '../src/types/library';
+import {
+  computeKindleReadingHeatmap,
+  titlesMatchAdaptation,
+  computeAdaptationBridge,
+  findFilmAdaptationForBook,
+} from '../src/lib/analytics/engine';
+import type { UserLocalState, Book, LibraryBundle } from '../src/types/library';
 
 describe('Letterboxd Cinema Intake & Narrative Correlation Matrix', () => {
   describe('formatStarRating', () => {
@@ -228,6 +233,342 @@ describe('Letterboxd Cinema Intake & Narrative Correlation Matrix', () => {
       expect(foundDay.wordsWrittenCount).toBe(1200);
       expect(foundDay.filmsWatchedCount).toBe(1);
       expect(foundDay.watchedFilms[0].name).toBe('Blade Runner 2049');
+    });
+  });
+
+  describe('The Adaptation Oracle (Codex ⇄ Screen Bridge)', () => {
+    describe('titlesMatchAdaptation', () => {
+      it('matches identical titles and normalizes case and articles', () => {
+        expect(titlesMatchAdaptation('Solaris', 'Solaris')).toBe(true);
+        expect(titlesMatchAdaptation('The Martian', 'Martian')).toBe(true);
+        expect(titlesMatchAdaptation('A Scanner Darkly', 'Scanner Darkly')).toBe(true);
+        expect(titlesMatchAdaptation('   Dune   ', 'DUNE')).toBe(true);
+      });
+
+      it('matches subtitle and sequel extensions with boundary delimiters', () => {
+        expect(titlesMatchAdaptation('Dune', 'Dune: Part Two')).toBe(true);
+        expect(titlesMatchAdaptation('Dune', 'Dune - Part One')).toBe(true);
+        expect(titlesMatchAdaptation('Dune', 'Dune – Part Two')).toBe(true);
+        expect(titlesMatchAdaptation('Mickey7', 'Mickey7: A Novel')).toBe(true);
+        expect(titlesMatchAdaptation('2001: A Space Odyssey', '2001: A Space Odyssey')).toBe(true);
+      });
+
+      it('prevents false-positive substring matches without delimiters', () => {
+        expect(titlesMatchAdaptation('Hunger', 'The Hunger Games')).toBe(false);
+        expect(titlesMatchAdaptation('Brave', 'Brave New World')).toBe(false);
+        expect(titlesMatchAdaptation('Mountain', 'The Mountain of Adventure')).toBe(false);
+        expect(titlesMatchAdaptation('', 'Arrival')).toBe(false);
+        expect(titlesMatchAdaptation('Solaris', '')).toBe(false);
+      });
+    });
+
+    describe('computeAdaptationBridge', () => {
+      const mockBundle = {
+        meta: { exportDate: '2026-11-04', totalBooks: 4, readCount: 3, toReadCount: 1 },
+        books: [
+          {
+            id: 'book-1',
+            title: 'Do Androids Dream of Electric Sheep?',
+            cleanTitle: 'Do Androids Dream of Electric Sheep?',
+            seriesName: null,
+            seriesNumber: null,
+            author: 'Philip K. Dick',
+            authorSort: 'Dick, Philip K.',
+            additionalAuthors: [],
+            isbn: null,
+            isbn13: null,
+            myRating: 5,
+            averageRating: 4.1,
+            publisher: null,
+            binding: null,
+            pageCount: 210,
+            yearPublished: 1968,
+            originalPublicationYear: 1968,
+            dateRead: '2026-01-10',
+            dateAdded: '2026-01-01',
+            exclusiveShelf: 'read',
+            bookshelves: ['sci-fi'],
+            bookshelvesWithPositions: null,
+            readCount: 1,
+            ownedCopies: 1,
+            myReview: null,
+            spoiler: false,
+            privateNotes: null,
+            shelving: null,
+            reviewDetails: null,
+            readingSessions: [],
+            kindleNotes: [],
+            recommendations: [],
+          },
+          {
+            id: 'book-2',
+            title: 'Stories of Your Life and Others',
+            cleanTitle: 'Stories of Your Life and Others',
+            seriesName: null,
+            seriesNumber: null,
+            author: 'Ted Chiang',
+            authorSort: 'Chiang, Ted',
+            additionalAuthors: [],
+            isbn: null,
+            isbn13: null,
+            myRating: 5,
+            averageRating: 4.5,
+            publisher: null,
+            binding: null,
+            pageCount: 280,
+            yearPublished: 2002,
+            originalPublicationYear: 2002,
+            dateRead: '2026-01-15',
+            dateAdded: '2026-01-01',
+            exclusiveShelf: 'read',
+            bookshelves: ['sci-fi'],
+            bookshelvesWithPositions: null,
+            readCount: 1,
+            ownedCopies: 1,
+            myReview: null,
+            spoiler: false,
+            privateNotes: null,
+            shelving: null,
+            reviewDetails: null,
+            readingSessions: [],
+            kindleNotes: [],
+            recommendations: [],
+          },
+          {
+            id: 'book-3',
+            title: 'The Martian',
+            cleanTitle: 'The Martian',
+            seriesName: null,
+            seriesNumber: null,
+            author: 'Andy Weir',
+            authorSort: 'Weir, Andy',
+            additionalAuthors: [],
+            isbn: null,
+            isbn13: null,
+            myRating: 4,
+            averageRating: 4.4,
+            publisher: null,
+            binding: null,
+            pageCount: 369,
+            yearPublished: 2014,
+            originalPublicationYear: 2014,
+            dateRead: null,
+            dateAdded: '2026-02-01',
+            exclusiveShelf: 'to-read',
+            bookshelves: ['sci-fi'],
+            bookshelvesWithPositions: null,
+            readCount: 0,
+            ownedCopies: 1,
+            myReview: null,
+            spoiler: false,
+            privateNotes: null,
+            shelving: null,
+            reviewDetails: null,
+            readingSessions: [],
+            kindleNotes: [],
+            recommendations: [],
+          },
+          {
+            id: 'book-4',
+            title: 'American Psycho',
+            cleanTitle: 'American Psycho',
+            seriesName: null,
+            seriesNumber: null,
+            author: 'Bret Easton Ellis',
+            authorSort: 'Ellis, Bret Easton',
+            additionalAuthors: [],
+            isbn: null,
+            isbn13: null,
+            myRating: 4,
+            averageRating: 3.8,
+            publisher: null,
+            binding: null,
+            pageCount: 399,
+            yearPublished: 1991,
+            originalPublicationYear: 1991,
+            dateRead: '2025-11-20',
+            dateAdded: '2025-11-01',
+            exclusiveShelf: 'read',
+            bookshelves: ['fiction'],
+            bookshelvesWithPositions: null,
+            readCount: 1,
+            ownedCopies: 1,
+            myReview: null,
+            spoiler: false,
+            privateNotes: null,
+            shelving: null,
+            reviewDetails: null,
+            readingSessions: [],
+            kindleNotes: [],
+            recommendations: [],
+          },
+        ],
+      } as unknown as LibraryBundle;
+
+      const mockUserState: UserLocalState = {
+        version: '1.0',
+        updatedAt: '2026-11-04T00:00:00Z',
+        showCovers: true,
+        bookOverrides: {},
+        kindleClippings: [],
+        letterboxdData: {
+          version: '1.0',
+          updatedAt: '2026-11-04T00:00:00Z',
+          totalWatchedCount: 2,
+          totalDiaryCount: 2,
+          totalReviewsCount: 2,
+          totalWatchlistCount: 2,
+          watches: [
+            {
+              id: 'watch-1',
+              name: 'The Martian',
+              year: 2015,
+              uri: 'https://boxd.it/7i4W',
+              rating: 4.5,
+              rewatch: true,
+              review: 'Yeah. Put some text over his face.',
+              date: '2026-02-10',
+              source: 'diary',
+            },
+            {
+              id: 'watch-2',
+              name: 'American Psycho',
+              year: 2000,
+              uri: 'https://boxd.it/2aEw',
+              rating: 4.0,
+              rewatch: false,
+              review: 'Jared Leto acı içinde geberiyor 😎👍',
+              date: '2025-12-05',
+              source: 'diary',
+            },
+          ],
+          ratingsMap: { 'The Martian': 4.5, 'American Psycho': 4.0 },
+          reviewsMap: {
+            'The Martian': 'Yeah. Put some text over his face.',
+            'American Psycho': 'Jared Leto acı içinde geberiyor 😎👍',
+          },
+          watchlist: [
+            {
+              name: 'Blade Runner',
+              year: 1982,
+              uri: 'https://boxd.it/29B0',
+              dateAdded: '2026-03-01',
+            },
+            {
+              name: 'Arrival',
+              year: 2016,
+              uri: 'https://boxd.it/bW3g',
+              dateAdded: '2026-03-05',
+            },
+          ],
+        },
+      };
+
+      it('cross-references watchlist adaptations and recognizes bibliographic aliases', () => {
+        const bridge = computeAdaptationBridge(mockBundle, mockUserState);
+
+        expect(bridge.watchlistAdaptationsCount).toBe(2);
+        expect(bridge.queuedOnWatchlist.some((l) => l.filmTitle === 'Blade Runner' && l.matchType === 'alias')).toBe(true);
+        expect(bridge.queuedOnWatchlist.some((l) => l.filmTitle === 'Arrival' && l.matchType === 'alias')).toBe(true);
+
+        const bladeRunnerLink = bridge.queuedOnWatchlist.find((l) => l.filmTitle === 'Blade Runner');
+        expect(bladeRunnerLink?.bookTitle).toBe('Do Androids Dream of Electric Sheep?');
+        expect(bladeRunnerLink?.direction).toBe('codex-to-screen');
+      });
+
+      it('extracts screen-to-nightstand recommendations with ratings and reviews', () => {
+        const bridge = computeAdaptationBridge(mockBundle, mockUserState);
+
+        expect(bridge.fromScreenToNightstand.length).toBe(2);
+        const martianBridge = bridge.fromScreenToNightstand.find((l) => l.bookTitle === 'The Martian');
+        expect(martianBridge).toBeDefined();
+        expect(martianBridge?.filmRating).toBe(4.5);
+        expect(martianBridge?.filmReview).toBe('Yeah. Put some text over his face.');
+        expect(martianBridge?.bookShelf).toBe('to-read');
+        expect(martianBridge?.direction).toBe('screen-to-codex');
+
+        const psychoBridge = bridge.fromScreenToNightstand.find((l) => l.bookTitle === 'American Psycho');
+        expect(psychoBridge?.filmReview).toContain('Jared Leto');
+      });
+    });
+
+    describe('findFilmAdaptationForBook', () => {
+      const mockUserState: UserLocalState = {
+        version: '1.0',
+        updatedAt: '2026-11-04T00:00:00Z',
+        showCovers: true,
+        bookOverrides: {},
+        kindleClippings: [],
+        letterboxdData: {
+          version: '1.0',
+          updatedAt: '2026-11-04T00:00:00Z',
+          totalWatchedCount: 2,
+          totalDiaryCount: 2,
+          totalReviewsCount: 1,
+          totalWatchlistCount: 0,
+          watches: [
+            {
+              id: 'w-1',
+              name: 'Arrival',
+              year: 2016,
+              uri: 'https://boxd.it/bW3g',
+              rating: 5.0,
+              rewatch: false,
+              review: 'Nonlinear temporal masterpiece.',
+              date: '2026-01-15',
+              source: 'diary',
+            },
+            {
+              id: 'w-2',
+              name: 'Solaris',
+              year: 1972,
+              uri: 'https://boxd.it/1u1Y',
+              rating: 4.5,
+              rewatch: false,
+              date: '2025-10-10',
+              source: 'watched',
+            },
+          ],
+          ratingsMap: {},
+          reviewsMap: {},
+          watchlist: [],
+        },
+      };
+
+      it('finds film adaptation for book via alias', () => {
+        const book: any = {
+          id: 'b-chiang',
+          title: 'Stories of Your Life and Others',
+          cleanTitle: 'Stories of Your Life and Others',
+        };
+        const match = findFilmAdaptationForBook(book, mockUserState);
+        expect(match).toBeDefined();
+        expect(match?.name).toBe('Arrival');
+        expect(match?.rating).toBe(5.0);
+        expect(match?.review).toBe('Nonlinear temporal masterpiece.');
+      });
+
+      it('finds film adaptation for book via direct title match', () => {
+        const book: any = {
+          id: 'b-lem',
+          title: 'Solaris',
+          cleanTitle: 'Solaris',
+        };
+        const match = findFilmAdaptationForBook(book, mockUserState);
+        expect(match).toBeDefined();
+        expect(match?.name).toBe('Solaris');
+        expect(match?.year).toBe(1972);
+      });
+
+      it('returns null when no adaptation exists in watched records', () => {
+        const book: any = {
+          id: 'b-none',
+          title: 'The Design of Everyday Things',
+          cleanTitle: 'The Design of Everyday Things',
+        };
+        const match = findFilmAdaptationForBook(book, mockUserState);
+        expect(match).toBeNull();
+      });
     });
   });
 });

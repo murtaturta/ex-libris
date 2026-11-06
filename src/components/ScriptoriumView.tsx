@@ -1,6 +1,13 @@
-import React, { useMemo } from 'react';
-import type { Book, EnrichmentCacheMap, LibraryBundle, UserLocalState } from '../types/library';
+import React, { useMemo, useState, useRef } from 'react';
+import type { Book, EnrichmentCacheMap, LibraryBundle, UserLocalState, WritingTelemetryData } from '../types/library';
 import { computeKindleReadingHeatmap } from '../lib/analytics/engine';
+import {
+  isKeepTheRhythmJson,
+  parseKeepTheRhythmJson,
+  exportTelemetryToFrontmatter,
+  exportTelemetryToCsv,
+  generateRepairedKeepTheRhythmJson,
+} from '../lib/parsers/writingTelemetryParser';
 import { KindleHeatmapSection } from './KindleHeatmapSection';
 import {
   Feather,
@@ -11,6 +18,14 @@ import {
   ExternalLink,
   FileText,
   BookmarkCheck,
+  UploadCloud,
+  Check,
+  Loader2,
+  Download,
+  FileSpreadsheet,
+  FileCode2,
+  Wrench,
+  Quote,
 } from 'lucide-react';
 
 export interface ScriptoriumViewProps {
@@ -19,6 +34,8 @@ export interface ScriptoriumViewProps {
   enrichmentCache: EnrichmentCacheMap;
   onSelectBook: (book: Book) => void;
   onSelectBookById: (bookId: string | null, fallbackTitle?: string) => void;
+  onWritingTelemetryImported?: (data: WritingTelemetryData) => void;
+  onOpenCommonplace?: () => void;
 }
 
 /**
@@ -32,8 +49,51 @@ export const ScriptoriumView: React.FC<ScriptoriumViewProps> = ({
   userState,
   onSelectBook,
   onSelectBookById,
+  onWritingTelemetryImported,
+  onOpenCommonplace,
 }) => {
   const books = bundle.books;
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [syncFeedback, setSyncFeedback] = useState<string | null>(null);
+  const [syncError, setSyncError] = useState<string | null>(null);
+
+  const handleDownloadFile = (content: string, filename: string, mimeType: string) => {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleSyncFile = async (file: File) => {
+    setSyncError(null);
+    try {
+      const text = await file.text();
+      if (!isKeepTheRhythmJson(text)) {
+        throw new Error('File does not match Keep the Rhythm data.json format.');
+      }
+      const parsed = parseKeepTheRhythmJson(text, userState?.writingTelemetry);
+      onWritingTelemetryImported?.(parsed);
+      setSyncFeedback(`Synced ${parsed.totalWords.toLocaleString()} words!`);
+      setTimeout(() => setSyncFeedback(null), 3500);
+    } catch (err: any) {
+      setSyncError(err?.message || 'Failed to parse writing telemetry.');
+      setTimeout(() => setSyncError(null), 4000);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleSyncFile(e.dataTransfer.files[0]);
+    }
+  };
 
   // Compute Kindle Reading + Writing Correlation Metrics
   const kindleHeatmap = useMemo(() => {
@@ -78,12 +138,59 @@ export const ScriptoriumView: React.FC<ScriptoriumViewProps> = ({
             </p>
           </div>
 
-          {/* Quick Status Pill */}
-          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 shrink-0">
-            <div className="px-3.5 py-2 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] text-xs font-mono-tabular">
-              <span className="text-[var(--text-muted)]">Sync Source:</span>{' '}
-              <span className="font-bold text-[var(--text-ink)]">Keep the Rhythm · Vault 2025</span>
+          {/* Live Sync Action & Dropzone */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 shrink-0">
+            <div
+              onDragOver={(e) => {
+                e.preventDefault();
+                setIsDragging(true);
+              }}
+              onDragLeave={() => setIsDragging(false)}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+              className={`group px-4 py-2.5 rounded-xl border text-xs font-mono-tabular flex items-center gap-2.5 transition-all cursor-pointer shadow-2xs select-none ${
+                isDragging
+                  ? 'border-emerald-500 bg-emerald-500/15 ring-2 ring-emerald-500/30'
+                  : syncFeedback
+                  ? 'border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-bold'
+                  : syncError
+                  ? 'border-red-500/50 bg-red-500/10 text-red-600 dark:text-red-400'
+                  : 'bg-[var(--bg-surface)] hover:bg-[var(--border-ledger)] border-[var(--border-ledger)] text-[var(--text-ink)]'
+              }`}
+              title="Click or drag and drop your Obsidian Keep the Rhythm data.json here to live-sync writing progress"
+            >
+              {syncFeedback ? (
+                <>
+                  <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  <span>{syncFeedback}</span>
+                </>
+              ) : syncError ? (
+                <>
+                  <span className="w-2 h-2 rounded-full bg-red-500" />
+                  <span>{syncError}</span>
+                </>
+              ) : (
+                <>
+                  <UploadCloud className="w-4 h-4 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform" />
+                  <div>
+                    <span className="font-bold">Sync Writing Data</span>
+                    <span className="text-[10px] text-[var(--text-muted)] block">Drop Keep the Rhythm data.json</span>
+                  </div>
+                </>
+              )}
             </div>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".json"
+              className="hidden"
+              onChange={(e) => {
+                if (e.target.files && e.target.files.length > 0) {
+                  handleSyncFile(e.target.files[0]);
+                }
+              }}
+            />
           </div>
         </div>
 
@@ -294,6 +401,105 @@ export const ScriptoriumView: React.FC<ScriptoriumViewProps> = ({
           </div>
         </section>
       </div>
+
+      {/* 4.5. Telemetry Doctor & Safe Vault Exporters */}
+      <section className="p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <Wrench className="w-5 h-5 text-[var(--accent-gold)]" />
+            <div>
+              <h2 className="font-serif-editorial text-base font-bold text-[var(--text-ink)]">
+                Keep the Rhythm Telemetry Doctor &amp; Safe Vault Exporters
+              </h2>
+              <p className="text-xs text-[var(--text-muted)] font-serif-editorial">
+                Export resilient daily frontmatter, tabular CSV logs, or download an auto-repaired data.json to protect your writing streaks.
+              </p>
+            </div>
+          </div>
+
+          {onOpenCommonplace && (
+            <button
+              type="button"
+              onClick={onOpenCommonplace}
+              className="px-3.5 py-1.5 rounded-lg bg-[var(--accent-gold)]/10 hover:bg-[var(--accent-gold)]/20 border border-[var(--accent-gold)]/30 text-xs font-serif-editorial font-bold text-[var(--accent-gold)] flex items-center gap-2 cursor-pointer transition-colors shrink-0"
+            >
+              <Quote className="w-3.5 h-3.5" />
+              <span>Open Commonplace Book</span>
+            </button>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+          {/* Download Repaired data.json */}
+          <button
+            type="button"
+            onClick={() => {
+              if (!telemetry) return;
+              const json = generateRepairedKeepTheRhythmJson(telemetry);
+              handleDownloadFile(json, 'repaired_keep_the_rhythm_data.json', 'application/json');
+            }}
+            disabled={!telemetry}
+            className="p-3.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] hover:border-[var(--accent-gold)]/60 transition-all text-left group cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="font-mono-tabular text-xs font-bold text-[var(--text-ink)] group-hover:text-[var(--accent-gold)] transition-colors flex items-center gap-1.5">
+                <FileCode2 className="w-4 h-4 text-[var(--accent-gold)]" />
+                Repaired data.json
+              </span>
+              <Download className="w-3.5 h-3.5 text-[var(--text-muted)] group-hover:text-[var(--accent-gold)] transition-colors" />
+            </div>
+            <p className="text-[11px] text-[var(--text-muted)] font-serif-editorial">
+              Clean plugin schema with validated dates, repaired brackets, and zero NaN counts.
+            </p>
+          </button>
+
+          {/* Export to Frontmatter YAML */}
+          <button
+            type="button"
+            onClick={() => {
+              if (!telemetry) return;
+              const yaml = exportTelemetryToFrontmatter(telemetry);
+              handleDownloadFile(yaml, 'writing_telemetry_frontmatter.yaml', 'text/yaml');
+            }}
+            disabled={!telemetry}
+            className="p-3.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] hover:border-[var(--accent-gold)]/60 transition-all text-left group cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="font-mono-tabular text-xs font-bold text-[var(--text-ink)] group-hover:text-[var(--accent-gold)] transition-colors flex items-center gap-1.5">
+                <FileText className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                Frontmatter YAML
+              </span>
+              <Download className="w-3.5 h-3.5 text-[var(--text-muted)] group-hover:text-emerald-500 transition-colors" />
+            </div>
+            <p className="text-[11px] text-[var(--text-muted)] font-serif-editorial">
+              YAML snippets ready to paste into Obsidian Daily Notes (<code className="font-mono text-[10px]">words_written: 450</code>).
+            </p>
+          </button>
+
+          {/* Export to CSV */}
+          <button
+            type="button"
+            onClick={() => {
+              if (!telemetry) return;
+              const csv = exportTelemetryToCsv(telemetry);
+              handleDownloadFile(csv, 'writing_telemetry.csv', 'text/csv');
+            }}
+            disabled={!telemetry}
+            className="p-3.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] hover:border-[var(--accent-gold)]/60 transition-all text-left group cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="font-mono-tabular text-xs font-bold text-[var(--text-ink)] group-hover:text-[var(--accent-gold)] transition-colors flex items-center gap-1.5">
+                <FileSpreadsheet className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+                Daily Activity CSV
+              </span>
+              <Download className="w-3.5 h-3.5 text-[var(--text-muted)] group-hover:text-sky-500 transition-colors" />
+            </div>
+            <p className="text-[11px] text-[var(--text-muted)] font-serif-editorial">
+              Tabular rows of date, word count, active status, and goal completion for spreadsheet analysis.
+            </p>
+          </button>
+        </div>
+      </section>
 
       {/* 5. Circadian Symbiosis Footer Note */}
       <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs font-mono-tabular text-[var(--text-muted)]">

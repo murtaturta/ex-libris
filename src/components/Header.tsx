@@ -23,6 +23,8 @@ export interface HeaderProps {
   onOpenImport: () => void;
   onOpenEnrichModal?: () => void;
   onOpenBookplate?: () => void;
+  onOpenCommonplace?: () => void;
+  onDownloadStandaloneHtml?: () => void;
   showCovers?: boolean;
   onToggleCovers?: () => void;
   theme: 'light' | 'dark';
@@ -43,6 +45,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenImport,
   onOpenEnrichModal,
   onOpenBookplate,
+  onOpenCommonplace,
+  onDownloadStandaloneHtml,
   showCovers = false,
   onToggleCovers,
   theme,
@@ -125,6 +129,8 @@ export const Header: React.FC<HeaderProps> = ({
               onOpenEnrichModal={onOpenEnrichModal}
               enrichedCount={enrichedCount}
               onOpenBookplate={onOpenBookplate}
+              onOpenCommonplace={onOpenCommonplace}
+              onDownloadStandaloneHtml={onDownloadStandaloneHtml}
               showCovers={showCovers}
               onToggleCovers={onToggleCovers}
             />

@@ -79,6 +79,11 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
   // Sorting
   const [sortBy, setSortBy] = useState<string>('dateReadDesc');
 
+  // Dedicated spine shelf filters
+  const [spineFilter5Star, setSpineFilter5Star] = useState<boolean>(false);
+  const [spineFilterMarginalia, setSpineFilterMarginalia] = useState<boolean>(false);
+  const [spineFilterTranslations, setSpineFilterTranslations] = useState<boolean>(false);
+
   // Spine Shelf scale mode: uniform ('regularized') or proportional (1, 2, or 4 pages per pixel)
   const [spineScale, setSpineScale] = useState<'regularized' | 1 | 2 | 4>(2);
 
@@ -111,6 +116,9 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
     setMultiSessionOnly(false);
     setOnHoldOnly(false);
     setHasClippingsOnly(false);
+    setSpineFilter5Star(false);
+    setSpineFilterMarginalia(false);
+    setSpineFilterTranslations(false);
     setSortBy('dateReadDesc');
     setVisibleCount(48);
   };
@@ -313,17 +321,46 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
     });
   }, [filteredBooks, sortBy]);
 
+  // Spine Shelf filtered books
+  const shelfBooks = useMemo(() => {
+    return sortedBooks.filter((book) => {
+      if (spineFilter5Star && book.myRating !== 5) return false;
+      if (spineFilterMarginalia) {
+        const hasNotes =
+          (book.kindleNotes && book.kindleNotes.length > 0) || clippingsBookIdSet.has(book.id);
+        if (!hasNotes) return false;
+      }
+      if (spineFilterTranslations) {
+        const profile = classifyBookLanguageAndFormat(
+          book,
+          userState?.bookOverrides?.[book.id],
+          enrichmentCache?.[book.id]
+        );
+        if (!profile.isTranslation) return false;
+      }
+      return true;
+    });
+  }, [
+    sortedBooks,
+    spineFilter5Star,
+    spineFilterMarginalia,
+    spineFilterTranslations,
+    userState,
+    enrichmentCache,
+    clippingsBookIdSet,
+  ]);
+
   // Spine Shelf: cluster series volumes together (anchored at the first member's sorted position,
   // ordered internally by series number). Only series with 2+ visible volumes form a group.
   const [groupSeries, setGroupSeries] = useState(true);
   const shelfGroups = useMemo(() => {
     type ShelfGroup = { key: string; seriesName: string | null; books: Book[] };
     if (!groupSeries) {
-      return sortedBooks.map((b): ShelfGroup => ({ key: b.id, seriesName: null, books: [b] }));
+      return shelfBooks.map((b): ShelfGroup => ({ key: b.id, seriesName: null, books: [b] }));
     }
     const seriesKey = (b: Book) => (b.seriesName ? b.seriesName.trim().toLowerCase() : null);
     const buckets = new Map<string, Book[]>();
-    for (const b of sortedBooks) {
+    for (const b of shelfBooks) {
       const k = seriesKey(b);
       if (k) {
         if (!buckets.has(k)) buckets.set(k, []);
@@ -336,7 +373,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
     };
     const emitted = new Set<string>();
     const groups: ShelfGroup[] = [];
-    for (const b of sortedBooks) {
+    for (const b of shelfBooks) {
       const k = seriesKey(b);
       const members = k ? buckets.get(k)! : null;
       if (!k || !members || members.length < 2) {
@@ -355,7 +392,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
       groups.push({ key: `series:${k}`, seriesName: b.seriesName!.trim(), books: ordered });
     }
     return groups;
-  }, [sortedBooks, groupSeries]);
+  }, [shelfBooks, groupSeries]);
 
   const visibleBooks = sortedBooks.slice(0, visibleCount);
   const isFiltered =
@@ -1018,6 +1055,100 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
       {/* 5. MODE 2: Continuous Full-Page Top-to-Bottom Stacked Spine Shelf View */}
       {viewMode === 'shelf' && sortedBooks.length > 0 && (
         <div className="flex flex-col w-full space-y-3">
+          {/* Tactile Spine Shelf Controls: Sort Presets & Quick Filter Strip */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-3.5 py-2.5 rounded-lg bg-[var(--bg-card)] border border-[var(--border-ledger)] text-xs font-mono-tabular shadow-2xs">
+            {/* Left: Tactile Sort Presets */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-[var(--text-muted)] font-semibold uppercase text-[10px] tracking-wider mr-1">
+                Spine Order:
+              </span>
+              {[
+                { id: 'dateReadDesc', label: 'Reading Flow', title: 'Chronological reading flow (most recent first)' },
+                { id: 'pagesDesc', label: 'Doorstoppers', title: 'Thickest to thinnest volume' },
+                { id: 'pagesAsc', label: 'Slim Volumes', title: 'Thinnest to thickest volume' },
+                { id: 'ratingDesc', label: '5★ Canon', title: 'Critical canon (highest rating first)' },
+                { id: 'pubYearAsc', label: 'Publication Era', title: 'Antiquity to contemporary chronology' },
+              ].map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => setSortBy(s.id)}
+                  title={s.title}
+                  className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-colors cursor-pointer ${
+                    sortBy === s.id
+                      ? 'bg-[var(--accent-primary)] text-white shadow-2xs'
+                      : 'bg-[var(--bg-surface)] text-[var(--text-muted)] hover:text-[var(--text-ink)] border border-[var(--border-ledger)]'
+                  }`}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Right: Quick Filter Toggles */}
+            <div className="flex flex-wrap items-center gap-1.5 pt-2 sm:pt-0 border-t sm:border-t-0 border-[var(--border-ledger)]/60">
+              <span className="text-[var(--text-muted)] font-semibold uppercase text-[10px] tracking-wider mr-1">
+                Focus:
+              </span>
+              <button
+                type="button"
+                onClick={() => setSpineFilter5Star((v) => !v)}
+                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-semibold transition-colors cursor-pointer border ${
+                  spineFilter5Star
+                    ? 'bg-amber-400/20 border-amber-400/60 text-amber-700 dark:text-amber-200'
+                    : 'bg-[var(--bg-surface)] border-[var(--border-ledger)] text-[var(--text-muted)] hover:text-[var(--text-ink)]'
+                }`}
+                title="Filter to 5-star canon works only"
+              >
+                <Star className={`w-3 h-3 ${spineFilter5Star ? 'fill-current' : ''}`} />
+                <span>5★ Canon</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSpineFilterMarginalia((v) => !v)}
+                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-semibold transition-colors cursor-pointer border ${
+                  spineFilterMarginalia
+                    ? 'bg-emerald-500/20 border-emerald-400/60 text-emerald-800 dark:text-emerald-200'
+                    : 'bg-[var(--bg-surface)] border-[var(--border-ledger)] text-[var(--text-muted)] hover:text-[var(--text-ink)]'
+                }`}
+                title="Filter to books with Kindle notes or highlights"
+              >
+                <Feather className="w-3 h-3" />
+                <span>With Marginalia</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSpineFilterTranslations((v) => !v)}
+                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-semibold transition-colors cursor-pointer border ${
+                  spineFilterTranslations
+                    ? 'bg-[var(--accent-gold)]/20 border-[var(--accent-gold)]/60 text-[var(--text-ink)]'
+                    : 'bg-[var(--bg-surface)] border-[var(--border-ledger)] text-[var(--text-muted)] hover:text-[var(--text-ink)]'
+                }`}
+                title="Filter to translated editions only"
+              >
+                <Languages className="w-3 h-3" />
+                <span>Translations</span>
+              </button>
+
+              {(spineFilter5Star || spineFilterMarginalia || spineFilterTranslations) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSpineFilter5Star(false);
+                    setSpineFilterMarginalia(false);
+                    setSpineFilterTranslations(false);
+                  }}
+                  className="px-1.5 py-1 text-[10px] text-[var(--text-muted)] hover:text-[var(--accent-primary)] cursor-pointer"
+                  title="Clear spine filters"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+          </div>
+
           {/* Spine Scale Toggle Bar */}
           <div className="flex flex-wrap items-center justify-between gap-3 px-3.5 py-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-ledger)] text-xs font-mono-tabular shadow-2xs">
             <div className="flex items-center gap-2 text-[var(--text-muted)]">
@@ -1092,8 +1223,30 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
 
           {/* Continuous Top-to-Bottom Spine Stack */}
           <div className="flex flex-col w-full">
-            <div className="flex flex-col gap-[3px] w-full">
-              {shelfGroups.map((group) => {
+            {shelfBooks.length === 0 ? (
+              <div className="py-12 text-center rounded-lg bg-[var(--bg-card)] border border-dashed border-[var(--border-ledger)] my-2">
+                <BookOpen className="w-8 h-8 text-[var(--text-muted)]/50 mx-auto mb-2" />
+                <p className="font-serif-editorial text-sm font-bold text-[var(--text-ink)]">
+                  No volumes match current shelf filters
+                </p>
+                <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                  Try clearing the 5★ Canon, Marginalia, or Translations filters above.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSpineFilter5Star(false);
+                    setSpineFilterMarginalia(false);
+                    setSpineFilterTranslations(false);
+                  }}
+                  className="mt-3 px-3 py-1 rounded bg-[var(--accent-primary)] text-white text-xs font-semibold cursor-pointer shadow-xs"
+                >
+                  Clear Shelf Filters
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-[3px] w-full">
+                {shelfGroups.map((group) => {
                 const spines = group.books.map((book) => {
                 const override = userState?.bookOverrides?.[book.id];
                 const enriched = enrichmentCache?.[book.id];
@@ -1177,6 +1330,26 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                                 ? `#${book.seriesNumber}`
                                 : ''
                               : `(${book.seriesName}${book.seriesNumber ? ` #${book.seriesNumber}` : ''})`}
+                          </span>
+                        )}
+                        {/* 5★ Critical Canon Gold Foil Ribbon */}
+                        {book.myRating === 5 && (
+                          <span
+                            className="ml-2 inline-flex items-center gap-1 px-1.5 py-0.2 rounded bg-amber-400/25 border border-amber-300/40 text-[#F5C96B] font-mono-tabular text-[10px] font-bold tracking-wider uppercase align-middle"
+                            title="5★ Personal Critical Canon"
+                          >
+                            <Star className="w-2.5 h-2.5 fill-[#F5C96B]" />
+                            <span>Canon</span>
+                          </span>
+                        )}
+                        {/* Marginalia / Notes Feather Quill Badge */}
+                        {(clippingsBookIdSet.has(book.id) || (book.kindleNotes && book.kindleNotes.length > 0)) && (
+                          <span
+                            className="ml-2 inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 font-mono-tabular text-[10px] align-middle"
+                            title="Kindle Highlights or Marginalia Attached"
+                          >
+                            <Feather className="w-2.5 h-2.5 text-emerald-300" />
+                            <span>Notes</span>
                           </span>
                         )}
                         {profile.isTranslation && (
@@ -1266,6 +1439,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                 );
               })}
             </div>
+            )}
 
             {/* Single Full-Width Wooden Plinth at the Base of the Continuous Stack */}
             <div className="shelf-wood-ledge h-6 w-full rounded-b-sm shadow-md flex items-center justify-between px-4 border-t border-amber-900/40">
@@ -1276,8 +1450,8 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                 </span>
               </div>
               <span className="text-[10px] font-mono-tabular text-amber-200/65">
-                {sortedBooks.length} volumes ·{' '}
-                {sortedBooks
+                {shelfBooks.length} volumes ·{' '}
+                {shelfBooks
                   .reduce((sum, b) => sum + (b.pageCount || 0), 0)
                   .toLocaleString()}{' '}
                 listed pages

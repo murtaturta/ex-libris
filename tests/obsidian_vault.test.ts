@@ -56,24 +56,30 @@ describe('Obsidian Vault Exporter', () => {
   const files = buildObsidianVaultFiles(library);
   const paths = [...files.keys()];
 
-  it('lays out Books / Authors / Series folders plus an Index', () => {
-    expect(paths).toContain('Ex Libris/Ex Libris Index.md');
+  it('lays out Books and Authors folders without Series or central index gravity wells', () => {
+    expect(paths).not.toContain('Ex Libris/Ex Libris Index.md');
+    expect(paths.some((p) => p.startsWith('Ex Libris/Series/'))).toBe(false);
     expect(paths).toContain('Ex Libris/Books/Dune.md');
     expect(paths).toContain('Ex Libris/Books/Dune Messiah.md');
     expect(paths).toContain('Ex Libris/Authors/Frank Herbert.md');
     expect(paths).toContain('Ex Libris/Authors/Stanisław Lem.md');
+    expect(paths).toContain('Ex Libris/Authors/Randall Munroe.md');
     // one note per book, never merged
     expect(paths.filter((p) => p.startsWith('Ex Libris/Books/'))).toHaveLength(5);
+    // author hub notes
+    expect(paths.filter((p) => p.startsWith('Ex Libris/Authors/'))).toHaveLength(3);
+    expect(paths).toHaveLength(8);
   });
 
-  it('renames hub notes that collide with a book title (Dune → Dune (Series))', () => {
-    expect(paths).toContain('Ex Libris/Series/Dune (Series).md');
+  it('keeps series as pure metadata without wikilinks or collision hacks', () => {
     const dune = files.get('Ex Libris/Books/Dune.md')!;
     expect(dune).toContain('author: "[[Frank Herbert]]"');
-    expect(dune).toContain('series: "[[Dune (Series)|Dune]]"');
+    expect(dune).toContain('series: "Dune"');
     expect(dune).toContain('series_number: 1');
     expect(dune).toContain('my_rating: 5');
     expect(dune).toContain('> **Author:** [[Frank Herbert]]');
+    expect(dune).toContain('*Dune #1*');
+    expect(dune).not.toContain('[[Dune (Series)');
   });
 
   it('suffixes duplicate book titles and strips link-breaking characters', () => {
@@ -83,22 +89,20 @@ describe('Obsidian Vault Exporter', () => {
     expect(paths).toContain('Ex Libris/Books/What If Part 2 Draft.md');
   });
 
-  it('author & series hubs link back to books in correct order', () => {
+  it('author hubs link back to books in chronological order with inline series metadata', () => {
     const author = files.get('Ex Libris/Authors/Frank Herbert.md')!;
     expect(author).toContain('type: author');
-    expect(author).toContain('[[Dune]]');
-    expect(author).toContain('[[Dune Messiah]]');
-    expect(author).toContain('[[Dune (Series)|Dune]]');
+    expect(author).toContain('[[Dune]] · (Dune #1)');
+    expect(author).toContain('[[Dune Messiah]] · (Dune #2)');
     expect(author.indexOf('[[Dune]]')).toBeLessThan(author.indexOf('[[Dune Messiah]]'));
-
-    const series = files.get('Ex Libris/Series/Dune (Series).md')!;
-    expect(series).toContain('type: series');
-    expect(series).toContain('#1 [[Dune]]');
-    expect(series).toContain('#2 [[Dune Messiah]]');
-    expect(series).toContain('Reading Order (2/2 read)');
+    expect(author).not.toContain('## Series');
 
     const lem = files.get('Ex Libris/Authors/Stanisław Lem.md')!;
     expect(lem).toContain('[[Solaris (2)|Solaris]]');
+
+    // Confirm no central index back-links create dangling/hub gravity wells
+    expect(author).not.toContain('Ex Libris Index');
+    expect(lem).not.toContain('Ex Libris Index');
   });
 
   it('zips the vault', async () => {

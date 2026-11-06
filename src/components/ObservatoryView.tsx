@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Book, EnrichmentCacheMap, LibraryBundle, UserLocalState } from '../types/library';
 import {
   computeObservatoryMetrics,
@@ -8,7 +8,11 @@ import {
   computeTranslatorLoyalty,
   computeLiteraryHorizons,
   computeReadingFrictionMetrics,
+  computeAdaptationForensics,
+  computeWorldShelf,
+  computeAnnualReadingReviews,
 } from '../lib/analytics/engine';
+import { formatStarRating } from '../lib/parsers/letterboxdParser';
 import { FORMAT_LABELS, LANGUAGE_LABELS } from '../lib/classifiers/languageAndFormat';
 import { formatPublicationYear } from '../lib/formatters';
 import { getGoodreadsBookUrl, getGoodreadsAuthorUrl } from '../lib/links/goodreadsLinks';
@@ -34,6 +38,10 @@ import {
   ArrowRight,
   ShieldAlert,
   ExternalLink,
+  Film,
+  Clapperboard,
+  Tv,
+  CalendarDays,
 } from 'lucide-react';
 
 interface ObservatoryViewProps {
@@ -138,6 +146,42 @@ export const ObservatoryView: React.FC<ObservatoryViewProps> = ({
       return null;
     }
   }, [bundle, userState, enrichmentCache]);
+
+  // Adaptation Forensics (Screen & Codex ratings, divergence delta, narrative diet timeline)
+  const adaptationForensics = useMemo(() => {
+    try {
+      return computeAdaptationForensics(bundle, userState, enrichmentCache);
+    } catch (e) {
+      console.warn('computeAdaptationForensics fallback:', e);
+      return null;
+    }
+  }, [bundle, userState, enrichmentCache]);
+
+  const [selectedReviewYear, setSelectedReviewYear] = useState<number>(2026);
+  const [selectedWorldHub, setSelectedWorldHub] = useState<string | null>(null);
+
+  const worldShelf = useMemo(() => {
+    try {
+      return computeWorldShelf(bundle, userState, enrichmentCache);
+    } catch (e) {
+      console.warn('computeWorldShelf fallback:', e);
+      return null;
+    }
+  }, [bundle, userState, enrichmentCache]);
+
+  const annualReviews = useMemo(() => {
+    try {
+      return computeAnnualReadingReviews(bundle, userState, enrichmentCache);
+    } catch (e) {
+      console.warn('computeAnnualReadingReviews fallback:', e);
+      return [];
+    }
+  }, [bundle, userState, enrichmentCache]);
+
+  const activeReview = useMemo(
+    () => annualReviews.find((r) => r.year === selectedReviewYear) || annualReviews[0],
+    [annualReviews, selectedReviewYear]
+  );
 
   // Session Forensics (Fastest Sprints, Longest Burns, Re-Reads)
   const { fastestSprints, longestBurns, reReadHallOfFame } = useMemo(() => {
@@ -907,6 +951,134 @@ export const ObservatoryView: React.FC<ObservatoryViewProps> = ({
         </section>
       )}
 
+      {/* 4.5. The Literary Map: The World Shelf Geo-Cartography */}
+      {worldShelf && (
+        <section aria-labelledby="world-shelf-heading" className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-[var(--border-ledger)]">
+            <div className="flex items-center gap-2">
+              <Globe className="w-5 h-5 text-[var(--accent-primary)]" />
+              <div>
+                <h2
+                  id="world-shelf-heading"
+                  className="font-serif-editorial text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-ink)]"
+                >
+                  The Literary Map · The World Shelf
+                </h2>
+                <p className="text-xs text-[var(--text-muted)] font-serif-editorial">
+                  Cultural spheres and regional movements across {worldShelf.totalVolumes} cataloged works.
+                </p>
+              </div>
+            </div>
+
+            {selectedWorldHub && (
+              <button
+                type="button"
+                onClick={() => setSelectedWorldHub(null)}
+                className="px-2.5 py-1 text-xs font-mono-tabular rounded bg-[var(--bg-surface)] hover:bg-[var(--border-ledger)] text-[var(--text-muted)] hover:text-[var(--text-ink)] transition-colors cursor-pointer border border-[var(--border-ledger)]"
+              >
+                Clear Hub Filter (Showing All)
+              </button>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {worldShelf.hubs.map((hub) => {
+              const isSelected = selectedWorldHub === hub.id;
+              return (
+                <div
+                  key={hub.id}
+                  onClick={() => setSelectedWorldHub(isSelected ? null : hub.id)}
+                  className={`p-5 rounded-xl bg-[var(--bg-card)] border transition-all cursor-pointer flex flex-col justify-between space-y-4 shadow-2xs group ${
+                    isSelected
+                      ? 'border-[var(--accent-primary)] ring-1 ring-[var(--accent-primary)]/50'
+                      : 'border-[var(--border-ledger)] hover:border-[var(--accent-primary)]/50'
+                  }`}
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="font-serif-editorial text-base font-bold text-[var(--text-ink)] group-hover:text-[var(--accent-primary)] transition-colors">
+                        {hub.name}
+                      </h3>
+                      <span className="font-mono-tabular text-xs px-2 py-0.5 rounded-full bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] font-bold shrink-0">
+                        {hub.volumeCount} vols
+                      </span>
+                    </div>
+                    <p className="text-xs text-[var(--text-muted)] font-serif-editorial leading-relaxed">
+                      {hub.subtitle}
+                    </p>
+                  </div>
+
+                  <div className="space-y-3 pt-3 border-t border-[var(--border-ledger)]/70 text-xs font-mono-tabular">
+                    <div className="flex items-center justify-between text-[var(--text-muted)]">
+                      <span>Total Pages Read:</span>
+                      <strong className="text-[var(--text-ink)]">{hub.totalPages.toLocaleString()} pp</strong>
+                    </div>
+
+                    {hub.averageRating && (
+                      <div className="flex items-center justify-between text-[var(--text-muted)]">
+                        <span>Average Rating:</span>
+                        <span className="flex items-center gap-1 font-bold text-[var(--accent-gold)]">
+                          <Star className="w-3.5 h-3.5 fill-[var(--accent-gold)]" />
+                          {hub.averageRating}★
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Top Translation Flows */}
+                    {hub.translationFlows.length > 0 && (
+                      <div className="space-y-1">
+                        <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">
+                          Key Pathways
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {hub.translationFlows.slice(0, 3).map((f) => (
+                            <span
+                              key={f.flow}
+                              className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--bg-surface)] border border-[var(--border-ledger)] text-[var(--text-ink)]"
+                            >
+                              {f.flow} <span className="text-[var(--text-muted)]">({f.count})</span>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Signature Works */}
+                    {hub.signatureWorks.length > 0 && (
+                      <div className="space-y-1.5 pt-1">
+                        <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">
+                          Signature Works
+                        </div>
+                        <div className="space-y-1">
+                          {hub.signatureWorks.map((work) => (
+                            <button
+                              key={work.id}
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onSelectBookById(work.id, work.title);
+                              }}
+                              className="w-full flex items-center justify-between text-left p-1 rounded hover:bg-[var(--bg-surface)] text-xs font-serif-editorial text-[var(--text-ink)] hover:text-[var(--accent-primary)] transition-colors group/item cursor-pointer"
+                            >
+                              <span className="truncate">{work.title}</span>
+                              {work.myRating && (
+                                <span className="text-[10px] font-mono-tabular text-[var(--accent-gold)] font-bold shrink-0 ml-1">
+                                  {work.myRating}★
+                                </span>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
       {/* 5. v0.2 Flagship B: Format-Calibrated Reading Velocity */}
       <section aria-labelledby="format-velocity-heading" className="space-y-6">
         <div className="flex items-center justify-between pb-2 border-b border-[var(--border-ledger)]">
@@ -1603,6 +1775,487 @@ export const ObservatoryView: React.FC<ObservatoryViewProps> = ({
             )}
           </section>
         )}
+
+      {/* 9B. The Screen & The Codex: Adaptation Forensics */}
+      {adaptationForensics && adaptationForensics.divergenceItems.length > 0 && (
+        <section aria-labelledby="adaptation-forensics-heading" className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2 border-b border-[var(--border-ledger)] gap-2">
+            <div className="flex items-center gap-2">
+              <Film className="w-5 h-5 text-[var(--accent-primary)]" />
+              <div>
+                <h2
+                  id="adaptation-forensics-heading"
+                  className="font-serif-editorial text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-ink)]"
+                >
+                  The Screen &amp; The Codex · Adaptation Forensics
+                </h2>
+              </div>
+            </div>
+            <span className="text-xs font-mono-tabular text-[var(--text-muted)]">
+              {adaptationForensics.divergenceItems.length} Cross-Matched Works · Letterboxd Bridge
+            </span>
+          </div>
+
+          {/* Personal Divergence Delta Banner */}
+          <div className="p-6 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-xs relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-80 h-80 bg-[var(--accent-primary)]/5 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="relative z-10 grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+              {/* Divergence Metric Score */}
+              <div className="md:col-span-5 space-y-2 border-b md:border-b-0 md:border-r border-[var(--border-ledger)] pb-4 md:pb-0 md:pr-6">
+                <div className="text-[11px] font-mono-tabular uppercase tracking-wider text-[var(--text-muted)] font-bold">
+                  Personal Divergence Delta
+                </div>
+                <div className="flex items-baseline gap-3">
+                  <span className="font-serif-editorial text-3xl sm:text-4xl font-black text-[var(--text-ink)]">
+                    {adaptationForensics.averageDelta !== null
+                      ? adaptationForensics.averageDelta > 0
+                        ? `+${adaptationForensics.averageDelta}★`
+                        : `${adaptationForensics.averageDelta}★`
+                      : 'Parity'}
+                  </span>
+                  <span className="text-xs font-mono-tabular uppercase px-2 py-0.5 rounded bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] font-bold">
+                    {adaptationForensics.averageDelta !== null && adaptationForensics.averageDelta > 0
+                      ? 'Codex Preferred'
+                      : adaptationForensics.averageDelta !== null && adaptationForensics.averageDelta < 0
+                      ? 'Cinema Preferred'
+                      : 'Equal Appreciation'}
+                  </span>
+                </div>
+                <p className="text-xs font-serif-editorial italic text-[var(--text-muted)] leading-relaxed">
+                  {adaptationForensics.averageDelta !== null
+                    ? adaptationForensics.averageDelta > 0
+                      ? `You rate literary originals +${adaptationForensics.averageDelta}★ higher on average than their cinematic adaptations.`
+                      : adaptationForensics.averageDelta < 0
+                      ? `You rate cinematic adaptations +${Math.abs(
+                          adaptationForensics.averageDelta
+                        )}★ higher on average than their literary sources.`
+                      : 'Perfect parity: your scores for literary sources and cinematic adaptations balance equally.'
+                    : 'Awaiting paired ratings across your cataloged books and Letterboxd diary.'}
+                </p>
+              </div>
+
+              {/* Stat Chips */}
+              <div className="md:col-span-7 grid grid-cols-2 sm:grid-cols-4 gap-3 text-center font-mono-tabular">
+                <div className="p-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)]">
+                  <div className="text-xs text-[var(--text-muted)]">Codex Higher</div>
+                  <div className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
+                    {adaptationForensics.favorsBookCount}
+                  </div>
+                </div>
+                <div className="p-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)]">
+                  <div className="text-xs text-[var(--text-muted)]">Twin Parity</div>
+                  <div className="text-lg font-bold text-[var(--accent-gold)]">
+                    {adaptationForensics.parityCount}
+                  </div>
+                </div>
+                <div className="p-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)]">
+                  <div className="text-xs text-[var(--text-muted)]">Cinema Higher</div>
+                  <div className="text-lg font-bold text-[#7C5CFF]">
+                    {adaptationForensics.favorsFilmCount}
+                  </div>
+                </div>
+                <div className="p-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)]">
+                  <div className="text-xs text-[var(--text-muted)]">Total Paired</div>
+                  <div className="text-lg font-bold text-[var(--text-ink)]">
+                    {adaptationForensics.divergenceItems.length}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Adaptation Divergence Leaderboard */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="font-serif-editorial text-base font-bold text-[var(--text-ink)] flex items-center gap-2">
+                <Scale className="w-4 h-4 text-[var(--accent-gold)]" />
+                <span>The Divergence Leaderboard (Book vs. Screen)</span>
+              </h3>
+              <span className="text-xs font-mono-tabular text-[var(--text-muted)]">
+                Ranked by rating differential
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {adaptationForensics.divergenceItems.map((item) => {
+                const book = books.find((b) => b.id === item.bookId);
+
+                return (
+                  <div
+                    key={item.id}
+                    className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] hover:border-[var(--accent-primary)]/40 transition-all flex flex-col justify-between space-y-3 shadow-2xs group"
+                  >
+                    <div className="space-y-2.5">
+                      {/* Header with Title and Verdict Badge */}
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <button
+                            type="button"
+                            onClick={() => book && onSelectBook(book)}
+                            className="font-serif-editorial font-bold text-sm text-[var(--text-ink)] hover:text-[var(--accent-primary)] text-left cursor-pointer transition-colors block"
+                          >
+                            {item.bookTitle}
+                          </button>
+                          <p className="text-[11px] text-[var(--text-muted)] font-serif-editorial">
+                            by {item.bookAuthor}
+                          </p>
+                        </div>
+
+                        {item.delta !== null ? (
+                          <span
+                            className={`px-2 py-0.5 rounded text-[10px] font-mono-tabular font-bold shrink-0 ${
+                              item.verdict === 'favors-book'
+                                ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30'
+                                : item.verdict === 'favors-film'
+                                ? 'bg-[#7C5CFF]/15 text-[#7C5CFF] border border-[#7C5CFF]/30'
+                                : 'bg-[var(--accent-gold)]/15 text-[var(--accent-gold)] border border-[var(--accent-gold)]/30'
+                            }`}
+                          >
+                            {item.delta > 0
+                              ? `+${item.delta}★ Codex`
+                              : item.delta < 0
+                              ? `${item.delta}★ Screen`
+                              : 'Faithful Twin'}
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-mono-tabular bg-[var(--bg-surface)] text-[var(--text-muted)]">
+                            Unrated
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Side-by-side Score Matrix */}
+                      <div className="grid grid-cols-2 gap-2 p-2.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] text-xs font-mono-tabular">
+                        <div className="space-y-0.5 border-r border-[var(--border-ledger)] pr-2">
+                          <span className="text-[10px] text-[var(--text-muted)] uppercase block">
+                            Literary Codex
+                          </span>
+                          <span className="font-bold text-[var(--text-ink)]">
+                            {item.bookRating ? `${item.bookRating}★` : '—'}
+                          </span>
+                        </div>
+                        <div className="space-y-0.5 pl-1">
+                          <span className="text-[10px] text-[var(--text-muted)] uppercase block truncate">
+                            Film ({item.filmYear})
+                          </span>
+                          <span className="font-bold text-[var(--accent-primary)]">
+                            {item.filmRating ? formatStarRating(item.filmRating) : '—'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Letterboxd Micro-Review Quote if present */}
+                      {item.filmReview && (
+                        <blockquote className="p-2.5 rounded-lg bg-[var(--bg-surface)]/60 border border-[var(--border-ledger)] text-xs font-serif-editorial italic text-[var(--text-muted)] leading-relaxed line-clamp-3">
+                          &ldquo;{item.filmReview}&rdquo;
+                        </blockquote>
+                      )}
+                    </div>
+
+                    {/* Footer with Letterboxd Link */}
+                    <div className="pt-2 border-t border-[var(--border-ledger)]/60 flex items-center justify-between text-[11px] font-mono-tabular">
+                      <span className="text-[var(--text-muted)]">
+                        {item.filmTitle} ({item.filmYear})
+                      </span>
+                      <a
+                        href={item.filmUri}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-1 text-[var(--accent-primary)] hover:underline"
+                        title="View on Letterboxd"
+                      >
+                        <span>Diary</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* The Total Narrative Diet Timeline */}
+          {adaptationForensics.dietTimeline.length > 0 && (
+            <div className="p-6 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-xs space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[var(--border-ledger)]">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <h3 className="font-serif-editorial text-base font-bold text-[var(--text-ink)]">
+                      The Total Narrative Diet Timeline (2024–2026)
+                    </h3>
+                  </div>
+                  <p className="text-xs text-[var(--text-muted)] font-mono-tabular">
+                    Comparative monthly cadence: Pages Traversed vs. Films Screened
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3 text-xs font-mono-tabular">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-sm bg-emerald-500" />
+                    <span>Pages Read</span>
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-sm bg-[var(--accent-primary)]" />
+                    <span>Films Watched</span>
+                  </span>
+                </div>
+              </div>
+
+              {/* Monthly Flow Chart */}
+              <div className="overflow-x-auto pb-2">
+                <div className="min-w-[700px] grid grid-cols-12 gap-1.5 pt-4">
+                  {adaptationForensics.dietTimeline
+                    .filter((m) => m.year >= 2025)
+                    .map((m) => {
+                      const pagesHeight =
+                        adaptationForensics.maxMonthlyPages > 0
+                          ? Math.round((m.pagesRead / adaptationForensics.maxMonthlyPages) * 75)
+                          : 0;
+                      const filmsHeight =
+                        adaptationForensics.maxMonthlyFilms > 0
+                          ? Math.round((m.filmsWatched / adaptationForensics.maxMonthlyFilms) * 75)
+                          : 0;
+
+                      return (
+                        <div
+                          key={m.yearMonth}
+                          className={`p-2 rounded-lg flex flex-col justify-end items-center text-center space-y-2 border transition-all ${
+                            m.isCinemaSurge
+                              ? 'border-[var(--accent-primary)]/50 bg-[var(--accent-primary)]/5'
+                              : 'border-[var(--border-ledger)] bg-[var(--bg-surface)]'
+                          }`}
+                          title={`${m.label}: ${m.pagesRead.toLocaleString()} pages (${m.booksRead} vol) · ${m.filmsWatched} films screened`}
+                        >
+                          {/* Cinema Surge Badge */}
+                          {m.isCinemaSurge && (
+                            <span className="text-[9px] font-mono-tabular uppercase px-1 py-0.2 rounded bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] font-bold">
+                              Surge
+                            </span>
+                          )}
+
+                          {/* Dual Bars */}
+                          <div className="h-20 w-full flex items-end justify-center gap-1 px-1">
+                            {/* Pages Bar */}
+                            <div
+                              style={{ height: `${Math.max(4, pagesHeight)}%` }}
+                              className="w-1/2 bg-emerald-500/80 hover:bg-emerald-500 rounded-t-xs transition-all"
+                            />
+                            {/* Films Bar */}
+                            <div
+                              style={{ height: `${Math.max(4, filmsHeight)}%` }}
+                              className="w-1/2 bg-[var(--accent-primary)]/80 hover:bg-[var(--accent-primary)] rounded-t-xs transition-all"
+                            />
+                          </div>
+
+                          {/* Month Label & Counts */}
+                          <div className="space-y-0.5 font-mono-tabular text-[10px] w-full">
+                            <div className="font-bold text-[var(--text-ink)] truncate">{m.label}</div>
+                            <div className="text-[9px] text-[var(--text-muted)] truncate">
+                              {m.pagesRead}p · {m.filmsWatched}f
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+
+              <p className="text-[11px] text-[var(--text-muted)] font-serif-editorial italic pt-1">
+                Notice: Apparent reading pauses (such as high-intake cinema months) represent an active narrative swap—where hundreds of literary pages are seamlessly counterbalanced by cinematic storytelling.
+              </p>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* 9.5. Annual Reading Reviews & Multi-Year Trends */}
+      {annualReviews.length > 0 && activeReview && (
+        <section aria-labelledby="annual-reviews-heading" className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-[var(--border-ledger)]">
+            <div className="flex items-center gap-2">
+              <CalendarDays className="w-5 h-5 text-[var(--accent-primary)]" />
+              <div>
+                <h2
+                  id="annual-reviews-heading"
+                  className="font-serif-editorial text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-ink)]"
+                >
+                  Annual Reading Reviews · Multi-Year Horizons
+                </h2>
+                <p className="text-xs text-[var(--text-muted)] font-serif-editorial">
+                  Comparative intake, pacing dynamics, and cinematic balances year over year.
+                </p>
+              </div>
+            </div>
+
+            {/* Year Selector Tabs */}
+            <div className="flex items-center gap-1.5 p-1 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] self-start sm:self-auto">
+              {annualReviews.map((rev) => (
+                <button
+                  key={rev.year}
+                  type="button"
+                  onClick={() => setSelectedReviewYear(rev.year)}
+                  className={`px-3 py-1 rounded text-xs font-mono-tabular transition-all cursor-pointer ${
+                    selectedReviewYear === rev.year
+                      ? 'bg-[var(--accent-primary)] text-white font-bold shadow-2xs'
+                      : 'text-[var(--text-muted)] hover:text-[var(--text-ink)]'
+                  }`}
+                >
+                  {rev.year}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            {/* Top KPI Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs space-y-1">
+                <div className="text-[10px] font-mono-tabular uppercase tracking-wider text-[var(--text-muted)]">
+                  Volumes Read
+                </div>
+                <div className="text-2xl font-bold font-serif-editorial text-[var(--text-ink)]">
+                  {activeReview.volumesRead}
+                </div>
+                <div className="text-[11px] font-mono-tabular text-[var(--text-muted)]">
+                  in {activeReview.year}
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs space-y-1">
+                <div className="text-[10px] font-mono-tabular uppercase tracking-wider text-[var(--text-muted)]">
+                  Pages Read
+                </div>
+                <div className="text-2xl font-bold font-serif-editorial text-[var(--text-ink)]">
+                  {activeReview.pagesRead.toLocaleString()}
+                </div>
+                <div className="text-[11px] font-mono-tabular text-[var(--text-muted)]">
+                  {activeReview.medianDaysPerBook ? `~${activeReview.medianDaysPerBook} days/vol` : 'Steady intake'}
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs space-y-1">
+                <div className="text-[10px] font-mono-tabular uppercase tracking-wider text-[var(--text-muted)]">
+                  Average Rating
+                </div>
+                <div className="text-2xl font-bold font-serif-editorial text-[var(--accent-gold)] flex items-center gap-1">
+                  <Star className="w-5 h-5 fill-[var(--accent-gold)]" />
+                  {activeReview.averageRating ? `${activeReview.averageRating}★` : '—'}
+                </div>
+                <div className="text-[11px] font-mono-tabular text-[var(--text-muted)]">
+                  {activeReview.canon5StarBooks.length} titles in 5★ canon
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs space-y-1">
+                <div className="text-[10px] font-mono-tabular uppercase tracking-wider text-[var(--text-muted)]">
+                  Narrative Balance
+                </div>
+                <div className="text-sm font-bold font-mono-tabular text-[var(--text-ink)] pt-1">
+                  {activeReview.narrativeDiet.booksRead} Codex / {activeReview.narrativeDiet.filmsWatched} Screen
+                </div>
+                <div className="text-[11px] font-serif-editorial italic text-[var(--text-muted)]">
+                  {activeReview.narrativeDiet.filmsWatched > 0 ? 'Multi-medium diet' : 'Pure reading year'}
+                </div>
+              </div>
+            </div>
+
+            {/* Pacing Extremes & Canon */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Sprint vs Savor */}
+              <div className="p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] space-y-3">
+                <h3 className="font-serif-editorial text-sm font-bold text-[var(--text-ink)] uppercase tracking-wide">
+                  Pacing Extremes · {activeReview.year}
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono-tabular">
+                  {activeReview.fastestSprintBook ? (
+                    <div
+                      onClick={() => onSelectBookById(activeReview.fastestSprintBook!.id, activeReview.fastestSprintBook!.title)}
+                      className="p-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] hover:border-[var(--accent-primary)] transition-all cursor-pointer space-y-1"
+                    >
+                      <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wider">
+                        ⚡ Quickest Read
+                      </div>
+                      <div className="font-serif-editorial font-bold text-[var(--text-ink)] truncate">
+                        {activeReview.fastestSprintBook.title}
+                      </div>
+                      <div className="text-[10px] text-[var(--text-muted)]">
+                        {activeReview.fastestSprintBook.author} · {activeReview.fastestSprintBook.pageCount} pp
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] text-[var(--text-muted)] italic text-xs">
+                      No sprint recorded
+                    </div>
+                  )}
+
+                  {activeReview.deepestSavorBook ? (
+                    <div
+                      onClick={() => onSelectBookById(activeReview.deepestSavorBook!.id, activeReview.deepestSavorBook!.title)}
+                      className="p-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] hover:border-[var(--accent-primary)] transition-all cursor-pointer space-y-1"
+                    >
+                      <div className="text-[10px] text-[var(--accent-primary)] font-bold uppercase tracking-wider">
+                        🏔️ Deepest Savor
+                      </div>
+                      <div className="font-serif-editorial font-bold text-[var(--text-ink)] truncate">
+                        {activeReview.deepestSavorBook.title}
+                      </div>
+                      <div className="text-[10px] text-[var(--text-muted)]">
+                        {activeReview.deepestSavorBook.author} · {activeReview.deepestSavorBook.pageCount} pp
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] text-[var(--text-muted)] italic text-xs">
+                      No savor recorded
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* 5★ Canon of the Year */}
+              <div className="p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-serif-editorial text-sm font-bold text-[var(--text-ink)] uppercase tracking-wide">
+                    5★ Canon of {activeReview.year}
+                  </h3>
+                  <span className="text-xs font-mono-tabular text-[var(--accent-gold)] font-bold">
+                    {activeReview.canon5StarBooks.length} works
+                  </span>
+                </div>
+
+                {activeReview.canon5StarBooks.length > 0 ? (
+                  <div className="space-y-1.5">
+                    {activeReview.canon5StarBooks.slice(0, 4).map((book) => (
+                      <div
+                        key={book.id}
+                        onClick={() => onSelectBookById(book.id, book.title)}
+                        className="p-2 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] hover:border-[var(--accent-gold)] transition-all cursor-pointer flex items-center justify-between gap-2 group"
+                      >
+                        <div className="min-w-0">
+                          <div className="font-serif-editorial font-bold text-xs text-[var(--text-ink)] group-hover:text-[var(--accent-gold)] truncate transition-colors">
+                            {book.title}
+                          </div>
+                          <div className="text-[10px] text-[var(--text-muted)] font-serif-editorial truncate">
+                            {book.author}
+                          </div>
+                        </div>
+                        <span className="text-xs font-mono-tabular text-[var(--accent-gold)] font-bold shrink-0">
+                          ★★★★★
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-[var(--text-muted)] italic font-serif-editorial">
+                    No 5-star ratings recorded in {activeReview.year}.
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* 10. Annual Goals, 12 Challenge Badges Trophy Case, & Favorite Genres */}
       <section aria-labelledby="trophy-heading" className="space-y-6">

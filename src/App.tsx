@@ -10,6 +10,7 @@ import {
   ExternalWantListItem,
   BookplateConfig,
   LetterboxdArchiveData,
+  WritingTelemetryData,
 } from './types/library';
 import {
   DEFAULT_USER_STATE,
@@ -20,6 +21,7 @@ import {
 } from './lib/storage/localStateClient';
 import { enrichSingleBook } from './lib/enrichment/metadataEnricher';
 import { fetchGoodreadsPublicLibrary } from './lib/parsers/goodreadsRss';
+import { downloadStandaloneLibraryHtml } from './lib/exporters/standaloneHtmlExporter';
 import { Header, TabId } from './components/Header';
 import { StudyView } from './components/StudyView';
 import { LibraryView } from './components/LibraryView';
@@ -31,6 +33,7 @@ import { CommandPaletteModal } from './components/CommandPaletteModal';
 import { ImportModal } from './components/ImportModal';
 import { EnrichmentModal } from './components/EnrichmentModal';
 import { BroadsideBookplateModal } from './components/BroadsideBookplateModal';
+import { CommonplaceBookModal } from './components/CommonplaceBookModal';
 import { BookOpen, Loader2, AlertCircle, RefreshCw, RotateCcw } from 'lucide-react';
 
 export const App: React.FC = () => {
@@ -94,6 +97,7 @@ export const App: React.FC = () => {
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isEnrichOpen, setIsEnrichOpen] = useState(false);
   const [isBookplateOpen, setIsBookplateOpen] = useState(false);
+  const [isCommonplaceOpen, setIsCommonplaceOpen] = useState(false);
 
   // Initial filter passed to LibraryView if navigated from another tab
   const [libraryFilter, setLibraryFilter] = useState<{ shelf?: string; rating?: number } | undefined>(
@@ -349,6 +353,18 @@ export const App: React.FC = () => {
     });
   }, []);
 
+  const handleWritingTelemetryImported = useCallback((incoming: WritingTelemetryData) => {
+    setUserState((prev) => {
+      const nextState: UserLocalState = {
+        ...prev,
+        updatedAt: new Date().toISOString(),
+        writingTelemetry: incoming,
+      };
+      saveUserState(nextState);
+      return nextState;
+    });
+  }, []);
+
   // Handle batch of enriched books flushed from modal
   const handleEnrichmentBatch = useCallback(async (batch: EnrichmentCacheMap) => {
     setEnrichmentCache((prev) => {
@@ -472,6 +488,21 @@ export const App: React.FC = () => {
     loadInitialData();
   }, [loadInitialData]);
 
+  // Standalone Offline HTML Export
+  const handleDownloadStandaloneHtml = useCallback(() => {
+    if (!bundle) return;
+    downloadStandaloneLibraryHtml(bundle, userState, enrichmentCache);
+  }, [bundle, userState, enrichmentCache]);
+
+  // Handle Kindle Clippings update from Orphan Reconciler or Study
+  const handleClippingsUpdated = useCallback((updated: KindleClipping[]) => {
+    setUserState((prev) => {
+      const nextState = { ...prev, updatedAt: new Date().toISOString(), kindleClippings: updated };
+      saveUserState(nextState).catch(console.error);
+      return nextState;
+    });
+  }, []);
+
   // Loading Screen
   if (isLoading) {
     return (
@@ -524,6 +555,8 @@ export const App: React.FC = () => {
         onOpenImport={() => setIsImportOpen(true)}
         onOpenEnrichModal={() => setIsEnrichOpen(true)}
         onOpenBookplate={() => setIsBookplateOpen(true)}
+        onOpenCommonplace={() => setIsCommonplaceOpen(true)}
+        onDownloadStandaloneHtml={handleDownloadStandaloneHtml}
         showCovers={userState.showCovers}
         onToggleCovers={handleToggleCovers}
         theme={theme}
@@ -577,6 +610,7 @@ export const App: React.FC = () => {
             onGoToOracle={() => setActiveTab('oracle')}
             onGoToLibraryWithFilter={handleGoToLibraryWithFilter}
             onOpenImport={() => setIsImportOpen(true)}
+            onClippingsUpdated={handleClippingsUpdated}
           />
         )}
 
@@ -622,6 +656,8 @@ export const App: React.FC = () => {
             onSelectBookById={handleSelectBookById}
             userState={userState}
             enrichmentCache={enrichmentCache}
+            onWritingTelemetryImported={handleWritingTelemetryImported}
+            onOpenCommonplace={() => setIsCommonplaceOpen(true)}
           />
         )}
       </main>
@@ -693,6 +729,7 @@ export const App: React.FC = () => {
         onBundleUpdated={handleBundleUpdated}
         onClippingsImported={handleClippingsImported}
         onLetterboxdImported={handleLetterboxdImported}
+        onWritingTelemetryImported={handleWritingTelemetryImported}
         userState={userState}
         enrichmentCache={enrichmentCache}
         onPublicProfileLoaded={handlePublicProfileLoaded}
@@ -717,6 +754,15 @@ export const App: React.FC = () => {
         userState={userState}
         enrichmentCache={enrichmentCache}
         onSaveBookplateConfig={handleSaveBookplateConfig}
+      />
+
+      {/* 9. The Commonplace Book & Typographic Broadside Modal */}
+      <CommonplaceBookModal
+        isOpen={isCommonplaceOpen}
+        onClose={() => setIsCommonplaceOpen(false)}
+        bundle={bundle}
+        userState={userState}
+        onSelectBookById={handleSelectBookById}
       />
     </div>
   );

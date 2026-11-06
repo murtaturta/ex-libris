@@ -193,6 +193,76 @@ export interface LetterboxdArchiveData {
   watchlist: LetterboxdWatchlistItem[];
 }
 
+export interface AdaptationLink {
+  id: string;
+  bookId: string;
+  bookTitle: string;
+  bookAuthor: string;
+  bookShelf: string;
+  bookCoverUrl?: string | null;
+  bookRating?: number | null;
+  filmTitle: string;
+  filmYear: number;
+  filmUri: string;
+  filmRating: number | null;
+  filmRewatch: boolean;
+  filmReview?: string | null;
+  relation: 'watched' | 'watchlist';
+  direction: 'codex-to-screen' | 'screen-to-codex';
+  matchType: 'direct' | 'alias';
+  rationale: string;
+}
+
+export interface AdaptationBridgeMetrics {
+  totalBridgesCount: number;
+  watchedAdaptationsCount: number;
+  watchlistAdaptationsCount: number;
+  queuedOnWatchlist: AdaptationLink[];
+  fromScreenToNightstand: AdaptationLink[];
+  allBridges: AdaptationLink[];
+}
+
+export interface AdaptationDivergenceItem {
+  id: string;
+  bookId: string;
+  bookTitle: string;
+  bookAuthor: string;
+  bookRating: number | null;
+  bookCoverUrl?: string | null;
+  filmTitle: string;
+  filmYear: number;
+  filmRating: number | null;
+  filmUri: string;
+  filmReview?: string | null;
+  delta: number | null; // bookRating - filmRating
+  verdict: 'favors-book' | 'favors-film' | 'parity' | 'unrated';
+}
+
+export interface NarrativeDietMonth {
+  yearMonth: string; // "2025-07"
+  label: string; // "Jul '25"
+  year: number;
+  month: number;
+  pagesRead: number;
+  booksRead: number;
+  filmsWatched: number;
+  isCinemaSurge: boolean; // e.g. filmsWatched >= 3 && pagesRead < 350
+}
+
+export interface AdaptationForensicsMetrics {
+  divergenceItems: AdaptationDivergenceItem[];
+  averageDelta: number | null; // e.g. +0.25
+  ratedPairsCount: number;
+  favorsBookCount: number;
+  favorsFilmCount: number;
+  parityCount: number;
+  dietTimeline: NarrativeDietMonth[];
+  maxMonthlyPages: number;
+  maxMonthlyFilms: number;
+  totalDietPages: number;
+  totalDietFilms: number;
+}
+
 export interface UserLocalState {
   version: string;
   updatedAt: string;
@@ -415,4 +485,96 @@ export interface LibraryBundle {
   reviewDrafts: ReviewDraft[];
   activityByHour: ActivityByHour | null;
   suggestedLists: SuggestedList[];
+}
+
+// ==========================================
+// SPRINT MANDATE #4: THE WORLD SHELF, PREDICTIVE TARGETS & ANNUAL REVIEWS
+// ==========================================
+
+export interface WorldShelfHub {
+  id: string; // e.g. 'anatolian', 'continental-europe', 'east-asian', 'anglo-american', 'antiquity-nordic'
+  name: string;
+  subtitle: string;
+  languages: LanguageCode[];
+  volumeCount: number;
+  totalPages: number;
+  averageRating: number | null;
+  signatureWorks: Array<{
+    id: string;
+    title: string;
+    author: string;
+    myRating?: number | null;
+    coverUrl?: string | null;
+  }>;
+  translationFlows: Array<{ flow: string; count: number }>;
+}
+
+export interface WorldShelfMetrics {
+  hubs: WorldShelfHub[];
+  totalVolumes: number;
+  totalHubsWithBooks: number;
+  topHub: WorldShelfHub | null;
+}
+
+export interface PredictiveTargetMetrics {
+  targetYear: number;
+  goalTarget: number;
+  completedCount: number;
+  percentComplete: number;
+  recentCadence30Days: {
+    booksRead: number;
+    pagesRead: number;
+    pagesPerDay: number;
+  };
+  recentCadence90Days: {
+    booksRead: number;
+    pagesRead: number;
+    pagesPerDay: number;
+  };
+  projectedYearEndFinish: number;
+  projectedTargetAchievedDate: string | null; // e.g. "October 14, 2026"
+  isAheadOfPace: boolean;
+  paceDeltaBooks: number; // e.g. +3.2 or -1.5
+  requiredPacePerMonth: number;
+  requiredPacePagesPerDay: number;
+  sprintSuggestions: Array<{
+    id: string;
+    title: string;
+    author: string;
+    pageCount: number;
+    oracleScore: number;
+    coverUrl?: string | null;
+  }>;
+}
+
+export interface AnnualReadingReview {
+  year: number; // e.g. 2024, 2025, 2026
+  volumesRead: number;
+  pagesRead: number;
+  averageRating: number | null;
+  medianDaysPerBook: number | null;
+  canon5StarBooks: Array<{
+    id: string;
+    title: string;
+    author: string;
+    myRating: number;
+    coverUrl?: string | null;
+  }>;
+  fastestSprintBook: {
+    id: string;
+    title: string;
+    author: string;
+    pageCount: number;
+  } | null;
+  deepestSavorBook: {
+    id: string;
+    title: string;
+    author: string;
+    pageCount: number;
+  } | null;
+  narrativeDiet: {
+    booksRead: number;
+    filmsWatched: number;
+    pagesRead: number;
+  };
 }

@@ -43,6 +43,471 @@ const MOTTO_PRESETS = [
   'Kitaplar sessiz öğretmenlerdir.',
 ];
 
+interface BookplateSvgProps {
+  ownerName: string;
+  motto: string;
+  fleuron: 'aldine' | 'compass' | 'owl' | 'quill';
+  borderStyle: 'venetian' | 'modernist' | 'guild';
+  includePenBlank?: boolean;
+  stats: {
+    totalVolumes: number;
+    totalPagesRead: number;
+  };
+  className?: string;
+  style?: React.CSSProperties;
+}
+
+export const BookplateSvg = React.forwardRef<SVGSVGElement, BookplateSvgProps>(
+  (
+    {
+      ownerName,
+      motto,
+      fleuron,
+      borderStyle,
+      includePenBlank = true,
+      stats,
+      className,
+      style,
+    },
+    ref
+  ) => {
+    return (
+      <svg
+        ref={ref}
+        viewBox="0 0 420 560"
+        className={className}
+        style={{ backgroundColor: '#FAF8F2', ...style }}
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        {/* Background Paper Tone */}
+        <rect width="420" height="560" fill="#FAF8F2" />
+
+        {/* Outer Border based on borderStyle */}
+        {borderStyle === 'venetian' && (
+          <>
+            <rect
+              x="16"
+              y="16"
+              width="388"
+              height="528"
+              fill="none"
+              stroke="#1C1B18"
+              strokeWidth="3.5"
+            />
+            <rect
+              x="24"
+              y="24"
+              width="372"
+              height="512"
+              fill="none"
+              stroke="#1C1B18"
+              strokeWidth="1"
+              strokeDasharray="4,2"
+            />
+            {/* Corner filigree ornaments */}
+            <path d="M24,36 L36,36 L36,24" fill="none" stroke="#9E3B24" strokeWidth="2" />
+            <path
+              d="M396,36 L384,36 L384,24"
+              fill="none"
+              stroke="#9E3B24"
+              strokeWidth="2"
+            />
+            <path
+              d="M24,524 L36,524 L36,536"
+              fill="none"
+              stroke="#9E3B24"
+              strokeWidth="2"
+            />
+            <path
+              d="M396,524 L384,524 L384,536"
+              fill="none"
+              stroke="#9E3B24"
+              strokeWidth="2"
+            />
+          </>
+        )}
+
+        {borderStyle === 'modernist' && (
+          <>
+            <rect
+              x="18"
+              y="18"
+              width="384"
+              height="524"
+              fill="none"
+              stroke="#1C1B18"
+              strokeWidth="5"
+            />
+            <rect
+              x="28"
+              y="28"
+              width="364"
+              height="504"
+              fill="none"
+              stroke="#9E3B24"
+              strokeWidth="1.5"
+            />
+            {/* Modernist tick marks */}
+            <line x1="18" y1="280" x2="35" y2="280" stroke="#1C1B18" strokeWidth="2" />
+            <line
+              x1="385"
+              y1="280"
+              x2="402"
+              y2="280"
+              stroke="#1C1B18"
+              strokeWidth="2"
+            />
+          </>
+        )}
+
+        {borderStyle === 'guild' && (
+          <>
+            <rect
+              x="16"
+              y="16"
+              width="388"
+              height="528"
+              fill="none"
+              stroke="#1C1B18"
+              strokeWidth="2"
+            />
+            <rect
+              x="22"
+              y="22"
+              width="376"
+              height="516"
+              fill="none"
+              stroke="#C89D3C"
+              strokeWidth="2"
+            />
+            <rect
+              x="28"
+              y="28"
+              width="364"
+              height="504"
+              fill="none"
+              stroke="#1C1B18"
+              strokeWidth="1"
+              strokeDasharray="3,3"
+            />
+          </>
+        )}
+
+        {/* Header: EX LIBRIS */}
+        <text
+          x="210"
+          y="70"
+          textAnchor="middle"
+          fontFamily="Georgia, 'Times New Roman', serif"
+          fontSize="22"
+          fontWeight="bold"
+          letterSpacing="6"
+          fill="#1C1B18"
+        >
+          EX LIBRIS
+        </text>
+
+        {/* Decorative rule */}
+        <line x1="80" y1="88" x2="340" y2="88" stroke="#1C1B18" strokeWidth="1" />
+        <circle cx="210" cy="88" r="3.5" fill="#C89D3C" />
+        <circle cx="160" cy="88" r="2" fill="#1C1B18" />
+        <circle cx="260" cy="88" r="2" fill="#1C1B18" />
+
+        {/* Center Emblem Graphic */}
+        <g transform="translate(0, 10)">
+          {fleuron === 'aldine' && (
+            <g id="emblem-aldine">
+              {/* Aldine Anchor & Dolphin Vector */}
+              <circle
+                cx="210"
+                cy="165"
+                r="13"
+                fill="none"
+                stroke="#1C1B18"
+                strokeWidth="3.5"
+              />
+              <line
+                x1="210"
+                y1="178"
+                x2="210"
+                y2="278"
+                stroke="#1C1B18"
+                strokeWidth="4.5"
+              />
+              <line
+                x1="175"
+                y1="200"
+                x2="245"
+                y2="200"
+                stroke="#1C1B18"
+                strokeWidth="4"
+              />
+              <circle cx="175" cy="200" r="3" fill="#1C1B18" />
+              <circle cx="245" cy="200" r="3" fill="#1C1B18" />
+              {/* Anchor bottom curved flukes */}
+              <path
+                d="M165,255 C175,295 245,295 255,255"
+                fill="none"
+                stroke="#1C1B18"
+                strokeWidth="4"
+              />
+              <polygon points="160,250 172,255 165,263" fill="#1C1B18" />
+              <polygon points="260,250 248,255 255,263" fill="#1C1B18" />
+              {/* Coiled Aldine Dolphin silhouette */}
+              <path
+                d="M210,190 C235,190 248,212 242,235 C236,258 200,260 210,285 C215,295 230,295 235,285"
+                fill="none"
+                stroke="#9E3B24"
+                strokeWidth="3.5"
+              />
+              {/* Ivy leaves flanking */}
+              <path
+                d="M145,225 C135,210 145,195 155,200 C165,205 160,225 145,225 Z"
+                fill="#C89D3C"
+                opacity="0.8"
+              />
+              <path
+                d="M275,225 C285,210 275,195 265,200 C255,205 260,225 275,225 Z"
+                fill="#C89D3C"
+                opacity="0.8"
+              />
+            </g>
+          )}
+
+          {fleuron === 'compass' && (
+            <g id="emblem-compass">
+              {/* Astrolabe / Mariner's Compass Rose */}
+              <circle
+                cx="210"
+                cy="225"
+                r="52"
+                fill="none"
+                stroke="#1C1B18"
+                strokeWidth="2"
+              />
+              <circle
+                cx="210"
+                cy="225"
+                r="46"
+                fill="none"
+                stroke="#C89D3C"
+                strokeWidth="1"
+                strokeDasharray="4,2"
+              />
+              <circle
+                cx="210"
+                cy="225"
+                r="4"
+                fill="#9E3B24"
+              />
+              {/* 8-Point Star Points */}
+              {/* North Point */}
+              <polygon points="210,170 216,220 210,225" fill="#1C1B18" />
+              <polygon points="210,170 204,220 210,225" fill="#FAF8F2" stroke="#1C1B18" strokeWidth="1" />
+              {/* South Point */}
+              <polygon points="210,280 216,230 210,225" fill="#FAF8F2" stroke="#1C1B18" strokeWidth="1" />
+              <polygon points="210,280 204,230 210,225" fill="#1C1B18" />
+              {/* East Point */}
+              <polygon points="265,225 215,219 210,225" fill="#1C1B18" />
+              <polygon points="265,225 215,231 210,225" fill="#FAF8F2" stroke="#1C1B18" strokeWidth="1" />
+              {/* West Point */}
+              <polygon points="155,225 205,219 210,225" fill="#FAF8F2" stroke="#1C1B18" strokeWidth="1" />
+              <polygon points="155,225 205,231 210,225" fill="#1C1B18" />
+              {/* Fleur-de-lis North ornament */}
+              <polygon points="210,160 215,168 205,168" fill="#9E3B24" />
+            </g>
+          )}
+
+          {fleuron === 'owl' && (
+            <g id="emblem-owl">
+              {/* Owl of Minerva on Codex */}
+              {/* Open Codex Book below */}
+              <path
+                d="M165,275 C185,270 205,272 210,280 C215,272 235,270 255,275 L255,285 C235,280 215,282 210,290 C205,282 185,280 165,285 Z"
+                fill="#C89D3C"
+                stroke="#1C1B18"
+                strokeWidth="2"
+              />
+              {/* Owl Body & Head */}
+              <ellipse cx="210" cy="225" rx="34" ry="42" fill="#1C1B18" />
+              <circle cx="197" cy="205" r="10" fill="#FAF8F2" stroke="#C89D3C" strokeWidth="2" />
+              <circle cx="223" cy="205" r="10" fill="#FAF8F2" stroke="#C89D3C" strokeWidth="2" />
+              <circle cx="197" cy="205" r="4" fill="#1C1B18" />
+              <circle cx="223" cy="205" r="4" fill="#1C1B18" />
+              <polygon points="210,212 214,222 206,222" fill="#9E3B24" />
+              {/* Ear Tufts */}
+              <polygon points="185,185 195,195 180,200" fill="#1C1B18" />
+              <polygon points="235,185 225,195 240,200" fill="#1C1B18" />
+              {/* Feather Hatching */}
+              <path d="M190,235 Q210,250 230,235" fill="none" stroke="#FAF8F2" strokeWidth="1.5" />
+              <path d="M195,248 Q210,260 225,248" fill="none" stroke="#FAF8F2" strokeWidth="1.5" />
+            </g>
+          )}
+
+          {fleuron === 'quill' && (
+            <g id="emblem-quill">
+              {/* Crossed Goose Quill and Laurel Arc */}
+              {/* Inkwell base */}
+              <polygon points="195,275 225,275 220,288 200,288" fill="#1C1B18" />
+              <rect x="202" y="270" width="16" height="5" fill="#C89D3C" />
+              {/* Quill shaft */}
+              <path
+                d="M245,170 C235,195 220,240 208,272"
+                fill="none"
+                stroke="#1C1B18"
+                strokeWidth="3.5"
+              />
+              {/* Quill feather vanes */}
+              <path
+                d="M245,170 C220,185 210,215 220,235 C225,220 238,200 245,170 Z"
+                fill="#9E3B24"
+                opacity="0.85"
+              />
+              <path
+                d="M245,170 C258,190 248,220 230,238 C238,218 245,195 245,170 Z"
+                fill="#C89D3C"
+                opacity="0.85"
+              />
+              {/* Laurel Arc */}
+              <path
+                d="M160,250 C155,210 170,185 195,175"
+                fill="none"
+                stroke="#1C1B18"
+                strokeWidth="1.5"
+                strokeDasharray="4,3"
+              />
+            </g>
+          )}
+        </g>
+
+        {/* Owner Name Section */}
+        <text
+          x="210"
+          y="350"
+          textAnchor="middle"
+          fontFamily="Georgia, 'Times New Roman', serif"
+          fontSize="24"
+          fontWeight="700"
+          letterSpacing="3"
+          fill="#1C1B18"
+        >
+          {(ownerName || 'Murat').toUpperCase()}
+        </text>
+
+        {/* Motto Ribbon Banner */}
+        <g transform="translate(0, 368)">
+          <path
+            d="M 50,22 L 370,22 L 358,40 L 370,58 L 50,58 L 62,40 Z"
+            fill="#FAF8F2"
+            stroke="#1C1B18"
+            strokeWidth="1.8"
+          />
+          <line x1="66" y1="26" x2="354" y2="26" stroke="#C89D3C" strokeWidth="1" />
+          <line x1="66" y1="54" x2="354" y2="54" stroke="#C89D3C" strokeWidth="1" />
+          <text
+            x="210"
+            y="44"
+            textAnchor="middle"
+            fontFamily="Georgia, 'Times New Roman', serif"
+            fontSize="13"
+            fontStyle="italic"
+            fill="#5C3826"
+          >
+            “{motto || 'Private Library of Murat'}”
+          </text>
+        </g>
+
+        {/* Archival Metrics Ledger Footer OR Fountain-Pen Inscription Blank */}
+        {includePenBlank ? (
+          <g transform="translate(0, 460)">
+            <line x1="65" y1="0" x2="355" y2="0" stroke="#DCD6C8" strokeWidth="1" />
+            <text
+              x="75"
+              y="22"
+              fontFamily="'JetBrains Mono', monospace, ui-monospace"
+              fontSize="9.5"
+              letterSpacing="1.5"
+              fill="#5E5A52"
+            >
+              VOL. NO. ________________
+            </text>
+            <text
+              x="268"
+              y="22"
+              fontFamily="'JetBrains Mono', monospace, ui-monospace"
+              fontSize="9.5"
+              letterSpacing="1.5"
+              fill="#5E5A52"
+            >
+              DATE: 2026
+            </text>
+            <text
+              x="210"
+              y="44"
+              textAnchor="middle"
+              fontFamily="'JetBrains Mono', monospace, ui-monospace"
+              fontSize="9"
+              letterSpacing="2.5"
+              fill="#9E3B24"
+            >
+              EX LIBRIS ARCHIVE · EST. 2026
+            </text>
+            <text
+              x="210"
+              y="60"
+              textAnchor="middle"
+              fontFamily="Georgia, 'Times New Roman', serif"
+              fontSize="8.5"
+              fontStyle="italic"
+              fill="#9A958C"
+            >
+              ❧ Aldus Manutius Studio Edition ❧
+            </text>
+          </g>
+        ) : (
+          <g transform="translate(0, 0)">
+            <line x1="70" y1="465" x2="350" y2="465" stroke="#DCD6C8" strokeWidth="1" />
+            <text
+              x="210"
+              y="484"
+              textAnchor="middle"
+              fontFamily="'JetBrains Mono', monospace, ui-monospace"
+              fontSize="10.5"
+              letterSpacing="2"
+              fill="#5E5A52"
+            >
+              {stats.totalVolumes} VOLUMES · {stats.totalPagesRead.toLocaleString()} PAGES READ
+            </text>
+            <text
+              x="210"
+              y="504"
+              textAnchor="middle"
+              fontFamily="'JetBrains Mono', monospace, ui-monospace"
+              fontSize="9"
+              letterSpacing="2.5"
+              fill="#9E3B24"
+            >
+              EX LIBRIS ARCHIVE · EST. 2026
+            </text>
+            <text
+              x="210"
+              y="522"
+              textAnchor="middle"
+              fontFamily="Georgia, 'Times New Roman', serif"
+              fontSize="9"
+              fontStyle="italic"
+              fill="#9A958C"
+            >
+              ❧ Aldus Manutius Studio Edition ❧
+            </text>
+          </g>
+        )}
+      </svg>
+    );
+  }
+);
+BookplateSvg.displayName = 'BookplateSvg';
+
 export const BroadsideBookplateModal: React.FC<BroadsideBookplateModalProps> = ({
   isOpen,
   onClose,
@@ -51,7 +516,10 @@ export const BroadsideBookplateModal: React.FC<BroadsideBookplateModalProps> = (
   enrichmentCache,
   onSaveBookplateConfig,
 }) => {
-  const [activeTab, setActiveTab] = useState<'bookplate' | 'broadside'>('bookplate');
+  const [activeTab, setActiveTab] = useState<'bookplate' | 'stickers' | 'broadside'>('bookplate');
+  const [stickerGridMode, setStickerGridMode] = useState<'6-up' | '8-up'>('6-up');
+  const [includePenBlank, setIncludePenBlank] = useState<boolean>(true);
+  const [isExportingPng, setIsExportingPng] = useState<boolean>(false);
 
   // Bookplate Studio State
   const initialConfig = userState.bookplateConfig;
@@ -185,6 +653,62 @@ export const BroadsideBookplateModal: React.FC<BroadsideBookplateModalProps> = (
     }
   };
 
+  const handleDownloadPng = async () => {
+    if (!svgRef.current) return;
+    setIsExportingPng(true);
+    try {
+      const serializer = new XMLSerializer();
+      let source = serializer.serializeToString(svgRef.current);
+      if (!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)) {
+        source = source.replace(
+          /^<svg/,
+          '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"'
+        );
+      }
+      const svgBlob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' });
+      const URL = window.URL || window.webkitURL || window;
+      const blobURL = URL.createObjectURL(svgBlob);
+
+      const img = new Image();
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = (e) => reject(e);
+        img.src = blobURL;
+      });
+
+      const canvas = document.createElement('canvas');
+      // 300 DPI high-resolution export (3x standard 420x560): 1260 x 1680
+      canvas.width = 1260;
+      canvas.height = 1680;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Could not get 2d context');
+
+      ctx.fillStyle = '#FAF8F2';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(blobURL);
+
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          setIsExportingPng(false);
+          return;
+        }
+        const downloadUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = `ex-libris-${(ownerName || 'reader').toLowerCase().replace(/\s+/g, '-')}-bookplate-300dpi.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(downloadUrl);
+        setIsExportingPng(false);
+      }, 'image/png');
+    } catch (err) {
+      console.error('Failed to export 300 DPI PNG bookplate:', err);
+      setIsExportingPng(false);
+    }
+  };
+
   const handleCopyMarkdownEmbed = async () => {
     const cleanName = ownerName.trim() || 'Murat';
     const cleanMotto = motto.trim() || 'Private Library of Murat';
@@ -209,6 +733,72 @@ export const BroadsideBookplateModal: React.FC<BroadsideBookplateModalProps> = (
       role="dialog"
       aria-modal="true"
     >
+      <style>{`
+        @media print {
+          @page {
+            size: A4 portrait;
+            margin: 8mm;
+          }
+          body {
+            background: white !important;
+            color: black !important;
+          }
+          body * {
+            visibility: hidden;
+          }
+          .broadside-modal-container,
+          .broadside-modal-container * {
+            visibility: visible;
+          }
+          .no-print {
+            display: none !important;
+          }
+          .broadside-modal-container {
+            position: static !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            background: white !important;
+            width: 100% !important;
+            height: auto !important;
+            display: block !important;
+            inset: auto !important;
+            z-index: auto !important;
+          }
+          .drawer-backdrop {
+            display: none !important;
+          }
+          .broadside-modal-dialog {
+            position: static !important;
+            border: none !important;
+            box-shadow: none !important;
+            max-width: 100% !important;
+            max-height: none !important;
+            background: white !important;
+            border-radius: 0 !important;
+            overflow: visible !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          .print-sheet-wrapper {
+            padding: 0 !important;
+            margin: 0 auto !important;
+            background: white !important;
+            box-shadow: none !important;
+            border: none !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            page-break-inside: avoid;
+          }
+          .broadside-sheet {
+            box-shadow: none !important;
+            border: 2px solid #1C1B18 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            page-break-inside: avoid;
+          }
+        }
+      `}</style>
       {/* Backdrop */}
       <div
         onClick={onClose}
@@ -260,6 +850,18 @@ export const BroadsideBookplateModal: React.FC<BroadsideBookplateModalProps> = (
           >
             <Shield className="w-4 h-4 text-[var(--accent-gold)]" />
             <span>Ex Libris Woodcut Bookplate</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('stickers')}
+            className={`flex items-center gap-2 py-3 px-4 border-b-2 font-serif-editorial text-sm font-semibold transition-all cursor-pointer ${
+              activeTab === 'stickers'
+                ? 'border-[var(--accent-gold)] text-[var(--text-ink)] bg-[var(--bg-card)]/50'
+                : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-ink)]'
+            }`}
+          >
+            <Printer className="w-4 h-4 text-[var(--accent-gold)]" />
+            <span>Physical Sticker Sheet (A4)</span>
           </button>
 
           <button
@@ -408,6 +1010,24 @@ export const BroadsideBookplateModal: React.FC<BroadsideBookplateModalProps> = (
                   </div>
                 </div>
 
+                {/* Fountain Pen Inscription Blank Option */}
+                <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)]">
+                  <div>
+                    <div className="text-xs font-serif-editorial font-bold text-[var(--text-ink)]">
+                      Fountain-Pen Inscription Blank
+                    </div>
+                    <div className="text-[10px] text-[var(--text-muted)] font-mono-tabular">
+                      Include “Vol. No. ___ Date: 2026” blank for hand-numbering stacked volumes
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={includePenBlank}
+                    onChange={(e) => setIncludePenBlank(e.target.checked)}
+                    className="w-4 h-4 rounded text-[var(--accent-gold)] accent-[var(--accent-gold)] cursor-pointer"
+                  />
+                </div>
+
                 {/* Studio Action Buttons */}
                 <div className="pt-2 flex flex-wrap gap-2.5">
                   <button
@@ -440,6 +1060,27 @@ export const BroadsideBookplateModal: React.FC<BroadsideBookplateModalProps> = (
 
                   <button
                     type="button"
+                    onClick={handleDownloadPng}
+                    disabled={isExportingPng}
+                    className="px-3.5 py-2.5 rounded-lg bg-[var(--bg-surface)] hover:bg-[var(--border-ledger)] border border-[var(--border-ledger)] text-[var(--text-ink)] font-mono-tabular text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                    title="Download high-resolution 300 DPI PNG (1260×1680) with parchment background"
+                  >
+                    <Download className="w-3.5 h-3.5 text-[var(--accent-gold)]" />
+                    <span>{isExportingPng ? 'Exporting...' : '300 DPI PNG'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('stickers')}
+                    className="px-3.5 py-2.5 rounded-lg bg-[var(--bg-surface)] hover:bg-[var(--border-ledger)] border border-[var(--border-ledger)] text-[var(--text-ink)] font-mono-tabular text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                    title="Open physical sticker sheet layout to print A4 sheets"
+                  >
+                    <Printer className="w-3.5 h-3.5 text-[var(--accent-gold)]" />
+                    <span>Print Sticker Sheet</span>
+                  </button>
+
+                  <button
+                    type="button"
                     onClick={handleCopyMarkdownEmbed}
                     className="px-3.5 py-2.5 rounded-lg bg-[var(--bg-surface)] hover:bg-[var(--border-ledger)] border border-[var(--border-ledger)] text-[var(--text-ink)] font-mono-tabular text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
                     title="Copy markdown quote embed for Obsidian or reading log notes"
@@ -467,394 +1108,137 @@ export const BroadsideBookplateModal: React.FC<BroadsideBookplateModalProps> = (
                 </div>
 
                 <div className="p-3 bg-white/70 dark:bg-black/30 rounded-lg shadow-inner flex items-center justify-center">
-                  <svg
+                  <BookplateSvg
                     ref={svgRef}
-                    viewBox="0 0 420 560"
-                    width="320"
-                    height="426"
+                    ownerName={ownerName}
+                    motto={motto}
+                    fleuron={fleuron}
+                    borderStyle={borderStyle}
+                    includePenBlank={includePenBlank}
+                    stats={stats}
                     className="w-full max-w-[300px] sm:max-w-[340px] h-auto shadow-md rounded-xs border border-[#DCD6C8]"
-                    style={{ backgroundColor: '#FAF8F2' }}
-                  >
-                    {/* Background Paper Tone */}
-                    <rect width="420" height="560" fill="#FAF8F2" />
-
-                    {/* Outer Border based on borderStyle */}
-                    {borderStyle === 'venetian' && (
-                      <>
-                        <rect
-                          x="16"
-                          y="16"
-                          width="388"
-                          height="528"
-                          fill="none"
-                          stroke="#1C1B18"
-                          strokeWidth="3.5"
-                        />
-                        <rect
-                          x="24"
-                          y="24"
-                          width="372"
-                          height="512"
-                          fill="none"
-                          stroke="#1C1B18"
-                          strokeWidth="1"
-                          strokeDasharray="4,2"
-                        />
-                        {/* Corner filigree ornaments */}
-                        <path d="M24,36 L36,36 L36,24" fill="none" stroke="#9E3B24" strokeWidth="2" />
-                        <path
-                          d="M396,36 L384,36 L384,24"
-                          fill="none"
-                          stroke="#9E3B24"
-                          strokeWidth="2"
-                        />
-                        <path
-                          d="M24,524 L36,524 L36,536"
-                          fill="none"
-                          stroke="#9E3B24"
-                          strokeWidth="2"
-                        />
-                        <path
-                          d="M396,524 L384,524 L384,536"
-                          fill="none"
-                          stroke="#9E3B24"
-                          strokeWidth="2"
-                        />
-                      </>
-                    )}
-
-                    {borderStyle === 'modernist' && (
-                      <>
-                        <rect
-                          x="18"
-                          y="18"
-                          width="384"
-                          height="524"
-                          fill="none"
-                          stroke="#1C1B18"
-                          strokeWidth="5"
-                        />
-                        <rect
-                          x="28"
-                          y="28"
-                          width="364"
-                          height="504"
-                          fill="none"
-                          stroke="#9E3B24"
-                          strokeWidth="1.5"
-                        />
-                        {/* Modernist tick marks */}
-                        <line x1="18" y1="280" x2="35" y2="280" stroke="#1C1B18" strokeWidth="2" />
-                        <line
-                          x1="385"
-                          y1="280"
-                          x2="402"
-                          y2="280"
-                          stroke="#1C1B18"
-                          strokeWidth="2"
-                        />
-                      </>
-                    )}
-
-                    {borderStyle === 'guild' && (
-                      <>
-                        <rect
-                          x="16"
-                          y="16"
-                          width="388"
-                          height="528"
-                          fill="none"
-                          stroke="#1C1B18"
-                          strokeWidth="2"
-                        />
-                        <rect
-                          x="22"
-                          y="22"
-                          width="376"
-                          height="516"
-                          fill="none"
-                          stroke="#C89D3C"
-                          strokeWidth="2"
-                        />
-                        <rect
-                          x="28"
-                          y="28"
-                          width="364"
-                          height="504"
-                          fill="none"
-                          stroke="#1C1B18"
-                          strokeWidth="1"
-                          strokeDasharray="3,3"
-                        />
-                      </>
-                    )}
-
-                    {/* Header: EX LIBRIS */}
-                    <text
-                      x="210"
-                      y="70"
-                      textAnchor="middle"
-                      fontFamily="Georgia, 'Times New Roman', serif"
-                      fontSize="22"
-                      fontWeight="bold"
-                      letterSpacing="6"
-                      fill="#1C1B18"
-                    >
-                      EX LIBRIS
-                    </text>
-
-                    {/* Decorative rule */}
-                    <line x1="80" y1="88" x2="340" y2="88" stroke="#1C1B18" strokeWidth="1" />
-                    <circle cx="210" cy="88" r="3.5" fill="#C89D3C" />
-                    <circle cx="160" cy="88" r="2" fill="#1C1B18" />
-                    <circle cx="260" cy="88" r="2" fill="#1C1B18" />
-
-                    {/* Center Emblem Graphic */}
-                    <g transform="translate(0, 10)">
-                      {fleuron === 'aldine' && (
-                        <g id="emblem-aldine">
-                          {/* Aldine Anchor & Dolphin Vector */}
-                          <circle
-                            cx="210"
-                            cy="165"
-                            r="13"
-                            fill="none"
-                            stroke="#1C1B18"
-                            strokeWidth="3.5"
-                          />
-                          <line
-                            x1="210"
-                            y1="178"
-                            x2="210"
-                            y2="278"
-                            stroke="#1C1B18"
-                            strokeWidth="4.5"
-                          />
-                          <line
-                            x1="175"
-                            y1="200"
-                            x2="245"
-                            y2="200"
-                            stroke="#1C1B18"
-                            strokeWidth="4"
-                          />
-                          <circle cx="175" cy="200" r="3" fill="#1C1B18" />
-                          <circle cx="245" cy="200" r="3" fill="#1C1B18" />
-                          {/* Anchor bottom curved flukes */}
-                          <path
-                            d="M165,255 C175,295 245,295 255,255"
-                            fill="none"
-                            stroke="#1C1B18"
-                            strokeWidth="4"
-                          />
-                          <polygon points="160,250 172,255 165,263" fill="#1C1B18" />
-                          <polygon points="260,250 248,255 255,263" fill="#1C1B18" />
-                          {/* Coiled Aldine Dolphin silhouette */}
-                          <path
-                            d="M210,190 C235,190 248,212 242,235 C236,258 200,260 210,285 C215,295 230,295 235,285"
-                            fill="none"
-                            stroke="#9E3B24"
-                            strokeWidth="3.5"
-                          />
-                          {/* Ivy leaves flanking */}
-                          <path
-                            d="M145,225 C135,210 145,195 155,200 C165,205 160,225 145,225 Z"
-                            fill="#C89D3C"
-                            opacity="0.8"
-                          />
-                          <path
-                            d="M275,225 C285,210 275,195 265,200 C255,205 260,225 275,225 Z"
-                            fill="#C89D3C"
-                            opacity="0.8"
-                          />
-                        </g>
-                      )}
-
-                      {fleuron === 'compass' && (
-                        <g id="emblem-compass">
-                          {/* Astrolabe / Mariner's Compass Rose */}
-                          <circle
-                            cx="210"
-                            cy="225"
-                            r="52"
-                            fill="none"
-                            stroke="#1C1B18"
-                            strokeWidth="2"
-                          />
-                          <circle
-                            cx="210"
-                            cy="225"
-                            r="46"
-                            fill="none"
-                            stroke="#C89D3C"
-                            strokeWidth="1"
-                            strokeDasharray="4,2"
-                          />
-                          <circle
-                            cx="210"
-                            cy="225"
-                            r="4"
-                            fill="#9E3B24"
-                          />
-                          {/* 8-Point Star Points */}
-                          {/* North Point */}
-                          <polygon points="210,170 216,220 210,225" fill="#1C1B18" />
-                          <polygon points="210,170 204,220 210,225" fill="#FAF8F2" stroke="#1C1B18" strokeWidth="1" />
-                          {/* South Point */}
-                          <polygon points="210,280 216,230 210,225" fill="#FAF8F2" stroke="#1C1B18" strokeWidth="1" />
-                          <polygon points="210,280 204,230 210,225" fill="#1C1B18" />
-                          {/* East Point */}
-                          <polygon points="265,225 215,219 210,225" fill="#1C1B18" />
-                          <polygon points="265,225 215,231 210,225" fill="#FAF8F2" stroke="#1C1B18" strokeWidth="1" />
-                          {/* West Point */}
-                          <polygon points="155,225 205,219 210,225" fill="#FAF8F2" stroke="#1C1B18" strokeWidth="1" />
-                          <polygon points="155,225 205,231 210,225" fill="#1C1B18" />
-                          {/* Fleur-de-lis North ornament */}
-                          <polygon points="210,160 215,168 205,168" fill="#9E3B24" />
-                        </g>
-                      )}
-
-                      {fleuron === 'owl' && (
-                        <g id="emblem-owl">
-                          {/* Owl of Minerva on Codex */}
-                          {/* Open Codex Book below */}
-                          <path
-                            d="M165,275 C185,270 205,272 210,280 C215,272 235,270 255,275 L255,285 C235,280 215,282 210,290 C205,282 185,280 165,285 Z"
-                            fill="#C89D3C"
-                            stroke="#1C1B18"
-                            strokeWidth="2"
-                          />
-                          {/* Owl Body & Head */}
-                          <ellipse cx="210" cy="225" rx="34" ry="42" fill="#1C1B18" />
-                          <circle cx="197" cy="205" r="10" fill="#FAF8F2" stroke="#C89D3C" strokeWidth="2" />
-                          <circle cx="223" cy="205" r="10" fill="#FAF8F2" stroke="#C89D3C" strokeWidth="2" />
-                          <circle cx="197" cy="205" r="4" fill="#1C1B18" />
-                          <circle cx="223" cy="205" r="4" fill="#1C1B18" />
-                          <polygon points="210,212 214,222 206,222" fill="#9E3B24" />
-                          {/* Ear Tufts */}
-                          <polygon points="185,185 195,195 180,200" fill="#1C1B18" />
-                          <polygon points="235,185 225,195 240,200" fill="#1C1B18" />
-                          {/* Feather Hatching */}
-                          <path d="M190,235 Q210,250 230,235" fill="none" stroke="#FAF8F2" strokeWidth="1.5" />
-                          <path d="M195,248 Q210,260 225,248" fill="none" stroke="#FAF8F2" strokeWidth="1.5" />
-                        </g>
-                      )}
-
-                      {fleuron === 'quill' && (
-                        <g id="emblem-quill">
-                          {/* Crossed Goose Quill and Laurel Arc */}
-                          {/* Inkwell base */}
-                          <polygon points="195,275 225,275 220,288 200,288" fill="#1C1B18" />
-                          <rect x="202" y="270" width="16" height="5" fill="#C89D3C" />
-                          {/* Quill shaft */}
-                          <path
-                            d="M245,170 C235,195 220,240 208,272"
-                            fill="none"
-                            stroke="#1C1B18"
-                            strokeWidth="3.5"
-                          />
-                          {/* Quill feather vanes */}
-                          <path
-                            d="M245,170 C220,185 210,215 220,235 C225,220 238,200 245,170 Z"
-                            fill="#9E3B24"
-                            opacity="0.85"
-                          />
-                          <path
-                            d="M245,170 C258,190 248,220 230,238 C238,218 245,195 245,170 Z"
-                            fill="#C89D3C"
-                            opacity="0.85"
-                          />
-                          {/* Laurel Arc */}
-                          <path
-                            d="M160,250 C155,210 170,185 195,175"
-                            fill="none"
-                            stroke="#1C1B18"
-                            strokeWidth="1.5"
-                            strokeDasharray="4,3"
-                          />
-                        </g>
-                      )}
-                    </g>
-
-                    {/* Owner Name Section */}
-                    <text
-                      x="210"
-                      y="350"
-                      textAnchor="middle"
-                      fontFamily="Georgia, 'Times New Roman', serif"
-                      fontSize="24"
-                      fontWeight="700"
-                      letterSpacing="3"
-                      fill="#1C1B18"
-                    >
-                      {(ownerName || 'Murat').toUpperCase()}
-                    </text>
-
-                    {/* Motto Ribbon Banner */}
-                    <g transform="translate(0, 368)">
-                      <path
-                        d="M 50,22 L 370,22 L 358,40 L 370,58 L 50,58 L 62,40 Z"
-                        fill="#FAF8F2"
-                        stroke="#1C1B18"
-                        strokeWidth="1.8"
-                      />
-                      <line x1="66" y1="26" x2="354" y2="26" stroke="#C89D3C" strokeWidth="1" />
-                      <line x1="66" y1="54" x2="354" y2="54" stroke="#C89D3C" strokeWidth="1" />
-                      <text
-                        x="210"
-                        y="44"
-                        textAnchor="middle"
-                        fontFamily="Georgia, 'Times New Roman', serif"
-                        fontSize="13"
-                        fontStyle="italic"
-                        fill="#5C3826"
-                      >
-                        “{motto || 'Private Library of Murat'}”
-                      </text>
-                    </g>
-
-                    {/* Archival Metrics Ledger Footer */}
-                    <line x1="70" y1="465" x2="350" y2="465" stroke="#DCD6C8" strokeWidth="1" />
-                    <text
-                      x="210"
-                      y="484"
-                      textAnchor="middle"
-                      fontFamily="'JetBrains Mono', monospace, ui-monospace"
-                      fontSize="10.5"
-                      letterSpacing="2"
-                      fill="#5E5A52"
-                    >
-                      {stats.totalVolumes} VOLUMES · {stats.totalPagesRead.toLocaleString()} PAGES READ
-                    </text>
-
-                    <text
-                      x="210"
-                      y="504"
-                      textAnchor="middle"
-                      fontFamily="'JetBrains Mono', monospace, ui-monospace"
-                      fontSize="9"
-                      letterSpacing="2.5"
-                      fill="#9E3B24"
-                    >
-                      EX LIBRIS ARCHIVE · EST. 2026
-                    </text>
-
-                    <text
-                      x="210"
-                      y="522"
-                      textAnchor="middle"
-                      fontFamily="Georgia, 'Times New Roman', serif"
-                      fontSize="9"
-                      fontStyle="italic"
-                      fill="#9A958C"
-                    >
-                      ❧ Aldus Manutius Studio Edition ❧
-                    </text>
-                  </svg>
+                  />
                 </div>
 
                 <div className="mt-3 text-[11px] text-[var(--text-muted)] italic text-center">
                   Rendered at 420 × 560 intaglio ratio · Clean vector linework
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 2: Printable Sticker Sheet Content */}
+        {activeTab === 'stickers' && (
+          <div className="p-5 sm:p-7 overflow-y-auto space-y-6 flex-1 bg-[var(--bg-card)]/40">
+            {/* Sticker Controls Bar (Hidden during print) */}
+            <div className="no-print flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-ledger)] shadow-2xs">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-serif-editorial text-sm font-bold text-[var(--text-ink)]">
+                    A4 Adhesive Sticker Sheet Calibration
+                  </span>
+                  <span className="px-2 py-0.5 rounded text-[10px] font-mono-tabular uppercase tracking-wider bg-[var(--accent-gold)]/10 text-[var(--accent-gold)] font-bold">
+                    Print-Ready
+                  </span>
+                </div>
+                <p className="text-xs text-[var(--text-muted)] font-mono-tabular">
+                  Dashed crop lines mark exact cutting margins for paper guillotine or scissors.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3">
+                {/* Grid Mode Selector */}
+                <div className="flex items-center rounded-lg border border-[var(--border-ledger)] p-0.5 bg-[var(--bg-card)]">
+                  <button
+                    type="button"
+                    onClick={() => setStickerGridMode('6-up')}
+                    className={`px-3 py-1.5 rounded-md text-xs font-mono-tabular font-semibold transition-all cursor-pointer ${
+                      stickerGridMode === '6-up'
+                        ? 'bg-[var(--accent-gold)] text-[#1C1B18] shadow-2xs'
+                        : 'text-[var(--text-muted)] hover:text-[var(--text-ink)]'
+                    }`}
+                  >
+                    6-Up (2×3 · 85×120mm)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStickerGridMode('8-up')}
+                    className={`px-3 py-1.5 rounded-md text-xs font-mono-tabular font-semibold transition-all cursor-pointer ${
+                      stickerGridMode === '8-up'
+                        ? 'bg-[var(--accent-gold)] text-[#1C1B18] shadow-2xs'
+                        : 'text-[var(--text-muted)] hover:text-[var(--text-ink)]'
+                    }`}
+                  >
+                    8-Up (2×4 · 85×90mm)
+                  </button>
+                </div>
+
+                {/* Fountain-Pen Blank Checkbox */}
+                <label className="flex items-center gap-2 text-xs font-mono-tabular text-[var(--text-ink)] cursor-pointer select-none px-2 py-1.5 rounded-lg hover:bg-[var(--bg-card)] transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={includePenBlank}
+                    onChange={(e) => setIncludePenBlank(e.target.checked)}
+                    className="w-3.5 h-3.5 rounded text-[var(--accent-gold)] accent-[var(--accent-gold)] cursor-pointer"
+                  />
+                  <span>Fountain-Pen Blank</span>
+                </label>
+
+                {/* Download PNG */}
+                <button
+                  type="button"
+                  onClick={handleDownloadPng}
+                  disabled={isExportingPng}
+                  className="px-3.5 py-2 rounded-lg bg-[var(--bg-surface)] hover:bg-[var(--border-ledger)] border border-[var(--border-ledger)] text-[var(--text-ink)] font-mono-tabular text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                  title="Download 300 DPI high-resolution PNG"
+                >
+                  <Download className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
+                  <span>{isExportingPng ? 'Exporting...' : 'Single 300 DPI PNG'}</span>
+                </button>
+
+                {/* Print Button */}
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="px-4 py-2 rounded-lg bg-[var(--accent-gold)] hover:brightness-105 text-[#1C1B18] font-serif-editorial font-bold text-xs flex items-center gap-2 shadow-sm transition-all cursor-pointer"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>Print Sticker Sheet</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Printable A4 Sheet Preview */}
+            <div className="flex justify-center py-2">
+              <div className="print-sheet-wrapper w-full max-w-[700px] bg-[#FAF8F2] p-6 sm:p-8 rounded-sm shadow-xl border border-[#DCD6C8]">
+                <div
+                  className={`grid grid-cols-2 gap-4 sm:gap-6 ${
+                    stickerGridMode === '6-up' ? 'grid-rows-3' : 'grid-rows-4'
+                  }`}
+                >
+                  {Array.from({ length: stickerGridMode === '6-up' ? 6 : 8 }).map((_, idx) => (
+                    <div
+                      key={idx}
+                      className="relative p-2.5 rounded-xs border border-dashed border-[#B8B0A2]/80 bg-[#FAF8F2] flex items-center justify-center overflow-hidden shadow-2xs"
+                    >
+                      {/* Corner Cutting Crop Marks */}
+                      <span className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-[#1C1B18]/50" />
+                      <span className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-[#1C1B18]/50" />
+                      <span className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-[#1C1B18]/50" />
+                      <span className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-[#1C1B18]/50" />
+
+                      <BookplateSvg
+                        ownerName={ownerName}
+                        motto={motto}
+                        fleuron={fleuron}
+                        borderStyle={borderStyle}
+                        includePenBlank={includePenBlank}
+                        stats={stats}
+                        className="w-full h-auto max-w-[240px] drop-shadow-2xs"
+                      />
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
