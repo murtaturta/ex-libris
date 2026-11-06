@@ -204,7 +204,9 @@ describe('Import Diff Auditor & Non-Destructive Sync (Wave 3 QA)', () => {
     expect(note.filename).toBe('Dune.md');
     expect(note.content).toContain('Dune');
     expect(note.content).toContain('Frank Herbert');
-    expect(note.content).toContain('A stunning sci-fi epic on Arrakis.');
+    expect(note.content).not.toContain('## Synopsis');
+    expect(note.content).not.toContain('A stunning sci-fi epic on Arrakis.');
+    expect(note.content).toContain('Masterpiece of worldbuilding.');
     expect(sanitizeMarkdownFilename('Dune: Deluxe Edition')).toBe('Dune Deluxe Edition.md');
   });
 });

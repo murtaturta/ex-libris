@@ -159,11 +159,11 @@ describe('Markdown Note Exporter (B-03)', () => {
     expect(content).toContain('film_watched_date: "2024-04-10"');
     expect(content).toContain('film_rewatch: false');
 
-    // Body sections
+    // Body sections (Strict Murat Rule: Personal thought only, NO promotional synopsis)
     expect(content).toContain('# Dune');
     expect(content).toContain('*Dune #1*');
-    expect(content).toContain('## Synopsis');
-    expect(content).toContain('Set on the desert planet Arrakis');
+    expect(content).not.toContain('## Synopsis');
+    expect(content).not.toContain('Set on the desert planet Arrakis');
     expect(content).toContain('## Screen Adaptation · Letterboxd');
     expect(content).toContain('**Film:** [Dune (2021)](https://letterboxd.com/film/dune-2021/)');
     expect(content).toContain('**Rating:** ★★★★½ (4.5/5)');

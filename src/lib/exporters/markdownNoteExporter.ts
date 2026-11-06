@@ -196,11 +196,6 @@ export function generateBookMarkdownNote(
 
   bodyParts.push(summaryLines.join('  \n'));
 
-  // Enriched Synopsis
-  if (enrichment?.synopsis && enrichment.synopsis.trim().length > 0) {
-    bodyParts.push(`## Synopsis\n\n${enrichment.synopsis.trim()}`);
-  }
-
   // Screen Adaptation · Letterboxd
   if (filmAdaptation) {
     const starStr = formatStarRating(filmAdaptation.rating);

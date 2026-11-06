@@ -73,7 +73,7 @@ export const ObsidianExportMenu: React.FC<ObsidianExportMenuProps> = ({
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label="Export to Obsidian"
-        title="Export your library as an Obsidian vault (Books · Authors · Series hubs — organic graph without central index)"
+        title="Export your library as an Obsidian vault (Books and Author hubs — pure personal literature notes, Kindle highlights & Letterboxd connections)"
         className="flex items-center justify-center min-h-[40px] px-2 sm:px-2.5 py-1.5 rounded-md border border-[#7C5CFF]/45 bg-[#7C5CFF]/10 text-xs font-semibold text-[var(--text-ink)] hover:bg-[#7C5CFF]/20 hover:border-[#7C5CFF] transition-colors cursor-pointer shadow-2xs"
       >
         <FolderArchive className="w-3.5 h-3.5 text-[#7C5CFF]" />
@@ -91,7 +91,7 @@ export const ObsidianExportMenu: React.FC<ObsidianExportMenuProps> = ({
               Export Obsidian Vault
             </div>
             <div className="text-[10px] text-[var(--text-muted)] leading-snug mt-0.5">
-              One note per book, linked to Author &amp; Series hubs (clean organic graph without central index). Unzip into your vault.
+              Books and Author hubs (pure personal literature notes, Kindle highlights &amp; Letterboxd connections). Unzip into your vault.
             </div>
           </div>
           {scopes.map((s) => (
