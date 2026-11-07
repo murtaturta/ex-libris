@@ -3,8 +3,12 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 describe('Scriptor Obsidian Plugin Verification Suite', () => {
-  const pluginDir = 'C:/Users/Murat/Desktop/scriptor-plugin';
-  const vaultPluginDir = "G:/Drive'ım/obsidian2025/.obsidian/plugins/scriptor";
+  const vaultPluginDir = fs.existsSync('C:/Users/Murat/Desktop/Obsidian Notes/.obsidian/plugins/scriptor')
+    ? 'C:/Users/Murat/Desktop/Obsidian Notes/.obsidian/plugins/scriptor'
+    : "G:/Drive'ım/obsidian2025/.obsidian/plugins/scriptor";
+  const pluginDir = fs.existsSync('C:/Users/Murat/Desktop/scriptor-plugin')
+    ? 'C:/Users/Murat/Desktop/scriptor-plugin'
+    : vaultPluginDir;
 
   it('contains all required plugin files in desktop folder and vault plugin folder', () => {
     expect(fs.existsSync(pluginDir)).toBe(true);
