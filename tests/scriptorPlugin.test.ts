@@ -92,6 +92,19 @@ describe('Scriptor Obsidian Plugin Verification Suite', () => {
     expect(styles).toContain('width: 100%');
     expect(styles).toContain('.scriptor-matrix-cell.cell-tier-revision');
     expect(styles).toContain('repeating-linear-gradient');
+
+    // Right-hand month brackets and year milestone dividers
+    expect(mainJs).toContain('scriptor-week-row');
+    expect(mainJs).toContain('scriptor-week-bracket');
+    expect(mainJs).toContain('scriptor-bracket-label');
+    expect(mainJs).toContain('scriptor-year-divider');
+    expect(styles).toContain('.scriptor-week-bracket');
+    expect(styles).toContain('.scriptor-year-divider');
+
+    // Dynamic accent color sync via color-mix() and var(--interactive-accent)
+    expect(styles).toContain('color-mix(in srgb, var(--interactive-accent) 25%, var(--background-modifier-border))');
+    expect(styles).toContain('color-mix(in srgb, var(--interactive-accent) 60%, var(--background-modifier-border))');
+    expect(styles).toContain('var(--interactive-accent)');
   });
 
   it('implements lightweight real-time live matrix shading updates on active typing', () => {
