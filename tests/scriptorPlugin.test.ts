@@ -49,13 +49,22 @@ describe('Scriptor Obsidian Plugin Verification Suite', () => {
     expect(mainJs).toContain('[In Progress]');
   });
 
-  it('implements Right Sidebar ItemView, session delimiters, vault create hook, and atomic saves', () => {
+  it('implements Right Sidebar ItemView, Status Bar Ticker, session delimiters, vault create hook, and atomic saves', () => {
     const mainJs = fs.readFileSync(path.join(pluginDir, 'main.js'), 'utf8');
+    const styles = fs.readFileSync(path.join(pluginDir, 'styles.css'), 'utf8');
+
     expect(mainJs).toContain('VIEW_TYPE_SCRIPTOR');
     expect(mainJs).toContain('ScriptorPanelView');
     expect(mainJs).toContain('ScriptorSettingTab');
     expect(mainJs).toContain('scriptor-panel-view');
     expect(mainJs).toContain('pen-tool');
+
+    // Status bar ticker with click-to-toggle
+    expect(mainJs).toContain('addStatusBarItem');
+    expect(mainJs).toContain('scriptor-status-bar-ticker');
+    expect(mainJs).toContain('toggleView');
+    expect(mainJs).toContain('updateStatusBar');
+    expect(styles).toContain('.scriptor-status-bar-ticker');
 
     // Event hooks: modify, create, active-leaf-change, blur
     expect(mainJs).toContain("this.app.vault.on('modify'");
@@ -69,7 +78,7 @@ describe('Scriptor Obsidian Plugin Verification Suite', () => {
     expect(mainJs).toContain(']]');
   });
 
-  it('renders the Continuous Vertical Matrix (zero month headers, 7 columns across, stacks downward)', () => {
+  it('renders the Continuous Vertical Matrix, normalized Month Brackets, and Circadian Golden Hours ribbon', () => {
     const mainJs = fs.readFileSync(path.join(pluginDir, 'main.js'), 'utf8');
     const styles = fs.readFileSync(path.join(pluginDir, 'styles.css'), 'utf8');
 
@@ -93,18 +102,39 @@ describe('Scriptor Obsidian Plugin Verification Suite', () => {
     expect(styles).toContain('.scriptor-matrix-cell.cell-tier-revision');
     expect(styles).toContain('repeating-linear-gradient');
 
-    // Right-hand month brackets and year milestone dividers
+    // Right-hand month brackets with normalized pseudo-element geometry (zero negative margins)
     expect(mainJs).toContain('scriptor-week-row');
     expect(mainJs).toContain('scriptor-week-bracket');
     expect(mainJs).toContain('scriptor-bracket-label');
     expect(mainJs).toContain('scriptor-year-divider');
-    expect(styles).toContain('.scriptor-week-bracket');
-    expect(styles).toContain('.scriptor-year-divider');
+    expect(styles).toContain('.scriptor-week-bracket::before');
+    expect(styles).toContain('.scriptor-week-bracket.bracket-bot::before');
+    expect(styles).not.toContain('margin-top: -2px');
+
+    // Circadian Golden Hours Ribbon & Month Bracket filter linkage
+    expect(mainJs).toContain('computeCircadianMetrics');
+    expect(mainJs).toContain('renderCircadianBox');
+    expect(mainJs).toContain('selectedMonthYm');
+    expect(styles).toContain('grid-template-columns: repeat(24, 1fr)');
 
     // Dynamic accent color sync via color-mix() and var(--interactive-accent)
     expect(styles).toContain('color-mix(in srgb, var(--interactive-accent) 25%, var(--background-modifier-border))');
     expect(styles).toContain('color-mix(in srgb, var(--interactive-accent) 60%, var(--background-modifier-border))');
     expect(styles).toContain('var(--interactive-accent)');
+  });
+
+  it('implements Hero 7-Day Velocity Sparkline, Per-File Pruning Engine, and Project Horizon telemetry', () => {
+    const mainJs = fs.readFileSync(path.join(pluginDir, 'main.js'), 'utf8');
+    const styles = fs.readFileSync(path.join(pluginDir, 'styles.css'), 'utf8');
+
+    expect(mainJs).toContain('getCurrentWeekData');
+    expect(mainJs).toContain('scriptor-sparkline-bars');
+    expect(mainJs).toContain('filesGross');
+    expect(mainJs).toContain('scriptor-pruning-row');
+    expect(mainJs).toContain('computeProjectAndCadenceMetrics');
+    expect(mainJs).toContain('formatChapterMilestone');
+    expect(styles).toContain('.scriptor-sparkline-bar');
+    expect(styles).toContain('.scriptor-horizon-card');
   });
 
   it('implements lightweight real-time live matrix shading updates on active typing', () => {
@@ -117,10 +147,11 @@ describe('Scriptor Obsidian Plugin Verification Suite', () => {
     expect(mainJs).toContain('cell-tier-revision');
   });
 
-  it('supports transparent two-way manual YAML frontmatter editing for daily logs', () => {
+  it('supports transparent two-way manual YAML frontmatter editing and year subfolder resolution', () => {
     const mainJs = fs.readFileSync(path.join(pluginDir, 'main.js'), 'utf8');
 
-    // Generates structured YAML frontmatter in daily logs
+    // Generates structured YAML frontmatter in daily logs inside year subfolders
+    expect(mainJs).toContain("const yearFolder = logFolder + '/' + year;");
     expect(mainJs).toContain('net_words: ');
     expect(mainJs).toContain('gross_added: ');
     expect(mainJs).toContain('drafts_touched:');
@@ -140,30 +171,35 @@ describe('Scriptor Obsidian Plugin Verification Suite', () => {
     expect(mainJs).toContain('frontmatterDate !== todayStr');
   });
 
-  it('provides a prominent [Reset Today\'s Log] button in ScriptorPanelView and ScriptorSettingTab', () => {
+  it("provides a prominent [Reset Today's Log] button in ScriptorPanelView and ScriptorSettingTab", () => {
     const mainJs = fs.readFileSync(path.join(pluginDir, 'main.js'), 'utf8');
     const styles = fs.readFileSync(path.join(pluginDir, 'styles.css'), 'utf8');
 
-    expect(mainJs).toContain('[Reset Today\'s Log]');
+    expect(mainJs).toContain("[Reset Today's Log]");
     expect(mainJs).toContain('resetTodayLog');
     expect(mainJs).toContain('confirm');
     expect(styles).toContain('scriptor-btn.scriptor-btn-danger');
   });
 
-  it('pre-seeds Murat\'s lifetime 54,397-word and 89-day history', () => {
+  it("pre-seeds Murat's full 101-day historical telemetry with sessions, filesGross, and hourlyCounts", () => {
     const mainJs = fs.readFileSync(path.join(pluginDir, 'main.js'), 'utf8');
     expect(mainJs).toContain('SEEDED_HISTORY');
-    expect(mainJs).toContain('2026-11-06');
+    expect(mainJs).toContain('2026-11-07');
     expect(mainJs).toContain('2026-03-06');
 
-    // Extract SEEDED_HISTORY json from mainJs
-    const match = mainJs.match(/const SEEDED_HISTORY = ({[\s\S]*?});/);
+    const match = mainJs.match(/const SEEDED_HISTORY = ({[\s\S]*?});\r?\n\r?\nconst DEFAULT_SETTINGS/);
     expect(match).not.toBeNull();
     const history = JSON.parse(match![1]);
     const keys = Object.keys(history);
-    expect(keys.length).toBe(89);
+    expect(keys.length).toBe(101);
 
-    const sum = Object.values(history).reduce((acc: number, item: any) => acc + (item.netWords || 0), 0);
-    expect(sum).toBe(54397);
+    const mar06 = history['2026-03-06'];
+    expect(mar06.grossWordsAdded).toBe(2226);
+    expect(mar06.grossWordsRemoved).toBe(384);
+    expect(mar06.netWords).toBe(1842);
+    expect(Array.isArray(mar06.hourlyCounts)).toBe(true);
+    expect(mar06.hourlyCounts.length).toBe(24);
+    expect(mar06.filesGross['2 Heraldry'].added).toBe(1157);
+    expect(mar06.filesGross['2 Heraldry'].removed).toBe(262);
   });
 });
