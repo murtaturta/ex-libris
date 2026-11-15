@@ -7,47 +7,24 @@ import {
   BookUserOverride,
   KindleClipping,
 } from '../types/library';
-import {
-  computeNightstandDiagnostics,
-  NightstandBookDiagnostic,
-  getSlumpIntermezzos,
-  computePredictiveTargets,
-} from '../lib/analytics/engine';
+import { computeNightstandDiagnostics } from '../lib/analytics/engine';
 import {
   classifyBookLanguageAndFormat,
   FORMAT_LABELS,
 } from '../lib/classifiers/languageAndFormat';
 import { getGoodreadsBookUrl } from '../lib/links/goodreadsLinks';
 import {
-  findCandidateBooksForClipping,
-  reconcileClippingsWithBook,
-} from '../lib/parsers/kindleFuzzyMatcher';
-import {
   BookOpen,
   Bookmark,
-  Calendar,
   Sparkles,
-  Quote,
-  Feather,
-  Shuffle,
   ArrowRight,
   Star,
   Layers,
   Clock,
-  Compass,
-  Search,
   PauseCircle,
   PlayCircle,
-  AlertTriangle,
-  UploadCloud,
-  Check,
   Globe,
-  Zap,
   ExternalLink,
-  Target,
-  TrendingUp,
-  CheckCircle2,
-  X,
 } from 'lucide-react';
 
 export interface StudyViewProps {
@@ -69,11 +46,8 @@ export const StudyView: React.FC<StudyViewProps> = ({
   enrichmentCache,
   onUpdateBookOverride,
   onSelectBook,
-  onSelectBookById,
   onGoToOracle,
   onGoToLibraryWithFilter,
-  onOpenImport,
-  onClippingsUpdated,
 }) => {
   const stats = bundle.summaryStats;
   const books = bundle.books || [];
@@ -117,165 +91,24 @@ export const StudyView: React.FC<StudyViewProps> = ({
   const displayedDiagnostics =
     nightstandTab === 'active' ? activeDiagnostics : onHoldDiagnostics;
 
-  // B-07: Slump Intermezzo (<120p) Picks & Cognitive Drag awareness
-  const slumpIntermezzos = useMemo(
-    () => getSlumpIntermezzos(bundle, userState, 3),
-    [bundle, userState]
-  );
-
-  const hasActiveCognitiveDrag = useMemo(
-    () => activeDiagnostics.some((d) => d.hasCognitiveDrag),
-    [activeDiagnostics]
-  );
-
-  const predictiveTargets = useMemo(() => {
-    try {
-      return computePredictiveTargets(bundle, userState, enrichmentCache);
-    } catch (e) {
-      console.warn('computePredictiveTargets fallback:', e);
-      return null;
-    }
-  }, [bundle, userState, enrichmentCache]);
-
-  // ------------------------------------------------------------------
-  // 2. Kindle My Clippings.txt Highlights Vault
-  // ------------------------------------------------------------------
-  const kindleClippings = useMemo(
-    () => userState?.kindleClippings || [],
-    [userState?.kindleClippings]
-  );
-
-  const [clippingSearch, setClippingSearch] = useState('');
-  const [clippingFilter, setClippingFilter] = useState<'all' | 'matched' | 'unshelved'>('all');
-  const [visibleClippingsCount, setVisibleClippingsCount] = useState(6);
-
-  const filteredClippings = useMemo(() => {
-    let list = kindleClippings;
-
-    if (clippingFilter === 'matched') {
-      list = list.filter((c) => Boolean(c.matchedBookId));
-    } else if (clippingFilter === 'unshelved') {
-      list = list.filter((c) => !c.matchedBookId);
-    }
-
-    if (clippingSearch.trim()) {
-      const q = clippingSearch.toLowerCase().trim();
-      list = list.filter(
-        (c) =>
-          c.content.toLowerCase().includes(q) ||
-          c.cleanTitle.toLowerCase().includes(q) ||
-          (c.author && c.author.toLowerCase().includes(q)) ||
-          (c.attachedNote && c.attachedNote.toLowerCase().includes(q))
-      );
-    }
-
-    return list;
-  }, [kindleClippings, clippingFilter, clippingSearch]);
-
-  const matchedClippingsCount = useMemo(
-    () => kindleClippings.filter((c) => Boolean(c.matchedBookId)).length,
-    [kindleClippings]
-  );
-  const unshelvedClippingsCount = kindleClippings.length - matchedClippingsCount;
-
-  // Orphan Reconciler state & calculations
-  const [isReconcilerOpen, setIsReconcilerOpen] = useState(false);
-  const [reconcilerSearch, setReconcilerSearch] = useState('');
-
-  interface OrphanGroup {
-    key: string;
-    cleanTitle: string;
-    rawTitle: string;
-    author: string | null;
-    clippings: KindleClipping[];
-  }
-
-  const orphanGroups = useMemo(() => {
-    const map = new Map<string, OrphanGroup>();
-    for (const c of kindleClippings) {
-      if (c.matchedBookId) continue;
-      const key = (c.cleanTitle || c.rawTitle || 'Untitled').trim().toLowerCase();
-      if (!map.has(key)) {
-        map.set(key, {
-          key,
-          cleanTitle: c.cleanTitle || c.rawTitle || 'Untitled',
-          rawTitle: c.rawTitle,
-          author: c.author,
-          clippings: [],
-        });
-      }
-      map.get(key)!.clippings.push(c);
-    }
-    return Array.from(map.values()).sort((a, b) => b.clippings.length - a.clippings.length);
-  }, [kindleClippings]);
-
-  const filteredOrphanGroups = useMemo(() => {
-    if (!reconcilerSearch.trim()) return orphanGroups;
-    const q = reconcilerSearch.toLowerCase().trim();
-    return orphanGroups.filter(
-      (g) =>
-        g.cleanTitle.toLowerCase().includes(q) ||
-        (g.author && g.author.toLowerCase().includes(q))
-    );
-  }, [orphanGroups, reconcilerSearch]);
-
-  const handlePairClippings = (group: OrphanGroup, bookId: string) => {
-    if (!userState?.kindleClippings) return;
-    const { updatedClippings } = reconcileClippingsWithBook(
-      userState.kindleClippings,
-      group.cleanTitle,
-      bookId
-    );
-    onClippingsUpdated?.(updatedClippings);
-  };
-
-  // ------------------------------------------------------------------
-  // 3. TBR Roulette
-  // ------------------------------------------------------------------
-  const toReadBooks = useMemo(
-    () => books.filter((b) => b.exclusiveShelf === 'to-read'),
-    [books]
-  );
-  const [rouletteBook, setRouletteBook] = useState<Book | null>(() => {
-    return toReadBooks.length > 0
-      ? toReadBooks[Math.floor(Math.random() * toReadBooks.length)]
-      : null;
-  });
-  const [isSpinning, setIsSpinning] = useState(false);
-
-  const handleSpinRoulette = () => {
-    if (toReadBooks.length === 0) return;
-    setIsSpinning(true);
-    setTimeout(() => {
-      const pick = toReadBooks[Math.floor(Math.random() * toReadBooks.length)];
-      setRouletteBook(pick);
-      setIsSpinning(false);
-    }, 300);
-  };
-
-  // ------------------------------------------------------------------
-  // 4. Marginalia, Drafts & Quotes visibility
-  // ------------------------------------------------------------------
-  const [visibleNotesCount, setVisibleNotesCount] = useState(4);
-  const [visibleQuotesCount, setVisibleQuotesCount] = useState(3);
-
-  const kindleNotes = bundle.kindleNotes || [];
-  const quotes = bundle.quotes || [];
-  const reviewDrafts = bundle.reviewDrafts || [];
-
   // Handle page check-in change
   const handlePageChange = (bookId: string, newPage: number, totalPages: number | null) => {
     const clamped = Math.max(0, totalPages ? Math.min(totalPages, newPage) : newPage);
     onUpdateBookOverride?.(bookId, { currentPage: clamped });
   };
 
-  const handlePageStep = (bookId: string, current: number, step: number, totalPages: number | null) => {
+  const handlePageStep = (
+    bookId: string,
+    current: number,
+    step: number,
+    totalPages: number | null
+  ) => {
     const newPage = (current || 0) + step;
     handlePageChange(bookId, newPage, totalPages);
   };
 
   return (
-    <div className="space-y-12 pb-16">
+    <div className="space-y-10 pb-16">
       {/* 1. Archival KPI Strip */}
       <section aria-label="Archival Summary" className="pt-2">
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
@@ -381,164 +214,6 @@ export const StudyView: React.FC<StudyViewProps> = ({
         </div>
       </section>
 
-      {/* 1.5. Smart Reading Targets & Predictive Pace Forecaster Card */}
-      {predictiveTargets && (
-        <section
-          aria-label="Predictive Reading Target & Pace Forecast"
-          className="p-5 sm:p-6 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-xs relative overflow-hidden space-y-5"
-        >
-          {/* Header Row */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[var(--border-ledger)]">
-            <div className="flex items-center gap-2.5">
-              <Target className="w-5 h-5 text-[var(--accent-primary)]" />
-              <div>
-                <h2 className="font-serif-editorial text-base sm:text-lg font-bold text-[var(--text-ink)]">
-                  {predictiveTargets.targetYear} Literary Reading Goal &amp; Predictive Forecaster
-                </h2>
-                <p className="text-xs text-[var(--text-muted)] font-serif-editorial">
-                  Calibrated against 30-day and 90-day reading velocity to eliminate guilt and maintain momentum.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 self-start sm:self-auto">
-              <span
-                className={`px-3 py-1 rounded-full text-xs font-mono-tabular font-bold flex items-center gap-1.5 shadow-2xs ${
-                  predictiveTargets.completedCount >= predictiveTargets.goalTarget
-                    ? 'bg-[var(--accent-gold)]/20 text-[var(--accent-gold)] border border-[var(--accent-gold)]/40'
-                    : predictiveTargets.isAheadOfPace
-                    ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
-                    : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'
-                }`}
-              >
-                <TrendingUp className="w-3.5 h-3.5" />
-                {predictiveTargets.completedCount >= predictiveTargets.goalTarget
-                  ? 'Target Achieved! 🏆'
-                  : predictiveTargets.isAheadOfPace
-                  ? `+${predictiveTargets.paceDeltaBooks} Ahead of Schedule`
-                  : `${predictiveTargets.paceDeltaBooks} Behind Pace`}
-              </span>
-            </div>
-          </div>
-
-          {/* Grid Layout: Progress + Metrics + Acceleration Bridge */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-            {/* Left Column (5/12): Progress & Projection */}
-            <div className="lg:col-span-5 space-y-4">
-              <div className="space-y-2">
-                <div className="flex justify-between items-baseline text-xs font-mono-tabular">
-                  <span className="text-[var(--text-ink)] font-semibold">
-                    <strong className="text-base text-[var(--accent-primary)]">{predictiveTargets.completedCount}</strong> of{' '}
-                    <strong className="text-base">{predictiveTargets.goalTarget}</strong> volumes completed
-                  </span>
-                  <span className="font-bold text-sm text-[var(--accent-primary)]">
-                    {predictiveTargets.percentComplete}%
-                  </span>
-                </div>
-                <div className="w-full h-3 rounded-full bg-[var(--bg-surface)] overflow-hidden border border-[var(--border-ledger)] p-0.5">
-                  <div
-                    className="h-full bg-[var(--accent-primary)] transition-all duration-700 rounded-full"
-                    style={{ width: `${Math.min(100, predictiveTargets.percentComplete)}%` }}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 text-xs font-mono-tabular">
-                <div className="p-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] space-y-0.5">
-                  <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-semibold">
-                    Projected Year-End
-                  </div>
-                  <div className="text-lg font-bold text-[var(--text-ink)]">
-                    ~{predictiveTargets.projectedYearEndFinish} vols
-                  </div>
-                  <div className="text-[10px] text-[var(--text-muted)] truncate">
-                    {predictiveTargets.projectedTargetAchievedDate || 'Steady rate'}
-                  </div>
-                </div>
-
-                <div className="p-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] space-y-0.5">
-                  <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-semibold">
-                    Required Pace
-                  </div>
-                  <div className="text-lg font-bold text-[var(--text-ink)]">
-                    ~{predictiveTargets.requiredPacePagesPerDay} pp/day
-                  </div>
-                  <div className="text-[10px] text-[var(--text-muted)]">
-                    {predictiveTargets.requiredPacePerMonth} books / month
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Middle Column (3/12): 30d & 90d Velocity Cadence */}
-            <div className="lg:col-span-3 p-3.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] space-y-3 font-mono-tabular text-xs">
-              <div className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] font-semibold flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
-                <span>Reading Cadence</span>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex justify-between items-center text-[11px]">
-                  <span className="text-[var(--text-muted)]">Last 30 Days:</span>
-                  <span className="font-bold text-[var(--text-ink)]">
-                    {predictiveTargets.recentCadence30Days.pagesPerDay} pp/day ({predictiveTargets.recentCadence30Days.booksRead} bks)
-                  </span>
-                </div>
-                <div className="flex justify-between items-center text-[11px]">
-                  <span className="text-[var(--text-muted)]">Last 90 Days:</span>
-                  <span className="font-bold text-[var(--text-ink)]">
-                    {predictiveTargets.recentCadence90Days.pagesPerDay} pp/day ({predictiveTargets.recentCadence90Days.booksRead} bks)
-                  </span>
-                </div>
-              </div>
-
-              <div className="pt-2 border-t border-[var(--border-ledger)] text-[10px] text-[var(--text-muted)] font-serif-editorial italic leading-snug">
-                Pacing is computed from your personal completion timestamps rather than rigid calendar quotas.
-              </div>
-            </div>
-
-            {/* Right Column (4/12): Oracle Acceleration Picks */}
-            <div className="lg:col-span-4 space-y-2">
-              <div className="flex items-center justify-between text-[11px] font-mono-tabular text-[var(--text-muted)]">
-                <span className="uppercase tracking-wider font-semibold flex items-center gap-1 text-[var(--text-ink)]">
-                  <Sparkles className="w-3.5 h-3.5 text-[var(--accent-gold)]" />
-                  <span>Oracle Acceleration Bridge</span>
-                </span>
-                <span className="text-[10px] text-[var(--accent-gold)] font-bold">&lt; 260 pp TBR</span>
-              </div>
-
-              {predictiveTargets.sprintSuggestions.length > 0 ? (
-                <div className="space-y-1.5">
-                  {predictiveTargets.sprintSuggestions.map((book) => (
-                    <div
-                      key={book.id}
-                      onClick={() => onSelectBookById(book.id, book.title)}
-                      className="p-2.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] hover:border-[var(--accent-primary)] transition-all cursor-pointer flex items-center justify-between gap-2.5 group"
-                    >
-                      <div className="min-w-0">
-                        <div className="text-xs font-serif-editorial font-bold text-[var(--text-ink)] group-hover:text-[var(--accent-primary)] truncate transition-colors">
-                          {book.title}
-                        </div>
-                        <div className="text-[10px] text-[var(--text-muted)] font-serif-editorial truncate">
-                          {book.author} · {book.pageCount} pp
-                        </div>
-                      </div>
-                      <span className="font-mono-tabular text-[10px] px-2 py-0.5 rounded bg-[var(--accent-gold)]/10 text-[var(--accent-gold)] font-bold shrink-0">
-                        {book.oracleScore} pts
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-xs text-[var(--text-muted)] italic font-serif-editorial p-3 rounded-lg bg-[var(--bg-surface)]">
-                  No short TBR candidates found. You are currently reading at full capacity!
-                </p>
-              )}
-            </div>
-          </div>
-        </section>
-      )}
-
       {/* 2. The Reading Desk with Nightstand Split & Live Page Check-In */}
       <section aria-labelledby="desk-heading" className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[var(--border-ledger)]">
@@ -612,16 +287,10 @@ export const StudyView: React.FC<StudyViewProps> = ({
               const {
                 book,
                 state,
-                idleDays,
-                isHibernatingCandidate,
                 currentPage,
                 totalPages,
                 percentComplete,
                 format,
-                pacePagesPerDay,
-                projectedFinishDate,
-                targetFinishDate,
-                pagesPerDayForTarget,
               } = diagnostic;
 
               const profile = classifyBookLanguageAndFormat(
@@ -630,19 +299,14 @@ export const StudyView: React.FC<StudyViewProps> = ({
                 enrichmentCache?.[book.id]
               );
 
-              const daysRemaining =
-                totalPages !== null && pacePagesPerDay > 0
-                  ? Math.max(0, Math.ceil((totalPages - currentPage) / pacePagesPerDay))
-                  : null;
+              const gr = getGoodreadsBookUrl(book);
 
               return (
                 <div
                   key={book.id}
-                  className={`group relative flex flex-col justify-between p-5 rounded-lg bg-[var(--bg-card)] border transition-all duration-200 shadow-2xs ${
+                  className={`group relative flex flex-col justify-between p-5 rounded-lg bg-[var(--bg-card)] border transition-all duration-200 shadow-2xs overflow-hidden ${
                     state === 'on-hold'
                       ? 'border-[var(--border-ledger)] opacity-85'
-                      : isHibernatingCandidate
-                      ? 'border-[var(--accent-gold)] shadow-sm'
                       : 'border-[var(--border-ledger)] hover:border-[var(--accent-primary)]/80 hover:shadow-md'
                   }`}
                 >
@@ -651,8 +315,6 @@ export const StudyView: React.FC<StudyViewProps> = ({
                     className={`absolute top-0 left-0 right-0 h-1 ${
                       state === 'on-hold'
                         ? 'bg-[var(--text-muted)]/40'
-                        : isHibernatingCandidate
-                        ? 'bg-[var(--accent-gold)]'
                         : 'bg-[var(--accent-primary)]/80'
                     }`}
                   />
@@ -671,17 +333,6 @@ export const StudyView: React.FC<StudyViewProps> = ({
                           <Globe className="w-2.5 h-2.5 text-[var(--text-muted)]" />
                           <span>{profile.translationFlow}</span>
                         </span>
-
-                        {/* Cognitive Drag Badge (B-07) */}
-                        {diagnostic.hasCognitiveDrag && (
-                          <span
-                            className="flex items-center gap-1 text-[10px] font-mono-tabular px-2 py-0.5 rounded bg-amber-500/15 text-amber-800 dark:text-amber-200 border border-amber-500/30 font-semibold"
-                            title={diagnostic.cognitiveDragReason || 'Cognitive Drag: Book pace has slowed significantly'}
-                          >
-                            <Zap className="w-2.5 h-2.5 text-amber-600 dark:text-amber-400" />
-                            <span>Cognitive Drag</span>
-                          </span>
-                        )}
                       </div>
 
                       {/* State Toggle Button (Active <-> On Hold) */}
@@ -717,74 +368,6 @@ export const StudyView: React.FC<StudyViewProps> = ({
                         by <span className="text-[var(--text-ink)]">{book.author}</span>
                       </p>
                     </div>
-
-                    {/* Hibernating Candidate Editorial Callout */}
-                    {isHibernatingCandidate && (
-                      <div className="mt-3 p-3 rounded-md bg-[var(--accent-gold)]/15 border border-[var(--accent-gold)]/40 text-xs">
-                        <div className="flex items-start gap-2">
-                          <AlertTriangle className="w-4 h-4 text-[var(--accent-gold)] shrink-0 mt-0.5" />
-                          <div className="space-y-1.5">
-                            <p className="text-[var(--text-ink)] font-serif-editorial italic leading-tight">
-                              Idle for {idleDays} days — Still actively reading or pause on hold?
-                            </p>
-                            <div className="flex items-center gap-2 pt-0.5">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onUpdateBookOverride?.(book.id, { nightstandState: 'active' });
-                                }}
-                                className="px-2 py-1 rounded bg-[var(--bg-card)] border border-[var(--border-ledger)] text-[11px] font-medium text-[var(--text-ink)] hover:border-[var(--accent-gold)] cursor-pointer shadow-2xs"
-                              >
-                                Keep Active
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onUpdateBookOverride?.(book.id, { nightstandState: 'on-hold' });
-                                }}
-                                className="px-2 py-1 rounded bg-[var(--accent-primary)] text-white text-[11px] font-semibold hover:opacity-90 cursor-pointer shadow-xs"
-                              >
-                                Move to On Hold
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Nightstand Stall Detector (Quiet prompt when stalled >40d or >25d on <25%) */}
-                    {diagnostic.isStalled && !isHibernatingCandidate && (
-                      <div className="mt-3 p-3 rounded-md bg-amber-500/10 border border-amber-500/30 text-xs">
-                        <div className="flex items-start gap-2">
-                          <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-                          <div className="space-y-1.5 flex-1">
-                            <p className="text-[var(--text-ink)] font-serif-editorial italic leading-tight">
-                              Stalled on page {currentPage} for {idleDays} days. Shift to &apos;On Hold&apos; to clear desk space?
-                            </p>
-                            <div className="flex items-center gap-2 pt-0.5">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onUpdateBookOverride?.(book.id, { nightstandState: 'on-hold' });
-                                }}
-                                className="px-2.5 py-1 rounded bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-semibold transition-colors cursor-pointer shadow-xs"
-                              >
-                                Shift to &apos;On Hold&apos;
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onUpdateBookOverride?.(book.id, { nightstandState: 'active' });
-                                }}
-                                className="px-2 py-1 rounded bg-[var(--bg-card)] border border-[var(--border-ledger)] text-[11px] font-medium text-[var(--text-muted)] hover:text-[var(--text-ink)] cursor-pointer"
-                              >
-                                Keep on Desk
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
 
                     {/* Live Page Check-In & Progress Bar */}
                     <div className="mt-4 p-3 rounded-md bg-[var(--bg-surface)] border border-[var(--border-ledger)] space-y-2">
@@ -842,794 +425,37 @@ export const StudyView: React.FC<StudyViewProps> = ({
                     </div>
                   </div>
 
-                  {/* Format-Calibrated ETA Footer */}
-                  <div className="mt-4 pt-3 border-t border-[var(--border-ledger)]/70 text-[11px] font-mono-tabular text-[var(--text-muted)] flex items-center justify-between gap-2">
-                    <div className="truncate">
-                      {targetFinishDate && pagesPerDayForTarget !== null ? (
-                        <span className="text-[var(--accent-primary)] font-semibold truncate">
-                          🎯 Target: {pagesPerDayForTarget}p/day to finish by {targetFinishDate}
-                        </span>
-                      ) : projectedFinishDate ? (
-                        <span className="truncate">
-                          At {pacePagesPerDay}p/day ({FORMAT_LABELS[format]}), ~{daysRemaining ?? '?'}d left →{' '}
-                          <strong className="text-[var(--text-ink)]">{projectedFinishDate}</strong>
-                        </span>
-                      ) : (
-                        <span>Pace: {pacePagesPerDay}p/day calibrated</span>
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-1.5 shrink-0 ml-1">
-                      {/* Goodreads Letterpress Link (B-01) */}
-                      {(() => {
-                        const gr = getGoodreadsBookUrl(book);
-                        return (
-                          <a
-                            href={gr.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-[var(--border-ledger)] hover:border-[var(--accent-gold)]/60 bg-[var(--bg-surface)] hover:bg-[var(--accent-gold)]/10 text-[10px] font-mono-tabular text-[var(--text-muted)] hover:text-[var(--text-ink)] transition-colors"
-                            title={gr.label}
-                            aria-label={`Open ${book.cleanTitle || book.title} on Goodreads`}
-                          >
-                            <span>GR</span>
-                            <ExternalLink className="w-2.5 h-2.5 opacity-70" />
-                          </a>
-                        );
-                      })()}
-
-                      <span
-                        onClick={() => onSelectBook(book)}
-                        className="cursor-pointer text-[var(--text-muted)] hover:text-[var(--accent-primary)] p-0.5"
-                        title="Open full book dossier"
-                      >
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* B-07: Slump Intermezzo Strip (<120p Palate Cleansers) */}
-        {slumpIntermezzos.length > 0 && (
-          <div className="p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-[var(--border-ledger)]">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-[var(--accent-gold)]" />
-                <h3 className="font-serif-editorial text-base sm:text-lg font-bold text-[var(--text-ink)]">
-                  Need a Momentum Reset? &lt;120p Slump Intermezzos
-                </h3>
-                {hasActiveCognitiveDrag && (
-                  <span className="text-[10px] font-mono-tabular px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-200 border border-amber-500/30 font-semibold">
-                    Recommended for Drag
-                  </span>
-                )}
-              </div>
-              <span className="text-xs text-[var(--text-muted)] font-mono-tabular">
-                1-sitting palate-cleansers to reignite reading flow
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              {slumpIntermezzos.map((item, sIdx) => {
-                const gr = getGoodreadsBookUrl(item.book);
-                return (
-                  <div
-                    key={item.book.id || sIdx}
-                    onClick={() => onSelectBook(item.book)}
-                    className="group p-4 rounded-lg bg-[var(--bg-surface)] hover:bg-[var(--bg-card)] border border-[var(--border-ledger)] hover:border-[var(--accent-gold)] transition-all cursor-pointer flex flex-col justify-between shadow-2xs"
-                  >
-                    <div>
-                      <div className="flex items-center justify-between gap-1 mb-2 text-[10px] font-mono-tabular">
-                        <span className="px-1.5 py-0.5 rounded bg-[var(--bg-card)] border border-[var(--border-ledger)] text-[var(--accent-gold)] font-bold">
-                          {item.pages} pp. · {item.formatLabel}
-                        </span>
-                        <a
-                          href={gr.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded hover:bg-[var(--accent-gold)]/15 text-[var(--text-muted)] hover:text-[var(--text-ink)] transition-colors"
-                          title={gr.label}
-                          aria-label={`Open ${item.book.cleanTitle || item.book.title} on Goodreads`}
-                        >
-                          <span>GR</span>
-                          <ExternalLink className="w-2.5 h-2.5 opacity-70" />
-                        </a>
-                      </div>
-
-                      <h4 className="font-serif-editorial text-sm font-bold text-[var(--text-ink)] group-hover:text-[var(--accent-primary)] transition-colors line-clamp-2 leading-snug">
-                        {item.book.cleanTitle || item.book.title}
-                      </h4>
-                      <p className="text-xs text-[var(--text-muted)] mt-0.5 font-medium">by {item.book.author}</p>
-
-                      <p className="mt-2 text-xs text-[var(--text-muted)] italic leading-relaxed line-clamp-2">
-                        &ldquo;{item.pitch}&rdquo;
-                      </p>
-                    </div>
-
-                    <div className="mt-3 pt-2 border-t border-[var(--border-ledger)]/60 flex items-center justify-between text-[11px] font-mono-tabular text-[var(--text-muted)]">
-                      <span>{item.translationFlow}</span>
-                      <span className="text-[var(--accent-primary)] group-hover:translate-x-0.5 transition-transform inline-flex items-center gap-1 font-semibold">
-                        <span>Inspect</span>
-                        <ArrowRight className="w-3 h-3" />
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </section>
-
-      {/* 3. Kindle `My Clippings.txt` Highlights Vault */}
-      <section aria-labelledby="clippings-heading" className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[var(--border-ledger)]">
-          <div className="flex items-center gap-2">
-            <Feather className="w-4 h-4 text-[var(--accent-primary)]" />
-            <h2
-              id="clippings-heading"
-              className="font-serif-editorial text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-ink)]"
-            >
-              Kindle Marginalia Vault
-            </h2>
-            <span className="text-xs font-mono-tabular px-2 py-0.5 rounded-full bg-[var(--bg-card)] border border-[var(--border-ledger)] text-[var(--text-muted)]">
-              {kindleClippings.length} passages
-            </span>
-          </div>
-
-          {kindleClippings.length > 0 && (
-            <div className="flex flex-wrap items-center gap-2">
-              {/* Search Highlights */}
-              <div className="relative">
-                <Search className="w-3.5 h-3.5 text-[var(--text-muted)] absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                <input
-                  type="text"
-                  placeholder="Search highlights & notes..."
-                  value={clippingSearch}
-                  onChange={(e) => setClippingSearch(e.target.value)}
-                  className="pl-8 pr-3 py-1 rounded-md text-xs bg-[var(--bg-card)] border border-[var(--border-ledger)] text-[var(--text-ink)] placeholder-[var(--text-muted)] focus:border-[var(--accent-primary)] outline-hidden w-48 sm:w-56"
-                />
-              </div>
-
-              {/* Filter Pills */}
-              <div className="flex items-center p-0.5 rounded-md bg-[var(--bg-card)] border border-[var(--border-ledger)] text-xs">
-                <button
-                  onClick={() => setClippingFilter('all')}
-                  className={`px-2 py-1 rounded text-[11px] font-medium transition-colors cursor-pointer ${
-                    clippingFilter === 'all'
-                      ? 'bg-[var(--accent-primary)] text-white font-semibold shadow-xs'
-                      : 'text-[var(--text-muted)] hover:text-[var(--text-ink)]'
-                  }`}
-                >
-                  All ({kindleClippings.length})
-                </button>
-                <button
-                  onClick={() => setClippingFilter('matched')}
-                  className={`px-2 py-1 rounded text-[11px] font-medium transition-colors cursor-pointer ${
-                    clippingFilter === 'matched'
-                      ? 'bg-[var(--accent-primary)] text-white font-semibold shadow-xs'
-                      : 'text-[var(--text-muted)] hover:text-[var(--text-ink)]'
-                  }`}
-                >
-                  Matched ({matchedClippingsCount})
-                </button>
-                <button
-                  onClick={() => setClippingFilter('unshelved')}
-                  className={`px-2 py-1 rounded text-[11px] font-medium transition-colors cursor-pointer ${
-                    clippingFilter === 'unshelved'
-                      ? 'bg-[var(--accent-primary)] text-white font-semibold shadow-xs'
-                      : 'text-[var(--text-muted)] hover:text-[var(--text-ink)]'
-                  }`}
-                >
-                  Unshelved ({unshelvedClippingsCount})
-                </button>
-              </div>
-
-              {/* Reconcile Orphans CTA Button */}
-              {unshelvedClippingsCount > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setIsReconcilerOpen(true)}
-                  className="flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold bg-[var(--accent-gold)]/15 border border-[var(--accent-gold)]/40 text-[var(--text-ink)] hover:bg-[var(--accent-gold)]/25 transition-colors cursor-pointer"
-                  title="Audit and pair orphan Kindle highlights with library books"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-[var(--accent-gold)]" />
-                  <span>Reconcile Orphans ({unshelvedClippingsCount})</span>
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-
-        {kindleClippings.length === 0 ? (
-          /* Empty State CTA */
-          <div className="p-8 rounded-xl bg-[var(--bg-card)] border border-dashed border-[var(--border-ledger)] text-center max-w-lg mx-auto space-y-3">
-            <div className="w-12 h-12 rounded-full bg-[var(--accent-gold)]/10 text-[var(--accent-gold)] flex items-center justify-center mx-auto border border-[var(--accent-gold)]/20 shadow-xs">
-              <Feather className="w-6 h-6" />
-            </div>
-            <div>
-              <h3 className="font-serif-editorial text-lg font-bold text-[var(--text-ink)]">
-                The Marginalia Vault is Empty
-              </h3>
-              <p className="text-xs text-[var(--text-muted)] mt-1 max-w-sm mx-auto leading-relaxed">
-                Drop your Kindle{' '}
-                <strong className="text-[var(--text-ink)]">Notebook.html</strong> (exported from the Kindle mobile/desktop app) or USB{' '}
-                <strong className="text-[var(--text-ink)]">My Clippings.txt</strong> file into the importer to pair all your highlights, chapters, and reader notes with your library.
-              </p>
-            </div>
-            <button
-              onClick={onOpenImport}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-[var(--accent-primary)] text-white text-xs font-semibold hover:opacity-90 transition-opacity cursor-pointer shadow-xs"
-            >
-              <UploadCloud className="w-3.5 h-3.5" />
-              <span>Import Kindle Highlights (.html / .txt)</span>
-            </button>
-          </div>
-        ) : filteredClippings.length === 0 ? (
-          <div className="p-6 rounded-lg bg-[var(--bg-card)] border border-[var(--border-ledger)] text-center text-xs text-[var(--text-muted)]">
-            No highlights match your current search or filter.
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredClippings.slice(0, visibleClippingsCount).map((clipping) => {
-              const locationStamp =
-                clipping.locationStart !== null
-                  ? `Loc ${clipping.locationStart}${
-                      clipping.locationEnd && clipping.locationEnd !== clipping.locationStart
-                        ? `-${clipping.locationEnd}`
-                        : ''
-                    }`
-                  : null;
-
-              return (
-                <div
-                  key={clipping.id}
-                  className="p-5 rounded-lg bg-[var(--bg-card)] border border-[var(--border-ledger)] hover:border-[var(--accent-gold)]/50 transition-all shadow-2xs flex flex-col justify-between group"
-                >
-                  <div>
-                    {/* Header: Title, Author, Matched Link */}
-                    <div className="flex items-start justify-between gap-2 mb-2 pb-2 border-b border-[var(--border-ledger)]/60">
-                      <div className="min-w-0">
-                        <h4
-                          onClick={() => {
-                            if (clipping.matchedBookId) {
-                              onSelectBookById(clipping.matchedBookId, clipping.cleanTitle);
-                            }
-                          }}
-                          className={`font-serif-editorial text-sm font-bold text-[var(--text-ink)] line-clamp-1 ${
-                            clipping.matchedBookId
-                              ? 'group-hover:text-[var(--accent-primary)] cursor-pointer hover:underline'
-                              : ''
-                          }`}
-                        >
-                          {clipping.cleanTitle}
-                        </h4>
-                        {clipping.author && (
-                          <p className="text-[11px] text-[var(--text-muted)] truncate">
-                            {clipping.author}
-                          </p>
-                        )}
-                      </div>
-
-                      {clipping.matchedBookId ? (
-                        <span className="shrink-0 text-[10px] font-mono-tabular px-1.5 py-0.5 rounded bg-[var(--accent-secondary)]/10 text-[var(--accent-secondary)] font-medium">
-                          Library Matched
-                        </span>
-                      ) : (
-                        <span className="shrink-0 text-[10px] font-mono-tabular px-1.5 py-0.5 rounded bg-[var(--bg-surface)] text-[var(--text-muted)]">
-                          Kindle Only
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Highlight Passage */}
-                    <blockquote className="font-serif-editorial text-sm italic leading-relaxed text-[var(--text-ink)] my-3">
-                      “{clipping.content}”
-                    </blockquote>
-
-                    {/* Paired Reader's Note */}
-                    {clipping.attachedNote && (
-                      <div className="mt-3 p-3 rounded-md bg-[var(--accent-gold)]/10 border border-[var(--accent-gold)]/30 text-xs">
-                        <div className="flex items-start gap-1.5 text-[var(--accent-gold)] font-semibold text-[11px] uppercase tracking-wider mb-1">
-                          <Feather className="w-3 h-3 mt-0.5 shrink-0" />
-                          <span>Reader's Marginal Note</span>
-                        </div>
-                        <p className="text-[var(--text-ink)] italic leading-relaxed font-serif-editorial">
-                          {clipping.attachedNote}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Stamp Footer */}
-                  <div className="mt-4 pt-3 border-t border-[var(--border-ledger)]/60 flex items-center justify-between gap-2 text-[11px] font-mono-tabular text-[var(--text-muted)]">
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      {clipping.highlightColor && (
-                        <span
-                          className="inline-block w-2.5 h-2.5 rounded-full shrink-0 border border-black/15"
-                          style={{
-                            backgroundColor:
-                              clipping.highlightColor === 'pink'
-                                ? '#e879a0'
-                                : clipping.highlightColor === 'blue'
-                                ? '#60a5fa'
-                                : clipping.highlightColor === 'orange'
-                                ? '#fb923c'
-                                : '#facc15',
-                          }}
-                          title={`${clipping.highlightColor} highlight`}
-                        />
-                      )}
-                      {clipping.chapter && (
-                        <span className="truncate max-w-[140px] text-[var(--text-ink)] font-medium">
-                          {clipping.chapter}
-                          {clipping.page || locationStamp ? ' ·' : ''}
-                        </span>
-                      )}
-                      <span className="shrink-0">
-                        {clipping.page ? `p. ${clipping.page}` : ''}
-                        {clipping.page && locationStamp ? ' · ' : ''}
-                        {locationStamp || ''}
-                      </span>
-                    </div>
-                    {clipping.addedAt && <span className="shrink-0">{clipping.addedAt.slice(0, 10)}</span>}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {filteredClippings.length > visibleClippingsCount && (
-          <div className="text-center pt-2">
-            <button
-              onClick={() => setVisibleClippingsCount((prev) => prev + 6)}
-              className="px-4 py-2 rounded-md border border-[var(--border-ledger)] bg-[var(--bg-card)] text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-ink)] hover:border-[var(--text-muted)] transition-colors cursor-pointer"
-            >
-              Show More Highlights ({filteredClippings.length - visibleClippingsCount} remaining)
-            </button>
-          </div>
-        )}
-      </section>
-
-      {/* 4. Split Grid: Live DSAR Kindle Marginalia & Quick TBR Divination */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-        {/* Left Column (2/3): Live DSAR Kindle Notes Stream */}
-        <section className="lg:col-span-2 space-y-4">
-          <div className="flex items-center justify-between pb-2 border-b border-[var(--border-ledger)]">
-            <div className="flex items-center gap-2">
-              <Quote className="w-4 h-4 text-[var(--accent-primary)]" />
-              <h2 className="font-serif-editorial text-xl font-bold tracking-tight text-[var(--text-ink)]">
-                Status Marginalia Stream
-              </h2>
-              <span className="text-xs font-mono-tabular px-2 py-0.5 rounded bg-[var(--bg-card)] border border-[var(--border-ledger)] text-[var(--text-muted)]">
-                {kindleNotes.length} entries
-              </span>
-            </div>
-            <span className="text-xs text-[var(--text-muted)] hidden sm:inline">
-              Extracted from Goodreads reading logs
-            </span>
-          </div>
-
-          {kindleNotes.length === 0 ? (
-            <div className="p-6 rounded-lg bg-[var(--bg-card)] border border-[var(--border-ledger)] text-center text-xs text-[var(--text-muted)]">
-              No status marginalia imported yet.
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {kindleNotes.slice(0, visibleNotesCount).map((note, idx) => (
-                <div
-                  key={`${note.bookTitle}-${idx}`}
-                  onClick={() => onSelectBookById(note.bookId, note.bookTitle)}
-                  className="group p-4 rounded-lg bg-[var(--bg-card)] border border-[var(--border-ledger)] hover:border-[var(--accent-primary)]/50 transition-colors shadow-2xs cursor-pointer relative"
-                >
-                  <div className="flex items-start gap-3">
-                    <Quote className="w-5 h-5 text-[var(--accent-gold)] shrink-0 mt-0.5 opacity-80" />
-                    <div className="flex-1 min-w-0">
-                      <blockquote className="font-serif-editorial text-sm sm:text-base italic text-[var(--text-ink)] leading-relaxed">
-                        “{note.noteText || note.activity}”
-                      </blockquote>
-                      <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-[var(--text-muted)]">
-                        <span className="font-medium text-[var(--text-ink)] group-hover:text-[var(--accent-primary)] transition-colors underline decoration-dotted">
-                          {note.bookTitle}
-                        </span>
-                        {note.createdAt && (
-                          <>
-                            <span>·</span>
-                            <span className="font-mono-tabular text-[11px]">
-                              {note.createdAt.slice(0, 10)}
-                            </span>
-                          </>
-                        )}
-                        {note.noteActivityType && (
-                          <span className="px-1.5 py-0.2 rounded bg-[var(--bg-surface)] text-[10px] font-mono-tabular">
-                            {note.noteActivityType}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-
-              {kindleNotes.length > visibleNotesCount && (
-                <button
-                  onClick={() => setVisibleNotesCount((prev) => prev + 5)}
-                  className="w-full py-2 text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-ink)] border border-dashed border-[var(--border-ledger)] rounded-md hover:bg-[var(--bg-card)] transition-colors cursor-pointer"
-                >
-                  Show More Marginalia ({kindleNotes.length - visibleNotesCount} remaining)
-                </button>
-              )}
-            </div>
-          )}
-        </section>
-
-        {/* Right Column (1/3): Quick Oracle Roulette Widget & Review Drafts */}
-        <div className="space-y-6">
-          {/* Quick Oracle Roulette Card */}
-          <section className="p-5 rounded-lg bg-[var(--bg-card)] border border-[var(--accent-gold)]/40 shadow-xs relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-[var(--accent-gold)]/5 rounded-full blur-xl pointer-events-none" />
-
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--accent-gold)]">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Desk Divination</span>
-              </div>
-              <button
-                onClick={handleSpinRoulette}
-                disabled={isSpinning || toReadBooks.length === 0}
-                className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-[var(--text-ink)] bg-[var(--bg-surface)] hover:bg-[var(--accent-gold)]/20 transition-colors cursor-pointer border border-[var(--border-ledger)]"
-                title="Deal a fresh book from your TBR pile"
-              >
-                <Shuffle className={`w-3 h-3 ${isSpinning ? 'animate-spin' : ''}`} />
-                <span>Deal Next</span>
-              </button>
-            </div>
-
-            <p className="text-xs text-[var(--text-muted)] mb-3 leading-relaxed">
-              Stuck on what to read next? The desk roulette draws a candidate from your {toReadCount} TBR volumes:
-            </p>
-
-            {rouletteBook ? (
-              <div
-                onClick={() => onSelectBook(rouletteBook)}
-                className={`p-3.5 rounded-md bg-[var(--bg-surface)] border border-[var(--border-ledger)] hover:border-[var(--accent-gold)] transition-all cursor-pointer group ${
-                  isSpinning ? 'opacity-40 scale-98' : 'opacity-100 scale-100'
-                }`}
-              >
-                <div className="text-[10px] uppercase font-mono-tabular text-[var(--accent-primary)] font-semibold mb-1">
-                  Selected Candidate
-                </div>
-                <h4 className="font-serif-editorial text-base font-bold text-[var(--text-ink)] group-hover:text-[var(--accent-primary)] line-clamp-2 transition-colors">
-                  {rouletteBook.cleanTitle || rouletteBook.title}
-                </h4>
-                <p className="text-xs text-[var(--text-muted)] mt-0.5">
-                  by <span className="text-[var(--text-ink)]">{rouletteBook.author}</span>
-                </p>
-                <div className="mt-2.5 flex items-center justify-between text-[11px] font-mono-tabular text-[var(--text-muted)]">
-                  <span>
-                    {rouletteBook.pageCount ? `${rouletteBook.pageCount} pages` : 'Length unlisted'}
-                  </span>
-                  {rouletteBook.averageRating && (
-                    <span className="flex items-center gap-0.5">
-                      <Star className="w-3 h-3 fill-[var(--accent-gold)] text-[var(--accent-gold)]" />
-                      {rouletteBook.averageRating.toFixed(2)}
-                    </span>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <p className="text-xs text-[var(--text-muted)] italic">
-                No TBR volumes found in library.
-              </p>
-            )}
-
-            <button
-              onClick={onGoToOracle}
-              className="mt-3.5 w-full flex items-center justify-center gap-1.5 py-2 rounded-md bg-[var(--accent-primary)] text-white text-xs font-semibold hover:opacity-95 transition-opacity cursor-pointer shadow-xs"
-            >
-              <Compass className="w-3.5 h-3.5" />
-              <span>Full Oracle Matcher &amp; Divination</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </section>
-
-          {/* Unfinished Review Drafts */}
-          {reviewDrafts.length > 0 && (
-            <section className="p-4 rounded-lg bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs">
-              <div className="flex items-center gap-2 mb-2.5 pb-2 border-b border-[var(--border-ledger)]">
-                <Feather className="w-3.5 h-3.5 text-[var(--accent-secondary)]" />
-                <h3 className="font-serif-editorial text-sm font-bold text-[var(--text-ink)]">
-                  Unfinished Review Drafts
-                </h3>
-                <span className="text-[10px] font-mono-tabular px-1.5 py-0.2 rounded bg-[var(--bg-surface)] text-[var(--text-muted)] ml-auto">
-                  {reviewDrafts.length}
-                </span>
-              </div>
-              <div className="space-y-2">
-                {reviewDrafts.slice(0, 3).map((draft, i) => (
-                  <div
-                    key={i}
-                    onClick={() => onSelectBookById(draft.bookId, draft.bookTitle)}
-                    className="p-2.5 rounded bg-[var(--bg-surface)] hover:bg-[var(--bg-surface)]/80 border border-transparent hover:border-[var(--border-ledger)] transition-colors cursor-pointer"
-                  >
-                    <div className="text-xs font-bold text-[var(--text-ink)] truncate">
-                      {draft.bookTitle}
-                    </div>
-                    {draft.review && (
-                      <p className="text-[11px] text-[var(--text-muted)] line-clamp-2 mt-0.5 italic">
-                        “{draft.review.replace(/<[^>]+>/g, '')}”
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-        </div>
-      </div>
-
-      {/* 5. Commonplace Liked Quotes */}
-      {quotes.length > 0 && (
-        <section aria-labelledby="quotes-heading">
-          <div className="flex items-center justify-between pb-2 mb-4 border-b border-[var(--border-ledger)]">
-            <div className="flex items-center gap-2">
-              <Quote className="w-4 h-4 text-[var(--accent-secondary)]" />
-              <h2
-                id="quotes-heading"
-                className="font-serif-editorial text-xl font-bold tracking-tight text-[var(--text-ink)]"
-              >
-                Commonplace Book: Liked Quotes
-              </h2>
-              <span className="text-xs font-mono-tabular px-2 py-0.5 rounded bg-[var(--bg-card)] border border-[var(--border-ledger)] text-[var(--text-muted)]">
-                {quotes.length} passages
-              </span>
-            </div>
-            <span className="text-xs text-[var(--text-muted)] hidden sm:inline">
-              Culled from personal Goodreads reading archives
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {quotes.slice(0, visibleQuotesCount).map((quote, idx) => (
-              <div
-                key={idx}
-                className="p-5 rounded-lg bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs flex flex-col justify-between hover:border-[var(--accent-secondary)]/40 transition-colors"
-              >
-                <blockquote className="font-serif-editorial text-sm sm:text-base italic leading-relaxed text-[var(--text-ink)]">
-                  “{quote.quote}”
-                </blockquote>
-                <div className="mt-4 pt-3 border-t border-[var(--border-ledger)]/60 flex items-center justify-between text-xs text-[var(--text-muted)]">
-                  <span className="font-medium text-[var(--text-ink)] truncate max-w-[200px]">
-                    {quote.origin || 'Unknown Source'}
-                  </span>
-                  {quote.createdAt && (
-                    <span className="font-mono-tabular text-[11px]">
-                      {quote.createdAt.slice(0, 10)}
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {quotes.length > visibleQuotesCount && (
-            <div className="mt-4 text-center">
-              <button
-                onClick={() => setVisibleQuotesCount((prev) => prev + 6)}
-                className="px-4 py-2 rounded-md border border-[var(--border-ledger)] bg-[var(--bg-card)] text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-ink)] hover:border-[var(--text-muted)] transition-colors cursor-pointer"
-              >
-                Display More Commonplace Passages ({quotes.length - visibleQuotesCount} more)
-              </button>
-            </div>
-          )}
-        </section>
-      )}
-
-      {/* 5. Kindle Orphan Highlight Reconciler Drawer / Modal */}
-      {isReconcilerOpen && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="reconciler-title"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
-          onClick={() => setIsReconcilerOpen(false)}
-        >
-          <div
-            className="w-full max-w-3xl max-h-[85vh] flex flex-col rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xl overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Modal Header */}
-            <div className="flex items-start justify-between p-5 border-b border-[var(--border-ledger)] bg-[var(--bg-surface)]/60">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-[var(--accent-gold)]/15 text-[var(--accent-gold)] flex items-center justify-center border border-[var(--accent-gold)]/30">
-                  <Sparkles className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 id="reconciler-title" className="font-serif-editorial text-lg sm:text-xl font-bold text-[var(--text-ink)]">
-                    Kindle Marginalia Reconciler
-                  </h3>
-                  <p className="text-xs text-[var(--text-muted)] mt-0.5">
-                    Match orphaned highlights to catalog volumes using fuzzy title &amp; author heuristics.
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsReconcilerOpen(false)}
-                className="p-1.5 rounded-md hover:bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-ink)] cursor-pointer transition-colors"
-                aria-label="Close reconciler"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Filter / Search Bar within Reconciler */}
-            <div className="p-4 border-b border-[var(--border-ledger)] bg-[var(--bg-card)] flex flex-col sm:flex-row items-center justify-between gap-3">
-              <div className="text-xs font-mono-tabular text-[var(--text-muted)]">
-                Showing <strong className="text-[var(--text-ink)]">{filteredOrphanGroups.length}</strong> unshelved works ({unshelvedClippingsCount} highlights total)
-              </div>
-              <div className="relative w-full sm:w-64">
-                <Search className="w-3.5 h-3.5 text-[var(--text-muted)] absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                <input
-                  type="text"
-                  placeholder="Filter orphan titles..."
-                  value={reconcilerSearch}
-                  onChange={(e) => setReconcilerSearch(e.target.value)}
-                  className="w-full pl-8 pr-3 py-1.5 rounded-md text-xs bg-[var(--bg-surface)] border border-[var(--border-ledger)] text-[var(--text-ink)] placeholder-[var(--text-muted)] focus:border-[var(--accent-primary)] outline-hidden"
-                />
-              </div>
-            </div>
-
-            {/* Orphan Groups List */}
-            <div className="flex-1 overflow-y-auto p-5 space-y-5">
-              {filteredOrphanGroups.length === 0 ? (
-                <div className="py-12 text-center">
-                  <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto mb-3" />
-                  <h4 className="font-serif-editorial text-base font-bold text-[var(--text-ink)]">
-                    All Highlights Paired!
-                  </h4>
-                  <p className="text-xs text-[var(--text-muted)] mt-1 max-w-sm mx-auto">
-                    Every passage in your Kindle vault is linked to a corresponding book in your library catalog.
-                  </p>
-                </div>
-              ) : (
-                filteredOrphanGroups.map((group) => {
-                  const candidates = findCandidateBooksForClipping(group.cleanTitle, group.author, bundle.books);
-                  const sampleClipping = group.clippings[0];
-
-                  return (
-                    <div
-                      key={group.key}
-                      className="p-4 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] space-y-3"
+                  {/* Card Footer: Goodreads Link & Open Dossier */}
+                  <div className="mt-4 pt-3 border-t border-[var(--border-ledger)]/70 flex items-center justify-between gap-2">
+                    <a
+                      href={gr.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-[var(--border-ledger)] hover:border-[var(--accent-gold)]/60 bg-[var(--bg-surface)] hover:bg-[var(--accent-gold)]/10 text-[10px] font-mono-tabular text-[var(--text-muted)] hover:text-[var(--text-ink)] transition-colors"
+                      title={gr.label}
+                      aria-label={`Open ${book.cleanTitle || book.title} on Goodreads`}
                     >
-                      {/* Orphan Header */}
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-[var(--border-ledger)]/60">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h4 className="font-serif-editorial text-sm sm:text-base font-bold text-[var(--text-ink)]">
-                              {group.cleanTitle}
-                            </h4>
-                            <span className="text-[10px] font-mono-tabular px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-800 dark:text-amber-200 border border-amber-500/30 font-semibold">
-                              {group.clippings.length} {group.clippings.length === 1 ? 'passage' : 'passages'}
-                            </span>
-                          </div>
-                          {group.author && (
-                            <p className="text-xs text-[var(--text-muted)] mt-0.5">
-                              by {group.author}
-                            </p>
-                          )}
-                        </div>
-                      </div>
+                      <span>GR</span>
+                      <ExternalLink className="w-2.5 h-2.5 opacity-70" />
+                    </a>
 
-                      {/* Sample quote preview */}
-                      {sampleClipping && (
-                        <p className="text-xs italic text-[var(--text-muted)] font-serif-editorial line-clamp-2 bg-[var(--bg-card)] p-2.5 rounded border border-[var(--border-ledger)]/40">
-                          &ldquo;{sampleClipping.content}&rdquo;
-                        </p>
-                      )}
-
-                      {/* Candidates Section */}
-                      <div className="space-y-1.5">
-                        <span className="text-[10px] font-mono-tabular uppercase tracking-wider text-[var(--text-muted)] font-semibold">
-                          Candidate Catalog Matches:
-                        </span>
-
-                        {candidates.length > 0 ? (
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            {candidates.map((cand) => (
-                              <div
-                                key={cand.book.id}
-                                className="p-2.5 rounded-md bg-[var(--bg-card)] border border-[var(--border-ledger)] hover:border-[var(--accent-primary)]/60 flex items-center justify-between gap-2 transition-colors"
-                              >
-                                <div className="min-w-0">
-                                  <div className="text-xs font-serif-editorial font-bold text-[var(--text-ink)] truncate">
-                                    {cand.book.cleanTitle || cand.book.title}
-                                  </div>
-                                  <div className="text-[10px] text-[var(--text-muted)] truncate">
-                                    {cand.book.author}
-                                    {cand.book.yearPublished ? ` (${cand.book.yearPublished})` : ''}
-                                  </div>
-                                  <div className="flex items-center gap-1 mt-1">
-                                    <span className="text-[9px] font-mono-tabular px-1 rounded bg-[var(--accent-gold)]/10 text-[var(--accent-gold)] font-bold">
-                                      {Math.round(cand.score * 100)}% match
-                                    </span>
-                                    <span className="text-[9px] font-mono-tabular text-[var(--text-muted)]">
-                                      {cand.matchReason}
-                                    </span>
-                                  </div>
-                                </div>
-
-                                <button
-                                  type="button"
-                                  onClick={() => handlePairClippings(group, cand.book.id)}
-                                  className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded bg-[var(--accent-primary)] hover:opacity-90 text-white text-[11px] font-semibold cursor-pointer shadow-xs transition-opacity"
-                                  title={`Pair all ${group.clippings.length} highlights with ${cand.book.cleanTitle || cand.book.title}`}
-                                >
-                                  <Check className="w-3 h-3" />
-                                  <span>Pair</span>
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="text-xs text-[var(--text-muted)] italic font-mono-tabular">
-                            No automatic candidate matches found. Use manual pairing below.
-                          </p>
-                        )}
-
-                        {/* Manual Search Selector for this group */}
-                        <div className="pt-2">
-                          <details className="text-xs group">
-                            <summary className="cursor-pointer text-[var(--text-muted)] hover:text-[var(--text-ink)] font-mono-tabular text-[11px]">
-                              ▸ Manual Catalog Search...
-                            </summary>
-                            <div className="mt-2 p-2.5 rounded bg-[var(--bg-card)] border border-[var(--border-ledger)] space-y-2">
-                              <select
-                                onChange={(e) => {
-                                  if (e.target.value) {
-                                    handlePairClippings(group, e.target.value);
-                                  }
-                                }}
-                                defaultValue=""
-                                className="w-full p-1.5 rounded text-xs bg-[var(--bg-surface)] border border-[var(--border-ledger)] text-[var(--text-ink)]"
-                              >
-                                <option value="" disabled>Select a book from catalog to pair with...</option>
-                                {bundle.books.map((b) => (
-                                  <option key={b.id} value={b.id}>
-                                    {b.cleanTitle || b.title} — {b.author}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-                          </details>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-
-            {/* Modal Footer */}
-            <div className="p-3.5 border-t border-[var(--border-ledger)] bg-[var(--bg-surface)] flex justify-end">
-              <button
-                type="button"
-                onClick={() => setIsReconcilerOpen(false)}
-                className="px-4 py-1.5 rounded-md bg-[var(--bg-card)] border border-[var(--border-ledger)] text-xs font-semibold text-[var(--text-ink)] hover:bg-[var(--bg-surface)] cursor-pointer"
-              >
-                Done
-              </button>
-            </div>
+                    <button
+                      type="button"
+                      onClick={() => onSelectBook(book)}
+                      className="inline-flex items-center gap-1 text-[11px] font-mono-tabular font-semibold text-[var(--accent-primary)] hover:underline cursor-pointer"
+                      title="Open full book dossier"
+                    >
+                      <span>Open Dossier</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        </div>
-      )}
+        )}
+      </section>
     </div>
   );
 };

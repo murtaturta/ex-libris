@@ -1,7 +1,7 @@
 # Ex Libris — Permanent Studio Team & Project Charter
 
 ## Project Goal
-Use Goodreads, Kindle, and similar reading platform data to genuinely **enhance the reading experience** via a fast, tactile, local-first web application (**Ex Libris**, running at `C:\Users\Murat\Projects\Goodreads` on `http://localhost:3000/`).
+Use Goodreads, Kindle, and similar reading platform data to genuinely **enhance the reading experience** via a fast, tactile, local-first web application (**Ex Libris**, running at `C:\Users\Murat\Desktop\ex-libris` on `http://localhost:3100/`).
 
 ---
 

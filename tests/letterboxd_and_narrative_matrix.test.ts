@@ -166,7 +166,7 @@ describe('Letterboxd Cinema Intake & Narrative Correlation Matrix', () => {
         writingTelemetry: {
           version: '1.0',
           updatedAt: '2026-11-04T00:00:00Z',
-          source: 'Keep the Rhythm',
+          source: 'scriptor',
           totalWords: 1200,
           totalChars: 6000,
           dailyGoal: 300,

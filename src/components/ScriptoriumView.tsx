@@ -2,11 +2,8 @@ import React, { useMemo, useState, useRef } from 'react';
 import type { Book, EnrichmentCacheMap, LibraryBundle, UserLocalState, WritingTelemetryData } from '../types/library';
 import { computeKindleReadingHeatmap } from '../lib/analytics/engine';
 import {
-  isKeepTheRhythmJson,
-  parseKeepTheRhythmJson,
-  exportTelemetryToFrontmatter,
-  exportTelemetryToCsv,
-  generateRepairedKeepTheRhythmJson,
+  isScriptorJson,
+  parseScriptorJson,
 } from '../lib/parsers/writingTelemetryParser';
 import { KindleHeatmapSection } from './KindleHeatmapSection';
 import {
@@ -14,18 +11,15 @@ import {
   BookOpen,
   Zap,
   Flame,
-  Clock,
   ExternalLink,
   FileText,
   BookmarkCheck,
   UploadCloud,
   Check,
-  Loader2,
-  Download,
-  FileSpreadsheet,
-  FileCode2,
-  Wrench,
   Quote,
+  Search,
+  Shuffle,
+  Star,
 } from 'lucide-react';
 
 export interface ScriptoriumViewProps {
@@ -38,11 +32,23 @@ export interface ScriptoriumViewProps {
   onOpenCommonplace?: () => void;
 }
 
+interface VaultPassage {
+  id: string;
+  content: string;
+  attachedNote?: string | null;
+  bookTitle: string;
+  author: string;
+  matchedBook: Book | null;
+  bookId: string | null;
+  bookRating: number | null;
+  locationLabel: string | null;
+  addedAt?: string | null;
+}
+
 /**
  * 05 / The Scriptorium
- * Dedicated Reader-Writer Workshop: Input (Reading) vs. Output (Writing) Telemetry.
- * Houses the correlation heatmap, Keep the Rhythm Obsidian drafting statistics,
- * manuscript project progress, and matched vault essay-reviews.
+ * Dedicated Reader-Writer Workshop: Marginalia & Clippings Vault, Input vs. Output
+ * calendar heatmap, Obsidian drafting statistics, manuscript projects, and vault reviews.
  */
 export const ScriptoriumView: React.FC<ScriptoriumViewProps> = ({
   bundle,
@@ -58,26 +64,19 @@ export const ScriptoriumView: React.FC<ScriptoriumViewProps> = ({
   const [syncFeedback, setSyncFeedback] = useState<string | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
 
-  const handleDownloadFile = (content: string, filename: string, mimeType: string) => {
-    const blob = new Blob([content], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
+  // Marginalia Vault search/filter/shuffle state
+  const [marginaliaSearch, setMarginaliaSearch] = useState('');
+  const [marginaliaFilter, setMarginaliaFilter] = useState<'all' | 'notes' | 'canon'>('all');
+  const [shuffleSeed, setShuffleSeed] = useState(0);
 
   const handleSyncFile = async (file: File) => {
     setSyncError(null);
     try {
       const text = await file.text();
-      if (!isKeepTheRhythmJson(text)) {
-        throw new Error('File does not match Keep the Rhythm data.json format.');
+      if (!isScriptorJson(text)) {
+        throw new Error('File does not match Scriptor .json format.');
       }
-      const parsed = parseKeepTheRhythmJson(text, userState?.writingTelemetry);
+      const parsed = parseScriptorJson(text, userState?.writingTelemetry);
       onWritingTelemetryImported?.(parsed);
       setSyncFeedback(`Synced ${parsed.totalWords.toLocaleString()} words!`);
       setTimeout(() => setSyncFeedback(null), 3500);
@@ -95,6 +94,116 @@ export const ScriptoriumView: React.FC<ScriptoriumViewProps> = ({
     }
   };
 
+  // Book lookup for linking marginalia passages directly to Dossier
+  const bookLookup = useMemo(() => {
+    const byId = new Map<string, Book>();
+    const byTitle = new Map<string, Book>();
+    for (const b of books) {
+      byId.set(b.id, b);
+      if (b.cleanTitle) byTitle.set(b.cleanTitle.toLowerCase().trim(), b);
+      if (b.title) byTitle.set(b.title.toLowerCase().trim(), b);
+    }
+    return { byId, byTitle };
+  }, [books]);
+
+  // Aggregate Marginalia Vault (userState.kindleClippings + book.kindleNotes fallback)
+  const allPassages = useMemo<VaultPassage[]>(() => {
+    const list: VaultPassage[] = [];
+    const seen = new Set<string>();
+
+    const clippings = userState?.kindleClippings || [];
+    for (const c of clippings) {
+      const content = c.content?.trim();
+      if (!content || content.length < 12) continue;
+
+      const title = c.cleanTitle || c.rawTitle || 'Untitled Volume';
+      const dedupeKey = `${title.toLowerCase()}::${content.slice(0, 48).toLowerCase()}`;
+      if (seen.has(dedupeKey)) continue;
+      seen.add(dedupeKey);
+
+      const matched =
+        (c.matchedBookId ? bookLookup.byId.get(c.matchedBookId) : undefined) ||
+        bookLookup.byTitle.get(title.toLowerCase().trim()) ||
+        null;
+
+      const locLabel = c.page
+        ? `p. ${c.page}`
+        : c.locationStart != null
+        ? `Loc ${c.locationStart}${c.locationEnd != null && c.locationEnd !== c.locationStart ? `–${c.locationEnd}` : ''}`
+        : null;
+
+      list.push({
+        id: c.id,
+        content,
+        attachedNote: c.attachedNote || null,
+        bookTitle: matched?.cleanTitle || title,
+        author: matched?.author || c.author || 'Unknown Author',
+        matchedBook: matched,
+        bookId: matched?.id || c.matchedBookId || null,
+        bookRating: matched?.myRating ?? null,
+        locationLabel: locLabel,
+        addedAt: c.addedAt || null,
+      });
+    }
+
+    // Fallback: include DSAR Kindle reading notes from book records not already represented
+    for (const b of books) {
+      const notes = b.kindleNotes || [];
+      for (let i = 0; i < notes.length; i++) {
+        const noteText = notes[i].noteText?.trim();
+        if (!noteText || noteText.length < 12) continue;
+
+        const title = b.cleanTitle || b.title;
+        const dedupeKey = `${title.toLowerCase()}::${noteText.slice(0, 48).toLowerCase()}`;
+        if (seen.has(dedupeKey)) continue;
+        seen.add(dedupeKey);
+
+        list.push({
+          id: `dsar-${b.id}-${i}`,
+          content: noteText,
+          attachedNote: null,
+          bookTitle: title,
+          author: b.author || 'Unknown Author',
+          matchedBook: b,
+          bookId: b.id,
+          bookRating: b.myRating ?? null,
+          locationLabel: notes[i].createdAt ? notes[i].createdAt.slice(0, 10) : 'Kindle Note',
+          addedAt: notes[i].createdAt || null,
+        });
+      }
+    }
+
+    return list.sort((a, b) => (b.addedAt || '').localeCompare(a.addedAt || ''));
+  }, [userState?.kindleClippings, books, bookLookup]);
+
+  const filteredPassages = useMemo(() => {
+    const q = marginaliaSearch.trim().toLowerCase();
+    return allPassages.filter((p) => {
+      if (marginaliaFilter === 'notes' && !p.attachedNote) return false;
+      if (marginaliaFilter === 'canon' && p.bookRating !== 5) return false;
+
+      if (!q) return true;
+      return (
+        p.content.toLowerCase().includes(q) ||
+        p.bookTitle.toLowerCase().includes(q) ||
+        p.author.toLowerCase().includes(q) ||
+        (p.attachedNote ? p.attachedNote.toLowerCase().includes(q) : false)
+      );
+    });
+  }, [allPassages, marginaliaSearch, marginaliaFilter]);
+
+  const visiblePassages = useMemo(() => {
+    if (filteredPassages.length <= 6) return filteredPassages;
+    if (shuffleSeed === 0) return filteredPassages.slice(0, 6);
+
+    const indexed = filteredPassages.map((item, idx) => {
+      const hash = (((idx + 1) * 2654435761) ^ (shuffleSeed * 1597334677)) >>> 0;
+      return { item, hash };
+    });
+    indexed.sort((a, b) => a.hash - b.hash);
+    return indexed.slice(0, 6).map((x) => x.item);
+  }, [filteredPassages, shuffleSeed]);
+
   // Compute Kindle Reading + Writing Correlation Metrics
   const kindleHeatmap = useMemo(() => {
     try {
@@ -111,8 +220,8 @@ export const ScriptoriumView: React.FC<ScriptoriumViewProps> = ({
     : 472;
 
   return (
-    <div className="space-y-8 animate-fadeIn">
-      {/* 1. Scholarly Room Header Banner */}
+    <div className="space-y-8 pb-16 animate-fadeIn">
+      {/* 1. Scholarly Room Header Banner & KPIs */}
       <div className="p-6 sm:p-8 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-xs relative overflow-hidden">
         <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/5 dark:bg-emerald-400/5 rounded-full blur-3xl pointer-events-none" />
 
@@ -133,13 +242,23 @@ export const ScriptoriumView: React.FC<ScriptoriumViewProps> = ({
 
             <p className="text-xs sm:text-sm text-[var(--text-muted)] max-w-2xl font-serif-editorial italic leading-relaxed">
               &ldquo;One writes not because one knows, but in order to discover what one has read.&rdquo; —
-              A quiet study tracking the symbiotic cadence between ingested thought (Kindle annotations)
-              and drafted prose (Obsidian manuscripts).
+              Tracking collected Kindle marginalia alongside drafted prose and Obsidian manuscripts.
             </p>
           </div>
 
-          {/* Live Sync Action & Dropzone */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 shrink-0">
+          {/* Live Sync Dropzone + Commonplace Book Button */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 shrink-0">
+            {onOpenCommonplace && (
+              <button
+                type="button"
+                onClick={onOpenCommonplace}
+                className="px-4 py-2.5 rounded-xl bg-[var(--accent-gold)]/10 hover:bg-[var(--accent-gold)]/20 border border-[var(--accent-gold)]/35 text-xs font-serif-editorial font-bold text-[var(--accent-gold)] flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-2xs"
+              >
+                <Quote className="w-4 h-4 shrink-0" />
+                <span>Open Commonplace Book</span>
+              </button>
+            )}
+
             <div
               onDragOver={(e) => {
                 e.preventDefault();
@@ -157,7 +276,7 @@ export const ScriptoriumView: React.FC<ScriptoriumViewProps> = ({
                   ? 'border-red-500/50 bg-red-500/10 text-red-600 dark:text-red-400'
                   : 'bg-[var(--bg-surface)] hover:bg-[var(--border-ledger)] border-[var(--border-ledger)] text-[var(--text-ink)]'
               }`}
-              title="Click or drag and drop your Obsidian Keep the Rhythm data.json here to live-sync writing progress"
+              title="Click or drag and drop your Obsidian Scriptor .json (data.json or scriptor_telemetry_*.json) here to live-sync writing progress"
             >
               {syncFeedback ? (
                 <>
@@ -174,7 +293,9 @@ export const ScriptoriumView: React.FC<ScriptoriumViewProps> = ({
                   <UploadCloud className="w-4 h-4 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform" />
                   <div>
                     <span className="font-bold">Sync Writing Data</span>
-                    <span className="text-[10px] text-[var(--text-muted)] block">Drop Keep the Rhythm data.json</span>
+                    <span className="text-[10px] text-[var(--text-muted)] block">
+                      Drop Scriptor .json
+                    </span>
                   </div>
                 </>
               )}
@@ -196,10 +317,11 @@ export const ScriptoriumView: React.FC<ScriptoriumViewProps> = ({
 
         {/* 2. Top-Level Metric Ribbon */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mt-6 pt-6 border-t border-[var(--border-ledger)]">
-          {/* Card 1: Output Words */}
           <div className="p-3.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] shadow-2xs">
             <div className="flex items-center justify-between text-xs text-[var(--text-muted)] mb-1">
-              <span className="uppercase font-mono-tabular text-[10px] tracking-wider">Output Drafted</span>
+              <span className="uppercase font-mono-tabular text-[10px] tracking-wider">
+                Output Drafted
+              </span>
               <Feather className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
             </div>
             <div className="font-mono-tabular text-xl sm:text-2xl font-bold text-[var(--text-ink)]">
@@ -211,10 +333,11 @@ export const ScriptoriumView: React.FC<ScriptoriumViewProps> = ({
             </div>
           </div>
 
-          {/* Card 2: Goal Streaks */}
           <div className="p-3.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] shadow-2xs">
             <div className="flex items-center justify-between text-xs text-[var(--text-muted)] mb-1">
-              <span className="uppercase font-mono-tabular text-[10px] tracking-wider">Goal Streaks</span>
+              <span className="uppercase font-mono-tabular text-[10px] tracking-wider">
+                Goal Streaks
+              </span>
               <Flame className="w-3.5 h-3.5 text-[var(--accent-gold)]" />
             </div>
             <div className="font-mono-tabular text-xl sm:text-2xl font-bold text-[var(--accent-gold)]">
@@ -222,43 +345,210 @@ export const ScriptoriumView: React.FC<ScriptoriumViewProps> = ({
               <span className="text-xs font-normal text-[var(--text-muted)] ml-1">days</span>
             </div>
             <div className="text-[11px] text-[var(--text-muted)] font-mono-tabular mt-0.5">
-              300w target hit · 45 goal milestones
+              {telemetry?.dailyGoal || 300}w target hit
             </div>
           </div>
 
-          {/* Card 3: Reading Input */}
           <div className="p-3.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] shadow-2xs">
             <div className="flex items-center justify-between text-xs text-[var(--text-muted)] mb-1">
-              <span className="uppercase font-mono-tabular text-[10px] tracking-wider">Reading Input</span>
+              <span className="uppercase font-mono-tabular text-[10px] tracking-wider">
+                Reading Input
+              </span>
               <BookOpen className="w-3.5 h-3.5 text-[#3b82f6]" />
             </div>
             <div className="font-mono-tabular text-xl sm:text-2xl font-bold text-[var(--text-ink)]">
-              {kindleHeatmap?.totalHighlights || 515}
+              {kindleHeatmap?.totalHighlights ?? allPassages.length}
               <span className="text-xs font-normal text-[var(--text-muted)] ml-1">highlights</span>
             </div>
             <div className="text-[11px] text-[var(--text-muted)] font-mono-tabular mt-0.5">
-              Across {kindleHeatmap?.totalActiveDays || 100} days · Longest: {kindleHeatmap?.longestStreakDays || 14}d
+              Across {kindleHeatmap?.totalActiveDays || 0} days · Longest:{' '}
+              {kindleHeatmap?.longestStreakDays || 0}d
             </div>
           </div>
 
-          {/* Card 4: Dual Momentum */}
           <div className="p-3.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] shadow-2xs">
             <div className="flex items-center justify-between text-xs text-[var(--text-muted)] mb-1">
-              <span className="uppercase font-mono-tabular text-[10px] tracking-wider">Dual Momentum</span>
+              <span className="uppercase font-mono-tabular text-[10px] tracking-wider">
+                Dual Momentum
+              </span>
               <Zap className="w-3.5 h-3.5 text-amber-500" />
             </div>
             <div className="font-mono-tabular text-xl sm:text-2xl font-bold text-amber-600 dark:text-amber-400">
-              {kindleHeatmap?.dualMomentumDaysCount || 36}
+              {kindleHeatmap?.dualMomentumDaysCount || 0}
               <span className="text-xs font-normal text-[var(--text-muted)] ml-1">days</span>
             </div>
             <div className="text-[11px] text-[var(--text-muted)] font-mono-tabular mt-0.5">
-              {kindleHeatmap?.inspiredRatePct || 64}% writing within 48h of reading
+              {kindleHeatmap?.inspiredRatePct || 0}% writing within 48h of reading
             </div>
           </div>
         </div>
       </div>
 
-      {/* 3. Primary Heatmap & Cadence Matrix */}
+      {/* 3. Marginalia & Clippings Vault */}
+      <section
+        aria-labelledby="marginalia-vault-heading"
+        className="p-6 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-xs space-y-5"
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[var(--border-ledger)]">
+          <div className="flex items-center gap-2.5">
+            <Quote className="w-4 h-4 text-[var(--accent-gold)] shrink-0" />
+            <div>
+              <h2
+                id="marginalia-vault-heading"
+                className="font-serif-editorial text-lg sm:text-xl font-bold text-[var(--text-ink)]"
+              >
+                Marginalia &amp; Clippings Vault
+              </h2>
+              <p className="text-xs text-[var(--text-muted)] font-mono-tabular">
+                Showing {visiblePassages.length} of {filteredPassages.length} captured passages
+                {allPassages.length !== filteredPassages.length
+                  ? ` (${allPassages.length} total)`
+                  : ''}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShuffleSeed((s) => s + 1)}
+              disabled={filteredPassages.length <= 6}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--bg-surface)] hover:bg-[var(--border-ledger)] border border-[var(--border-ledger)] text-xs font-mono-tabular font-semibold text-[var(--text-ink)] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Surface 6 different passages from your clippings vault"
+            >
+              <Shuffle className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
+              <span>Shuffle</span>
+            </button>
+
+            {onOpenCommonplace && (
+              <button
+                type="button"
+                onClick={onOpenCommonplace}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--accent-gold)]/10 hover:bg-[var(--accent-gold)]/20 border border-[var(--accent-gold)]/30 text-xs font-mono-tabular font-bold text-[var(--accent-gold)] transition-colors cursor-pointer"
+              >
+                <span>Open Full Commonplace Book</span>
+                <ExternalLink className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Search & Filter Strip */}
+        <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+          <div className="relative flex-1 max-w-md">
+            <Search className="w-3.5 h-3.5 text-[var(--text-muted)] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              value={marginaliaSearch}
+              onChange={(e) => {
+                setMarginaliaSearch(e.target.value);
+                setShuffleSeed(0);
+              }}
+              placeholder="Search passages, notes, titles, or authors..."
+              className="w-full pl-9 pr-3 py-1.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] text-xs text-[var(--text-ink)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-primary)]"
+            />
+          </div>
+
+          <div className="flex items-center gap-1.5 p-1 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] font-mono-tabular text-xs self-start sm:self-auto">
+            {(
+              [
+                { id: 'all', label: 'All' },
+                { id: 'notes', label: 'With Notes' },
+                { id: 'canon', label: '5★ Canon' },
+              ] as const
+            ).map((pill) => (
+              <button
+                key={pill.id}
+                type="button"
+                onClick={() => {
+                  setMarginaliaFilter(pill.id);
+                  setShuffleSeed(0);
+                }}
+                className={`px-2.5 py-1 rounded transition-colors cursor-pointer ${
+                  marginaliaFilter === pill.id
+                    ? 'bg-[var(--accent-primary)] text-white font-semibold shadow-2xs'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-ink)]'
+                }`}
+              >
+                {pill.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Passages Grid */}
+        {visiblePassages.length === 0 ? (
+          <div className="p-8 rounded-lg bg-[var(--bg-surface)] border border-dashed border-[var(--border-ledger)] text-center">
+            <p className="font-serif-editorial text-sm italic text-[var(--text-muted)]">
+              {allPassages.length === 0
+                ? 'No Kindle clippings or highlights loaded yet. Import My Clippings.txt via the Archive menu to populate your vault.'
+                : 'No passages matched your current search or filter.'}
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {visiblePassages.map((p) => (
+              <article
+                key={p.id}
+                className="p-4 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-ledger)] hover:border-[var(--accent-gold)]/60 transition-all flex flex-col justify-between gap-3 shadow-2xs"
+              >
+                <div className="space-y-2.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (p.matchedBook) {
+                          onSelectBook(p.matchedBook);
+                        } else {
+                          onSelectBookById(p.bookId, p.bookTitle);
+                        }
+                      }}
+                      className="text-left group cursor-pointer min-w-0"
+                    >
+                      <h3 className="font-serif-editorial text-sm font-bold text-[var(--text-ink)] group-hover:text-[var(--accent-primary)] transition-colors line-clamp-1">
+                        {p.bookTitle}
+                      </h3>
+                      <p className="text-[11px] text-[var(--text-muted)] font-mono-tabular truncate">
+                        by {p.author}
+                      </p>
+                    </button>
+
+                    <div className="flex items-center gap-1.5 shrink-0 font-mono-tabular text-[10px]">
+                      {p.bookRating === 5 && (
+                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-[var(--accent-gold)]/15 text-[var(--accent-gold)] font-bold border border-[var(--accent-gold)]/30">
+                          <Star className="w-2.5 h-2.5 fill-[var(--accent-gold)]" />
+                          <span>5★</span>
+                        </span>
+                      )}
+                      {p.locationLabel && (
+                        <span className="px-1.5 py-0.5 rounded bg-[var(--bg-card)] border border-[var(--border-ledger)] text-[var(--text-muted)]">
+                          {p.locationLabel}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <blockquote className="font-serif-editorial text-sm italic text-[var(--text-ink)] leading-relaxed border-l-2 border-[var(--accent-gold)]/60 pl-3 line-clamp-4">
+                    &ldquo;{p.content}&rdquo;
+                  </blockquote>
+
+                  {p.attachedNote && (
+                    <div className="p-2.5 rounded-lg bg-[var(--bg-card)] border border-[var(--border-ledger)] flex items-start gap-2 text-xs">
+                      <Feather className="w-3.5 h-3.5 text-[var(--accent-gold)] shrink-0 mt-0.5" />
+                      <div className="text-[var(--text-ink)] font-sans-ui leading-snug">
+                        <span className="font-semibold text-[var(--accent-gold)] mr-1">Note:</span>
+                        {p.attachedNote}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* 4. Primary Heatmap & Cadence Matrix */}
       {kindleHeatmap && (
         <section aria-label="Input vs Output Calendar Matrix">
           <KindleHeatmapSection
@@ -271,7 +561,7 @@ export const ScriptoriumView: React.FC<ScriptoriumViewProps> = ({
         </section>
       )}
 
-      {/* 4. Secondary Row: Manuscripts Breakdown & Matched Vault Reviews */}
+      {/* 5. Manuscripts Breakdown & Matched Vault Reviews */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Manuscripts Ledger */}
         <section className="p-6 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-xs space-y-4">
@@ -307,11 +597,11 @@ export const ScriptoriumView: React.FC<ScriptoriumViewProps> = ({
                         </span>
                       </div>
                       <span className="font-semibold text-[var(--text-ink)]">
-                        {proj.words.toLocaleString()} <span className="font-normal text-[var(--text-muted)]">words</span> ({pct}%)
+                        {proj.words.toLocaleString()}{' '}
+                        <span className="font-normal text-[var(--text-muted)]">words</span> ({pct}%)
                       </span>
                     </div>
 
-                    {/* Progress Bar */}
                     <div className="h-2 rounded-full bg-[var(--bg-card)] overflow-hidden border border-[var(--border-ledger)]/50">
                       <div
                         style={{ width: `${Math.max(4, pct)}%` }}
@@ -339,7 +629,8 @@ export const ScriptoriumView: React.FC<ScriptoriumViewProps> = ({
               </h2>
             </div>
             <span className="font-mono-tabular text-xs text-[var(--text-muted)]">
-              {telemetry?.matchedReviews ? Object.keys(telemetry.matchedReviews).length : 0} Reviews Linked
+              {telemetry?.matchedReviews ? Object.keys(telemetry.matchedReviews).length : 0} Reviews
+              Linked
             </span>
           </div>
 
@@ -386,7 +677,6 @@ export const ScriptoriumView: React.FC<ScriptoriumViewProps> = ({
                       </div>
                     </div>
 
-                    {/* Review Snippet Preview */}
                     <p className="text-xs text-[var(--text-muted)] font-serif-editorial italic line-clamp-3 bg-[var(--bg-card)]/50 p-2 rounded border border-[var(--border-ledger)]/50">
                       &ldquo;{snippet}&hellip;&rdquo;
                     </p>
@@ -395,125 +685,12 @@ export const ScriptoriumView: React.FC<ScriptoriumViewProps> = ({
               })
             ) : (
               <p className="text-xs text-[var(--text-muted)] italic font-serif-editorial">
-                No matching vault essays found. Add Markdown notes to your Obsidian vault under &ldquo;Benim Yazılar&rdquo; or review folders to link them automatically.
+                No matching vault essays found. Add Markdown notes to your Obsidian vault under
+                &ldquo;Benim Yazılar&rdquo; or review folders to link them automatically.
               </p>
             )}
           </div>
         </section>
-      </div>
-
-      {/* 4.5. Telemetry Doctor & Safe Vault Exporters */}
-      <section className="p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <Wrench className="w-5 h-5 text-[var(--accent-gold)]" />
-            <div>
-              <h2 className="font-serif-editorial text-base font-bold text-[var(--text-ink)]">
-                Keep the Rhythm Telemetry Doctor &amp; Safe Vault Exporters
-              </h2>
-              <p className="text-xs text-[var(--text-muted)] font-serif-editorial">
-                Export resilient daily frontmatter, tabular CSV logs, or download an auto-repaired data.json to protect your writing streaks.
-              </p>
-            </div>
-          </div>
-
-          {onOpenCommonplace && (
-            <button
-              type="button"
-              onClick={onOpenCommonplace}
-              className="px-3.5 py-1.5 rounded-lg bg-[var(--accent-gold)]/10 hover:bg-[var(--accent-gold)]/20 border border-[var(--accent-gold)]/30 text-xs font-serif-editorial font-bold text-[var(--accent-gold)] flex items-center gap-2 cursor-pointer transition-colors shrink-0"
-            >
-              <Quote className="w-3.5 h-3.5" />
-              <span>Open Commonplace Book</span>
-            </button>
-          )}
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-          {/* Download Repaired data.json */}
-          <button
-            type="button"
-            onClick={() => {
-              if (!telemetry) return;
-              const json = generateRepairedKeepTheRhythmJson(telemetry);
-              handleDownloadFile(json, 'repaired_keep_the_rhythm_data.json', 'application/json');
-            }}
-            disabled={!telemetry}
-            className="p-3.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] hover:border-[var(--accent-gold)]/60 transition-all text-left group cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="font-mono-tabular text-xs font-bold text-[var(--text-ink)] group-hover:text-[var(--accent-gold)] transition-colors flex items-center gap-1.5">
-                <FileCode2 className="w-4 h-4 text-[var(--accent-gold)]" />
-                Repaired data.json
-              </span>
-              <Download className="w-3.5 h-3.5 text-[var(--text-muted)] group-hover:text-[var(--accent-gold)] transition-colors" />
-            </div>
-            <p className="text-[11px] text-[var(--text-muted)] font-serif-editorial">
-              Clean plugin schema with validated dates, repaired brackets, and zero NaN counts.
-            </p>
-          </button>
-
-          {/* Export to Frontmatter YAML */}
-          <button
-            type="button"
-            onClick={() => {
-              if (!telemetry) return;
-              const yaml = exportTelemetryToFrontmatter(telemetry);
-              handleDownloadFile(yaml, 'writing_telemetry_frontmatter.yaml', 'text/yaml');
-            }}
-            disabled={!telemetry}
-            className="p-3.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] hover:border-[var(--accent-gold)]/60 transition-all text-left group cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="font-mono-tabular text-xs font-bold text-[var(--text-ink)] group-hover:text-[var(--accent-gold)] transition-colors flex items-center gap-1.5">
-                <FileText className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                Frontmatter YAML
-              </span>
-              <Download className="w-3.5 h-3.5 text-[var(--text-muted)] group-hover:text-emerald-500 transition-colors" />
-            </div>
-            <p className="text-[11px] text-[var(--text-muted)] font-serif-editorial">
-              YAML snippets ready to paste into Obsidian Daily Notes (<code className="font-mono text-[10px]">words_written: 450</code>).
-            </p>
-          </button>
-
-          {/* Export to CSV */}
-          <button
-            type="button"
-            onClick={() => {
-              if (!telemetry) return;
-              const csv = exportTelemetryToCsv(telemetry);
-              handleDownloadFile(csv, 'writing_telemetry.csv', 'text/csv');
-            }}
-            disabled={!telemetry}
-            className="p-3.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] hover:border-[var(--accent-gold)]/60 transition-all text-left group cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="font-mono-tabular text-xs font-bold text-[var(--text-ink)] group-hover:text-[var(--accent-gold)] transition-colors flex items-center gap-1.5">
-                <FileSpreadsheet className="w-4 h-4 text-sky-600 dark:text-sky-400" />
-                Daily Activity CSV
-              </span>
-              <Download className="w-3.5 h-3.5 text-[var(--text-muted)] group-hover:text-sky-500 transition-colors" />
-            </div>
-            <p className="text-[11px] text-[var(--text-muted)] font-serif-editorial">
-              Tabular rows of date, word count, active status, and goal completion for spreadsheet analysis.
-            </p>
-          </button>
-        </div>
-      </section>
-
-      {/* 5. Circadian Symbiosis Footer Note */}
-      <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs font-mono-tabular text-[var(--text-muted)]">
-        <div className="flex items-center gap-2">
-          <Clock className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-          <span>
-            <strong className="text-[var(--text-ink)]">Diurnal Rhythm:</strong> Drafting peaks between{' '}
-            <strong className="text-[var(--text-ink)]">17:00–19:00</strong> (51% of words) · Kindle reading peaks between{' '}
-            <strong className="text-[var(--text-ink)]">23:00–01:00</strong> (38% of highlights).
-          </span>
-        </div>
-        <span className="text-[11px] text-[var(--text-muted)]/70">
-          Telemetry auto-synced from keep-the-rhythm data.json &amp; My Clippings.txt
-        </span>
       </div>
     </div>
   );

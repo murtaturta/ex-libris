@@ -169,7 +169,7 @@ export default defineConfig({
   base: './',
   plugins: [react(), tailwindcss(), localDiskStorePlugin()],
   server: {
-    port: 3000,
+    port: 3100,
   },
   test: {
     environment: 'node',

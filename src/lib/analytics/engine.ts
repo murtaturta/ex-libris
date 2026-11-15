@@ -2776,7 +2776,7 @@ export function computeKindleReadingHeatmap(
     }
   }
 
-  // 3. Interleave Writing Telemetry (Obsidian Keep-the-Rhythm)
+  // 3. Interleave Writing Telemetry (Obsidian Scriptor)
   const writingTelemetry = userState?.writingTelemetry;
   const writingDaily = writingTelemetry?.dailyTotals || {};
   let totalWordsWritten = writingTelemetry?.totalWords || 0;

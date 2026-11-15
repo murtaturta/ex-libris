@@ -79,7 +79,7 @@ describe('Room 05 / The Scriptorium & Archive Cabinet Tests', () => {
   const sampleTelemetry: WritingTelemetryData = {
     version: '1.0',
     updatedAt: '2025-11-02T12:00:00Z',
-    source: 'keep-the-rhythm',
+    source: 'scriptor',
     totalWords: 54353,
     totalChars: 310000,
     dailyGoal: 300,

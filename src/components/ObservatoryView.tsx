@@ -1,20 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import { Book, EnrichmentCacheMap, LibraryBundle, UserLocalState } from '../types/library';
 import {
-  computeObservatoryMetrics,
   computeLanguagePassportMetrics,
   computeFormatVelocity,
   computeContrarianMetrics,
   computeTranslatorLoyalty,
-  computeLiteraryHorizons,
-  computeReadingFrictionMetrics,
-  computeAdaptationForensics,
-  computeWorldShelf,
   computeAnnualReadingReviews,
 } from '../lib/analytics/engine';
-import { formatStarRating } from '../lib/parsers/letterboxdParser';
-import { FORMAT_LABELS, LANGUAGE_LABELS } from '../lib/classifiers/languageAndFormat';
-import { formatPublicationYear } from '../lib/formatters';
 import { getGoodreadsBookUrl, getGoodreadsAuthorUrl } from '../lib/links/goodreadsLinks';
 import {
   Compass,
@@ -24,23 +16,14 @@ import {
   Calendar,
   Zap,
   Flame,
-  AlertTriangle,
   Trophy,
-  Activity,
   Globe,
   Languages,
   Scale,
   Sparkles,
   TrendingDown,
   TrendingUp,
-  Layers,
-  BookOpen,
-  ArrowRight,
-  ShieldAlert,
   ExternalLink,
-  Film,
-  Clapperboard,
-  Tv,
   CalendarDays,
 } from 'lucide-react';
 
@@ -61,113 +44,11 @@ export const ObservatoryView: React.FC<ObservatoryViewProps> = ({
   userState,
   enrichmentCache,
   onOpenEnrichModal,
-  onOpenBookplate,
 }) => {
   const books = bundle.books || [];
 
-  // 1. Core observatory metrics
-  const engineMetrics = useMemo(() => {
-    try {
-      return computeObservatoryMetrics(bundle);
-    } catch (e) {
-      console.warn('computeObservatoryMetrics fallback:', e);
-      return null;
-    }
-  }, [bundle]);
-
-  // Rating Distribution & 5-Star Canon
-  const ratingDistribution = useMemo(() => {
-    const dist: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-    let totalRated = 0;
-    let sumRating = 0;
-
-    for (const b of books) {
-      if (b.myRating && b.myRating >= 1 && b.myRating <= 5) {
-        dist[b.myRating] = (dist[b.myRating] || 0) + 1;
-        totalRated++;
-        sumRating += b.myRating;
-      }
-    }
-
-    const avg = totalRated > 0 ? (sumRating / totalRated).toFixed(2) : '4.01';
-    return { dist, totalRated, avg };
-  }, [books]);
-
-  const fiveStarCanon = useMemo(() => {
-    return books.filter((b) => b.myRating === 5);
-  }, [books]);
-
-  // 2. v0.2 Flagship A: Translation & Language Passport Matrix
-  const languageMetrics = useMemo(() => {
-    try {
-      return computeLanguagePassportMetrics(bundle, userState, enrichmentCache);
-    } catch (e) {
-      console.warn('computeLanguagePassportMetrics fallback:', e);
-      return null;
-    }
-  }, [bundle, userState, enrichmentCache]);
-
-  // 3. v0.2 Flagship B: Format-Calibrated Reading Velocity
-  const formatVelocityList = useMemo(() => {
-    try {
-      return computeFormatVelocity(bundle, userState);
-    } catch (e) {
-      console.warn('computeFormatVelocity fallback:', e);
-      return [];
-    }
-  }, [bundle, userState]);
-
-  // 4. v0.2 Flagship C: The Contrarian Index
-  const contrarianMetrics = useMemo(() => {
-    try {
-      return computeContrarianMetrics(bundle, enrichmentCache);
-    } catch (e) {
-      console.warn('computeContrarianMetrics fallback:', e);
-      return null;
-    }
-  }, [bundle, enrichmentCache]);
-
-  // B-08: Translator Loyalty & Affinity Conduits
-  const translatorLoyalty = useMemo(() => {
-    try {
-      return computeTranslatorLoyalty(bundle, userState);
-    } catch (e) {
-      console.warn('computeTranslatorLoyalty fallback:', e);
-      return [];
-    }
-  }, [bundle, userState]);
-
-  // B-12 (Lucien's Grant): Literary Frontier Radar & Uncharted Horizons
-  const literaryHorizons = useMemo(() => {
-    try {
-      return computeLiteraryHorizons(bundle, userState, enrichmentCache);
-    } catch (e) {
-      console.warn('computeLiteraryHorizons fallback:', e);
-      return null;
-    }
-  }, [bundle, userState, enrichmentCache]);
-
-  // Adaptation Forensics (Screen & Codex ratings, divergence delta, narrative diet timeline)
-  const adaptationForensics = useMemo(() => {
-    try {
-      return computeAdaptationForensics(bundle, userState, enrichmentCache);
-    } catch (e) {
-      console.warn('computeAdaptationForensics fallback:', e);
-      return null;
-    }
-  }, [bundle, userState, enrichmentCache]);
-
+  // 1. Annual Reading Reviews & Multi-Year Trends
   const [selectedReviewYear, setSelectedReviewYear] = useState<number>(2026);
-  const [selectedWorldHub, setSelectedWorldHub] = useState<string | null>(null);
-
-  const worldShelf = useMemo(() => {
-    try {
-      return computeWorldShelf(bundle, userState, enrichmentCache);
-    } catch (e) {
-      console.warn('computeWorldShelf fallback:', e);
-      return null;
-    }
-  }, [bundle, userState, enrichmentCache]);
 
   const annualReviews = useMemo(() => {
     try {
@@ -183,7 +64,67 @@ export const ObservatoryView: React.FC<ObservatoryViewProps> = ({
     [annualReviews, selectedReviewYear]
   );
 
-  // Session Forensics (Fastest Sprints, Longest Burns, Re-Reads)
+  // 2. Rating Distribution & 5-Star Canon
+  const ratingDistribution = useMemo(() => {
+    const dist: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    let totalRated = 0;
+    let sumRating = 0;
+
+    for (const b of books) {
+      if (b.myRating && b.myRating >= 1 && b.myRating <= 5) {
+        dist[b.myRating] = (dist[b.myRating] || 0) + 1;
+        totalRated++;
+        sumRating += b.myRating;
+      }
+    }
+
+    const avg = totalRated > 0 ? (sumRating / totalRated).toFixed(2) : '—';
+    return { dist, totalRated, avg };
+  }, [books]);
+
+  const fiveStarCanon = useMemo(() => {
+    return books.filter((b) => b.myRating === 5);
+  }, [books]);
+
+  // 3. The Contrarian Index
+  const contrarianMetrics = useMemo(() => {
+    try {
+      return computeContrarianMetrics(bundle, enrichmentCache);
+    } catch (e) {
+      console.warn('computeContrarianMetrics fallback:', e);
+      return null;
+    }
+  }, [bundle, enrichmentCache]);
+
+  // 4. Translation & Language Passport Matrix
+  const languageMetrics = useMemo(() => {
+    try {
+      return computeLanguagePassportMetrics(bundle, userState, enrichmentCache);
+    } catch (e) {
+      console.warn('computeLanguagePassportMetrics fallback:', e);
+      return null;
+    }
+  }, [bundle, userState, enrichmentCache]);
+
+  const translatorLoyalty = useMemo(() => {
+    try {
+      return computeTranslatorLoyalty(bundle, userState);
+    } catch (e) {
+      console.warn('computeTranslatorLoyalty fallback:', e);
+      return [];
+    }
+  }, [bundle, userState]);
+
+  // 5. Format-Calibrated Reading Velocity & Session Forensics
+  const formatVelocityList = useMemo(() => {
+    try {
+      return computeFormatVelocity(bundle, userState);
+    } catch (e) {
+      console.warn('computeFormatVelocity fallback:', e);
+      return [];
+    }
+  }, [bundle, userState]);
+
   const { fastestSprints, longestBurns, reReadHallOfFame } = useMemo(() => {
     const readBooks = books.filter((b) => b.exclusiveShelf === 'read');
     const sessionList: Array<{ book: Book; durationDays: number; pagesPerDay: number }> = [];
@@ -265,7 +206,7 @@ export const ObservatoryView: React.FC<ObservatoryViewProps> = ({
     });
   }, [books]);
 
-  // Author Loyalty Leaderboard
+  // 6. Author Loyalty Leaderboard
   const authorLeaderboard = useMemo(() => {
     const authorMap = new Map<
       string,
@@ -289,7 +230,7 @@ export const ObservatoryView: React.FC<ObservatoryViewProps> = ({
       }
     }
 
-    const list = Array.from(authorMap.values())
+    return Array.from(authorMap.values())
       .filter((a) => a.booksRead > 0)
       .map((a) => ({
         ...a,
@@ -301,31 +242,20 @@ export const ObservatoryView: React.FC<ObservatoryViewProps> = ({
       }))
       .sort((a, b) => b.pagesRead - a.pagesRead || b.booksRead - a.booksRead)
       .slice(0, 10);
-
-    return list;
   }, [books, bundle.followedAuthors]);
 
-  // Reading Friction Metrics & Abandonment Post-Mortem
-  const frictionMetrics = useMemo(() => {
-    return computeReadingFrictionMetrics(bundle, userState);
-  }, [bundle, userState]);
-
-  // Circadian rhythm & trophy data
-  const circadian = bundle.activityByHour;
-  const achievements = bundle.achievements || [];
-  const goals = bundle.readingGoals || [];
-  const favoriteGenres = bundle.favoriteGenres;
+  const totalBookDenom = Math.max(1, books.length);
 
   return (
     <div className="space-y-12 pb-20">
-      {/* 1. Header Banner */}
+      {/* Header Banner */}
       <section className="relative p-6 sm:p-8 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-xs overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-[var(--accent-secondary)]/5 rounded-full blur-3xl pointer-events-none" />
 
         <div className="max-w-3xl">
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[var(--accent-secondary)]/10 text-[var(--accent-secondary)] border border-[var(--accent-secondary)]/20 text-xs font-semibold mb-3">
             <Compass className="w-3.5 h-3.5" />
-            <span>Forensic Reading Analytics</span>
+            <span>Reading Analytics</span>
           </div>
 
           <h1 className="font-serif-editorial text-2xl sm:text-4xl font-bold tracking-tight text-[var(--text-ink)]">
@@ -333,13 +263,213 @@ export const ObservatoryView: React.FC<ObservatoryViewProps> = ({
           </h1>
 
           <p className="font-serif-editorial text-base sm:text-lg italic text-[var(--text-muted)] mt-2 leading-relaxed">
-            “Data is the shadow cast by curiosity: chronometry, velocity, translation bridges, and the
-            divergent contours of personal judgment against the crowd.”
+            Annual cadence, rating tendencies, translation flows, reading velocity, and author
+            depth across your archive.
           </p>
         </div>
       </section>
 
-      {/* 2. Rating Distribution & 5-Star Canon */}
+      {/* SECTION 1: Annual Reading Reviews (Multi-Year Horizons) */}
+      {annualReviews.length > 0 && activeReview && (
+        <section aria-labelledby="annual-reviews-heading" className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-[var(--border-ledger)]">
+            <div className="flex items-center gap-2">
+              <CalendarDays className="w-5 h-5 text-[var(--accent-primary)]" />
+              <div>
+                <h2
+                  id="annual-reviews-heading"
+                  className="font-serif-editorial text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-ink)]"
+                >
+                  Annual Reading Reviews
+                </h2>
+                <p className="text-xs text-[var(--text-muted)] font-serif-editorial">
+                  Year-by-year volume, page intake, pacing extremes, and 5-star favorites
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5 p-1 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] self-start sm:self-auto">
+              {annualReviews.map((rev) => (
+                <button
+                  key={rev.year}
+                  type="button"
+                  onClick={() => setSelectedReviewYear(rev.year)}
+                  className={`px-3 py-1 rounded text-xs font-mono-tabular transition-all cursor-pointer ${
+                    activeReview.year === rev.year
+                      ? 'bg-[var(--accent-primary)] text-white font-bold shadow-2xs'
+                      : 'text-[var(--text-muted)] hover:text-[var(--text-ink)]'
+                  }`}
+                >
+                  {rev.year}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs space-y-1">
+                <div className="text-[10px] font-mono-tabular uppercase tracking-wider text-[var(--text-muted)]">
+                  Volumes Read
+                </div>
+                <div className="text-2xl font-bold font-serif-editorial text-[var(--text-ink)]">
+                  {activeReview.volumesRead}
+                </div>
+                <div className="text-[11px] font-mono-tabular text-[var(--text-muted)]">
+                  in {activeReview.year}
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs space-y-1">
+                <div className="text-[10px] font-mono-tabular uppercase tracking-wider text-[var(--text-muted)]">
+                  Pages Read
+                </div>
+                <div className="text-2xl font-bold font-serif-editorial text-[var(--text-ink)]">
+                  {activeReview.pagesRead.toLocaleString()}
+                </div>
+                <div className="text-[11px] font-mono-tabular text-[var(--text-muted)]">
+                  {activeReview.medianDaysPerBook
+                    ? `~${activeReview.medianDaysPerBook} days/vol`
+                    : 'Steady intake'}
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs space-y-1">
+                <div className="text-[10px] font-mono-tabular uppercase tracking-wider text-[var(--text-muted)]">
+                  Average Rating
+                </div>
+                <div className="text-2xl font-bold font-serif-editorial text-[var(--accent-gold)] flex items-center gap-1">
+                  <Star className="w-5 h-5 fill-[var(--accent-gold)]" />
+                  {activeReview.averageRating ? `${activeReview.averageRating}★` : '—'}
+                </div>
+                <div className="text-[11px] font-mono-tabular text-[var(--text-muted)]">
+                  {activeReview.canon5StarBooks.length} titles in 5★ canon
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs space-y-1">
+                <div className="text-[10px] font-mono-tabular uppercase tracking-wider text-[var(--text-muted)]">
+                  Median Pace
+                </div>
+                <div className="text-2xl font-bold font-serif-editorial text-[var(--text-ink)]">
+                  {activeReview.medianDaysPerBook
+                    ? `~${activeReview.medianDaysPerBook} days`
+                    : '—'}
+                </div>
+                <div className="text-[11px] font-mono-tabular text-[var(--text-muted)]">
+                  {activeReview.volumesRead > 0
+                    ? `${Math.round(activeReview.pagesRead / activeReview.volumesRead)} pp / book avg`
+                    : 'Per volume'}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Pacing Extremes */}
+              <div className="p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] space-y-3">
+                <h3 className="font-serif-editorial text-sm font-bold text-[var(--text-ink)] uppercase tracking-wide">
+                  Pacing Extremes · {activeReview.year}
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono-tabular">
+                  {activeReview.fastestSprintBook ? (
+                    <div
+                      onClick={() =>
+                        onSelectBookById(
+                          activeReview.fastestSprintBook!.id,
+                          activeReview.fastestSprintBook!.title
+                        )
+                      }
+                      className="p-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] hover:border-[var(--accent-primary)] transition-all cursor-pointer space-y-1"
+                    >
+                      <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wider">
+                        Quickest Read
+                      </div>
+                      <div className="font-serif-editorial font-bold text-[var(--text-ink)] truncate">
+                        {activeReview.fastestSprintBook.title}
+                      </div>
+                      <div className="text-[10px] text-[var(--text-muted)]">
+                        {activeReview.fastestSprintBook.author} · {activeReview.fastestSprintBook.pageCount} pp
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] text-[var(--text-muted)] italic text-xs">
+                      No sprint recorded
+                    </div>
+                  )}
+
+                  {activeReview.deepestSavorBook ? (
+                    <div
+                      onClick={() =>
+                        onSelectBookById(
+                          activeReview.deepestSavorBook!.id,
+                          activeReview.deepestSavorBook!.title
+                        )
+                      }
+                      className="p-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] hover:border-[var(--accent-primary)] transition-all cursor-pointer space-y-1"
+                    >
+                      <div className="text-[10px] text-[var(--accent-primary)] font-bold uppercase tracking-wider">
+                        Deepest Savor
+                      </div>
+                      <div className="font-serif-editorial font-bold text-[var(--text-ink)] truncate">
+                        {activeReview.deepestSavorBook.title}
+                      </div>
+                      <div className="text-[10px] text-[var(--text-muted)]">
+                        {activeReview.deepestSavorBook.author} · {activeReview.deepestSavorBook.pageCount} pp
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] text-[var(--text-muted)] italic text-xs">
+                      No savor recorded
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* 5-Star Canon of Year */}
+              <div className="p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-serif-editorial text-sm font-bold text-[var(--text-ink)] uppercase tracking-wide">
+                    5★ Canon of {activeReview.year}
+                  </h3>
+                  <span className="text-xs font-mono-tabular text-[var(--accent-gold)] font-bold">
+                    {activeReview.canon5StarBooks.length} works
+                  </span>
+                </div>
+
+                {activeReview.canon5StarBooks.length > 0 ? (
+                  <div className="space-y-1.5">
+                    {activeReview.canon5StarBooks.slice(0, 4).map((book) => (
+                      <div
+                        key={book.id}
+                        onClick={() => onSelectBookById(book.id, book.title)}
+                        className="p-2 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] hover:border-[var(--accent-gold)] transition-all cursor-pointer flex items-center justify-between gap-2 group"
+                      >
+                        <div className="min-w-0">
+                          <div className="font-serif-editorial font-bold text-xs text-[var(--text-ink)] group-hover:text-[var(--accent-gold)] truncate transition-colors">
+                            {book.title}
+                          </div>
+                          <div className="text-[10px] text-[var(--text-muted)] font-serif-editorial truncate">
+                            {book.author}
+                          </div>
+                        </div>
+                        <span className="text-xs font-mono-tabular text-[var(--accent-gold)] font-bold shrink-0">
+                          ★★★★★
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-[var(--text-muted)] italic font-serif-editorial">
+                    No 5-star ratings recorded in {activeReview.year}.
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* SECTION 2: Personal Critical Distribution, 5-Star Canon & The Contrarian Index */}
       <section aria-labelledby="ratings-heading" className="space-y-6">
         <div className="flex items-center justify-between pb-2 border-b border-[var(--border-ledger)]">
           <div className="flex items-center gap-2">
@@ -348,7 +478,7 @@ export const ObservatoryView: React.FC<ObservatoryViewProps> = ({
               id="ratings-heading"
               className="font-serif-editorial text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-ink)]"
             >
-              Personal Critical Distribution
+              Critical Distribution &amp; The Contrarian Index
             </h2>
           </div>
           <span className="text-xs font-mono-tabular text-[var(--text-muted)]">
@@ -406,7 +536,7 @@ export const ObservatoryView: React.FC<ObservatoryViewProps> = ({
             </div>
           </div>
 
-          {/* 5-Star Canon Chips (Clickable) */}
+          {/* 5-Star Canon Chips */}
           <div className="lg:col-span-2 p-6 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between mb-3">
@@ -460,40 +590,12 @@ export const ObservatoryView: React.FC<ObservatoryViewProps> = ({
             </div>
 
             <div className="mt-4 pt-3 border-t border-[var(--border-ledger)] text-xs text-[var(--text-muted)] italic">
-              These {fiveStarCanon.length} works represent your highest personal standard of literary achievement.
+              These {fiveStarCanon.length} works represent your highest personal standard.
             </div>
           </div>
         </div>
-      </section>
 
-      {/* 3. v0.2 Flagship C: The Contrarian Index */}
-      <section aria-labelledby="contrarian-heading" className="space-y-6">
-        <div className="flex items-center justify-between pb-2 border-b border-[var(--border-ledger)]">
-          <div className="flex items-center gap-2">
-            <Scale className="w-4 h-4 text-[var(--accent-primary)]" />
-            <h2
-              id="contrarian-heading"
-              className="font-serif-editorial text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-ink)]"
-            >
-              The Contrarian Index: You vs. The Crowd
-            </h2>
-          </div>
-          {contrarianMetrics && contrarianMetrics.enrichedRatedCount > 0 && (
-            <span className="text-xs font-mono-tabular text-[var(--text-muted)]">
-              {contrarianMetrics.enrichedRatedCount} compared volumes · Mean Divergence:{' '}
-              <strong
-                className={
-                  contrarianMetrics.meanDelta >= 0
-                    ? 'text-[var(--accent-secondary)]'
-                    : 'text-[var(--accent-primary)]'
-                }
-              >
-                {contrarianMetrics.meanDelta > 0 ? `+${contrarianMetrics.meanDelta}` : contrarianMetrics.meanDelta}★
-              </strong>
-            </span>
-          )}
-        </div>
-
+        {/* Contrarian Index Sub-block */}
         {!contrarianMetrics || contrarianMetrics.enrichedRatedCount === 0 ? (
           <div className="p-8 rounded-xl bg-[var(--bg-card)] border border-dashed border-[var(--border-ledger)] text-center space-y-3">
             <Scale className="w-10 h-10 text-[var(--accent-primary)]/60 mx-auto" />
@@ -502,7 +604,7 @@ export const ObservatoryView: React.FC<ObservatoryViewProps> = ({
             </h3>
             <p className="text-xs text-[var(--text-muted)] max-w-lg mx-auto leading-relaxed">
               Discover how your critical evaluations diverge from Goodreads &amp; Open Library
-              consensus. Detect your Sacred Cows Slain and Hidden Champions.
+              consensus: Sacred Cows Slain vs. Hidden Champions.
             </p>
             <div className="pt-2">
               <button
@@ -516,11 +618,10 @@ export const ObservatoryView: React.FC<ObservatoryViewProps> = ({
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Divergence Summary Bar */}
             <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs flex flex-wrap items-center justify-between gap-4 text-xs font-mono-tabular">
               <div className="flex items-center gap-2">
                 <span className="text-[var(--text-muted)] uppercase tracking-wider font-semibold">
-                  Overall Divergence:
+                  Contrarian Divergence ({contrarianMetrics.enrichedRatedCount} compared):
                 </span>
                 <span
                   className={`text-sm font-bold px-2 py-0.5 rounded ${
@@ -537,14 +638,13 @@ export const ObservatoryView: React.FC<ObservatoryViewProps> = ({
               </div>
               <span className="text-[var(--text-muted)] italic">
                 {contrarianMetrics.meanDelta < 0
-                  ? 'You are generally more demanding and rigorous than the consensus'
-                  : 'You are generally more generous and appreciative than the consensus'}
+                  ? 'Generally more demanding and rigorous than community consensus'
+                  : 'Generally more generous and appreciative than community consensus'}
               </span>
             </div>
 
-            {/* Sacred Cows Slain vs. Hidden Champions Side-by-Side */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Sacred Cows Slain (My Rating << Community) */}
+              {/* Sacred Cows Slain */}
               <div className="p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between mb-2">
@@ -557,8 +657,7 @@ export const ObservatoryView: React.FC<ObservatoryViewProps> = ({
                     </span>
                   </div>
                   <p className="text-xs text-[var(--text-muted)] mb-3">
-                    Books highly acclaimed by the community where your personal critique was sharply
-                    harsher.
+                    Highly acclaimed books where your personal rating was sharply harsher.
                   </p>
 
                   <div className="space-y-2.5">
@@ -614,7 +713,7 @@ export const ObservatoryView: React.FC<ObservatoryViewProps> = ({
                 </div>
               </div>
 
-              {/* Hidden Champions (My Rating >> Community) */}
+              {/* Hidden Champions */}
               <div className="p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between mb-2">
@@ -627,8 +726,7 @@ export const ObservatoryView: React.FC<ObservatoryViewProps> = ({
                     </span>
                   </div>
                   <p className="text-xs text-[var(--text-muted)] mb-3">
-                    Personal masterpieces you found profound, but the crowd undervalued or rated
-                    modestly.
+                    Personal favorites you rated significantly higher than the crowd.
                   </p>
 
                   <div className="space-y-2.5">
@@ -688,7 +786,7 @@ export const ObservatoryView: React.FC<ObservatoryViewProps> = ({
         )}
       </section>
 
-      {/* 4. v0.2 Flagship A: Translation & Language Passport Matrix */}
+      {/* SECTION 3: Translation & Language Passport Matrix */}
       {languageMetrics && (
         <section aria-labelledby="languages-heading" className="space-y-6">
           <div className="flex items-center justify-between pb-2 border-b border-[var(--border-ledger)]">
@@ -776,9 +874,8 @@ export const ObservatoryView: React.FC<ObservatoryViewProps> = ({
               })()}
             </div>
 
-            {/* Side-by-side Language Comparison: Reading In vs. Original Works */}
+            {/* Side-by-side Language Comparison */}
             <div className="lg:col-span-2 p-6 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs grid grid-cols-1 sm:grid-cols-2 gap-6">
-              {/* Reading Languages */}
               <div>
                 <div className="text-xs font-mono-tabular uppercase tracking-wider text-[var(--accent-secondary)] font-bold mb-3 flex items-center gap-1.5">
                   <Globe className="w-3.5 h-3.5" />
@@ -797,12 +894,7 @@ export const ObservatoryView: React.FC<ObservatoryViewProps> = ({
                         <div
                           className="h-full bg-[var(--accent-secondary)] rounded-full"
                           style={{
-                            width: `${Math.min(
-                              100,
-                              Math.round(
-                                (ed.totalCount / books.length) * 100
-                              )
-                            )}%`,
+                            width: `${Math.min(100, Math.round((ed.totalCount / totalBookDenom) * 100))}%`,
                           }}
                         />
                       </div>
@@ -811,7 +903,6 @@ export const ObservatoryView: React.FC<ObservatoryViewProps> = ({
                 </div>
               </div>
 
-              {/* Original Languages of Works */}
               <div>
                 <div className="text-xs font-mono-tabular uppercase tracking-wider text-[var(--accent-gold)] font-bold mb-3 flex items-center gap-1.5">
                   <Languages className="w-3.5 h-3.5" />
@@ -830,12 +921,7 @@ export const ObservatoryView: React.FC<ObservatoryViewProps> = ({
                         <div
                           className="h-full bg-[var(--accent-gold)] rounded-full"
                           style={{
-                            width: `${Math.min(
-                              100,
-                              Math.round(
-                                (orig.totalCount / books.length) * 100
-                              )
-                            )}%`,
+                            width: `${Math.min(100, Math.round((orig.totalCount / totalBookDenom) * 100))}%`,
                           }}
                         />
                       </div>
@@ -846,7 +932,6 @@ export const ObservatoryView: React.FC<ObservatoryViewProps> = ({
             </div>
           </div>
 
-          {/* Translation Bridges & Translators Leaderboard */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Top Translation Bridges */}
             <div className="p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs">
@@ -881,12 +966,12 @@ export const ObservatoryView: React.FC<ObservatoryViewProps> = ({
               </div>
             </div>
 
-            {/* B-08: Translator Loyalty & Affinity Conduits */}
+            {/* Translator Loyalty & Conduits */}
             <div className="p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs">
               <div className="flex items-center justify-between mb-3">
                 <div className="text-xs font-mono-tabular uppercase tracking-wider text-[var(--accent-gold)] font-bold flex items-center gap-1.5">
                   <Languages className="w-3.5 h-3.5" />
-                  <span>Translator Loyalty & Conduits</span>
+                  <span>Translator Loyalty &amp; Conduits</span>
                 </div>
                 <span className="text-[11px] text-[var(--text-muted)] italic">
                   Trusted Voices Across Tongues
@@ -894,7 +979,7 @@ export const ObservatoryView: React.FC<ObservatoryViewProps> = ({
               </div>
               {translatorLoyalty.length === 0 ? (
                 <p className="text-xs text-[var(--text-muted)] italic">
-                  Translator data is inferred when foreign works include accredited contributors.
+                  Translator data appears when foreign works include accredited contributors.
                 </p>
               ) : (
                 <div className="space-y-2.5">
@@ -939,7 +1024,7 @@ export const ObservatoryView: React.FC<ObservatoryViewProps> = ({
                       </div>
                       {trans.sampleTitles.length > 0 && (
                         <div className="text-[11px] text-[var(--text-muted)] italic truncate">
-                          “{trans.sampleTitles.slice(0, 2).join('”, “')}”
+                          &ldquo;{trans.sampleTitles.slice(0, 2).join('”, “')}&rdquo;
                         </div>
                       )}
                     </div>
@@ -951,358 +1036,215 @@ export const ObservatoryView: React.FC<ObservatoryViewProps> = ({
         </section>
       )}
 
-      {/* 4.5. The Literary Map: The World Shelf Geo-Cartography */}
-      {worldShelf && (
-        <section aria-labelledby="world-shelf-heading" className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-[var(--border-ledger)]">
+      {/* SECTION 4: Format-Calibrated Reading Velocity & 2,800-Year Temporal Horizons */}
+      <section aria-labelledby="format-velocity-heading" className="space-y-8">
+        <div className="space-y-6">
+          <div className="flex items-center justify-between pb-2 border-b border-[var(--border-ledger)]">
             <div className="flex items-center gap-2">
-              <Globe className="w-5 h-5 text-[var(--accent-primary)]" />
-              <div>
-                <h2
-                  id="world-shelf-heading"
-                  className="font-serif-editorial text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-ink)]"
-                >
-                  The Literary Map · The World Shelf
-                </h2>
-                <p className="text-xs text-[var(--text-muted)] font-serif-editorial">
-                  Cultural spheres and regional movements across {worldShelf.totalVolumes} cataloged works.
-                </p>
-              </div>
-            </div>
-
-            {selectedWorldHub && (
-              <button
-                type="button"
-                onClick={() => setSelectedWorldHub(null)}
-                className="px-2.5 py-1 text-xs font-mono-tabular rounded bg-[var(--bg-surface)] hover:bg-[var(--border-ledger)] text-[var(--text-muted)] hover:text-[var(--text-ink)] transition-colors cursor-pointer border border-[var(--border-ledger)]"
+              <Zap className="w-4 h-4 text-[var(--accent-primary)]" />
+              <h2
+                id="format-velocity-heading"
+                className="font-serif-editorial text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-ink)]"
               >
-                Clear Hub Filter (Showing All)
-              </button>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {worldShelf.hubs.map((hub) => {
-              const isSelected = selectedWorldHub === hub.id;
-              return (
-                <div
-                  key={hub.id}
-                  onClick={() => setSelectedWorldHub(isSelected ? null : hub.id)}
-                  className={`p-5 rounded-xl bg-[var(--bg-card)] border transition-all cursor-pointer flex flex-col justify-between space-y-4 shadow-2xs group ${
-                    isSelected
-                      ? 'border-[var(--accent-primary)] ring-1 ring-[var(--accent-primary)]/50'
-                      : 'border-[var(--border-ledger)] hover:border-[var(--accent-primary)]/50'
-                  }`}
-                >
-                  <div className="space-y-2">
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="font-serif-editorial text-base font-bold text-[var(--text-ink)] group-hover:text-[var(--accent-primary)] transition-colors">
-                        {hub.name}
-                      </h3>
-                      <span className="font-mono-tabular text-xs px-2 py-0.5 rounded-full bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] font-bold shrink-0">
-                        {hub.volumeCount} vols
-                      </span>
-                    </div>
-                    <p className="text-xs text-[var(--text-muted)] font-serif-editorial leading-relaxed">
-                      {hub.subtitle}
-                    </p>
-                  </div>
-
-                  <div className="space-y-3 pt-3 border-t border-[var(--border-ledger)]/70 text-xs font-mono-tabular">
-                    <div className="flex items-center justify-between text-[var(--text-muted)]">
-                      <span>Total Pages Read:</span>
-                      <strong className="text-[var(--text-ink)]">{hub.totalPages.toLocaleString()} pp</strong>
-                    </div>
-
-                    {hub.averageRating && (
-                      <div className="flex items-center justify-between text-[var(--text-muted)]">
-                        <span>Average Rating:</span>
-                        <span className="flex items-center gap-1 font-bold text-[var(--accent-gold)]">
-                          <Star className="w-3.5 h-3.5 fill-[var(--accent-gold)]" />
-                          {hub.averageRating}★
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Top Translation Flows */}
-                    {hub.translationFlows.length > 0 && (
-                      <div className="space-y-1">
-                        <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">
-                          Key Pathways
-                        </div>
-                        <div className="flex flex-wrap gap-1">
-                          {hub.translationFlows.slice(0, 3).map((f) => (
-                            <span
-                              key={f.flow}
-                              className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--bg-surface)] border border-[var(--border-ledger)] text-[var(--text-ink)]"
-                            >
-                              {f.flow} <span className="text-[var(--text-muted)]">({f.count})</span>
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Signature Works */}
-                    {hub.signatureWorks.length > 0 && (
-                      <div className="space-y-1.5 pt-1">
-                        <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">
-                          Signature Works
-                        </div>
-                        <div className="space-y-1">
-                          {hub.signatureWorks.map((work) => (
-                            <button
-                              key={work.id}
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onSelectBookById(work.id, work.title);
-                              }}
-                              className="w-full flex items-center justify-between text-left p-1 rounded hover:bg-[var(--bg-surface)] text-xs font-serif-editorial text-[var(--text-ink)] hover:text-[var(--accent-primary)] transition-colors group/item cursor-pointer"
-                            >
-                              <span className="truncate">{work.title}</span>
-                              {work.myRating && (
-                                <span className="text-[10px] font-mono-tabular text-[var(--accent-gold)] font-bold shrink-0 ml-1">
-                                  {work.myRating}★
-                                </span>
-                              )}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {/* 5. v0.2 Flagship B: Format-Calibrated Reading Velocity */}
-      <section aria-labelledby="format-velocity-heading" className="space-y-6">
-        <div className="flex items-center justify-between pb-2 border-b border-[var(--border-ledger)]">
-          <div className="flex items-center gap-2">
-            <Zap className="w-4 h-4 text-[var(--accent-primary)]" />
-            <h2
-              id="format-velocity-heading"
-              className="font-serif-editorial text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-ink)]"
-            >
-              Format-Calibrated Reading Velocity
-            </h2>
-          </div>
-          <span className="text-xs text-[var(--text-muted)] hidden sm:inline">
-            Comparative reading speeds calibrated across distinct literary media
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {formatVelocityList.map((fv) => (
-            <div
-              key={fv.format}
-              className="p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs flex flex-col justify-between"
-            >
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-mono-tabular uppercase tracking-wider text-[var(--accent-primary)] font-bold">
-                    {fv.label}
-                  </span>
-                  <span className="text-[11px] font-mono-tabular text-[var(--text-muted)]">
-                    {fv.booksCompleted} read
-                  </span>
-                </div>
-
-                <div className="my-2">
-                  <div className="font-mono-tabular font-bold text-3xl text-[var(--text-ink)]">
-                    {fv.avgPagesPerDay}
-                  </div>
-                  <div className="text-[11px] font-mono-tabular text-[var(--text-muted)]">
-                    pages / day average
-                  </div>
-                </div>
-
-                <div className="mt-3 pt-3 border-t border-[var(--border-ledger)]/60 text-xs font-mono-tabular text-[var(--text-muted)] space-y-1">
-                  <div className="flex justify-between">
-                    <span>Median finish:</span>
-                    <strong className="text-[var(--text-ink)]">{fv.medianDaysToFinish} days</strong>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Total read pages:</span>
-                    <strong className="text-[var(--text-ink)]">
-                      {fv.totalPages.toLocaleString()} pp
-                    </strong>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-3 pt-2 text-[10px] text-[var(--text-muted)] italic">
-                {fv.format === 'comic-manga'
-                  ? 'Visual pacing allows swift compendium reading'
-                  : fv.format === 'academic-ref'
-                  ? 'Dense notation & conceptual analysis requires deliberate pacing'
-                  : fv.format === 'short-essay'
-                  ? 'Brisk standalone essays & short fictions completed in sprint sessions'
-                  : 'Standard narrative immersion across long-form fiction and memoirs'}
-              </div>
+                Reading Velocity &amp; Pacing
+              </h2>
             </div>
-          ))}
-        </div>
+            <span className="text-xs text-[var(--text-muted)] hidden sm:inline">
+              Comparative reading speeds across distinct formats
+            </span>
+          </div>
 
-        {/* Fastest Sprints, Longest Burns & Re-Reads */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
-          {/* Fastest Sprints */}
-          <div className="p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs">
-            <div className="flex items-center gap-1.5 text-xs font-mono-tabular uppercase tracking-wider text-[var(--accent-primary)] font-bold mb-3">
-              <Zap className="w-3.5 h-3.5" />
-              <span>Fastest Sprints</span>
-            </div>
-            <div className="space-y-3">
-              {fastestSprints.map((item, idx) => (
-                <div
-                  key={idx}
-                  onClick={() => onSelectBook(item.book)}
-                  className="p-2.5 rounded-lg bg-[var(--bg-surface)] hover:bg-[var(--bg-surface)]/80 border border-transparent hover:border-[var(--accent-primary)]/40 transition-colors cursor-pointer group"
-                >
-                  <div className="font-serif-editorial text-xs font-bold text-[var(--text-ink)] group-hover:text-[var(--accent-primary)] truncate">
-                    {item.book.cleanTitle || item.book.title}
-                  </div>
-                  <div className="flex items-center justify-between text-[11px] font-mono-tabular text-[var(--text-muted)] mt-1">
-                    <span>{item.durationDays} day{item.durationDays > 1 ? 's' : ''}</span>
-                    <span className="text-[var(--accent-primary)] font-semibold">
-                      ~{item.pagesPerDay} pp/day
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {formatVelocityList.map((fv) => (
+              <div
+                key={fv.format}
+                className="p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-mono-tabular uppercase tracking-wider text-[var(--accent-primary)] font-bold">
+                      {fv.label}
+                    </span>
+                    <span className="text-[11px] font-mono-tabular text-[var(--text-muted)]">
+                      {fv.booksCompleted} read
                     </span>
                   </div>
-                </div>
-              ))}
-            </div>
-          </div>
 
-          {/* Longest Slow Burns */}
-          <div className="p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs">
-            <div className="flex items-center gap-1.5 text-xs font-mono-tabular uppercase tracking-wider text-[var(--accent-secondary)] font-bold mb-3">
-              <Clock className="w-3.5 h-3.5" />
-              <span>Longest Slow Burns</span>
-            </div>
-            <div className="space-y-3">
-              {longestBurns.map((item, idx) => (
-                <div
-                  key={idx}
-                  onClick={() => onSelectBook(item.book)}
-                  className="p-2.5 rounded-lg bg-[var(--bg-surface)] hover:bg-[var(--bg-surface)]/80 border border-transparent hover:border-[var(--accent-secondary)]/40 transition-colors cursor-pointer group"
-                >
-                  <div className="font-serif-editorial text-xs font-bold text-[var(--text-ink)] group-hover:text-[var(--accent-secondary)] truncate">
-                    {item.book.cleanTitle || item.book.title}
+                  <div className="my-2">
+                    <div className="font-mono-tabular font-bold text-3xl text-[var(--text-ink)]">
+                      {fv.avgPagesPerDay}
+                    </div>
+                    <div className="text-[11px] font-mono-tabular text-[var(--text-muted)]">
+                      pages / day average
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between text-[11px] font-mono-tabular text-[var(--text-muted)] mt-1">
-                    <span>{item.durationDays} days under study</span>
-                    <span>{item.book.pageCount} pp</span>
+
+                  <div className="mt-3 pt-3 border-t border-[var(--border-ledger)]/60 text-xs font-mono-tabular text-[var(--text-muted)] space-y-1">
+                    <div className="flex justify-between">
+                      <span>Median finish:</span>
+                      <strong className="text-[var(--text-ink)]">{fv.medianDaysToFinish} days</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Total read pages:</span>
+                      <strong className="text-[var(--text-ink)]">
+                        {fv.totalPages.toLocaleString()} pp
+                      </strong>
+                    </div>
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
 
-          {/* Re-Read Hall of Fame */}
-          <div className="p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs">
-            <div className="flex items-center gap-1.5 text-xs font-mono-tabular uppercase tracking-wider text-[var(--accent-gold)] font-bold mb-3">
-              <Flame className="w-3.5 h-3.5" />
-              <span>Re-Read Hall of Fame</span>
-            </div>
-            {reReadHallOfFame.length === 0 ? (
-              <p className="text-xs text-[var(--text-muted)] italic">
-                No explicit re-read volumes recorded.
-              </p>
-            ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs">
+              <div className="flex items-center gap-1.5 text-xs font-mono-tabular uppercase tracking-wider text-[var(--accent-primary)] font-bold mb-3">
+                <Zap className="w-3.5 h-3.5" />
+                <span>Fastest Sprints</span>
+              </div>
               <div className="space-y-3">
-                {reReadHallOfFame.slice(0, 4).map((book) => (
+                {fastestSprints.map((item, idx) => (
                   <div
-                    key={book.id}
-                    onClick={() => onSelectBook(book)}
-                    className="p-2.5 rounded-lg bg-[var(--bg-surface)] hover:bg-[var(--bg-surface)]/80 border border-transparent hover:border-[var(--accent-gold)]/40 transition-colors cursor-pointer group"
+                    key={idx}
+                    onClick={() => onSelectBook(item.book)}
+                    className="p-2.5 rounded-lg bg-[var(--bg-surface)] hover:bg-[var(--bg-surface)]/80 border border-transparent hover:border-[var(--accent-primary)]/40 transition-colors cursor-pointer group"
                   >
-                    <div className="font-serif-editorial text-xs font-bold text-[var(--text-ink)] group-hover:text-[var(--accent-gold)] truncate">
-                      {book.cleanTitle || book.title}
+                    <div className="font-serif-editorial text-xs font-bold text-[var(--text-ink)] group-hover:text-[var(--accent-primary)] truncate">
+                      {item.book.cleanTitle || item.book.title}
                     </div>
                     <div className="flex items-center justify-between text-[11px] font-mono-tabular text-[var(--text-muted)] mt-1">
-                      <span>{book.author}</span>
-                      <span className="font-semibold text-[var(--accent-gold)]">
-                        {book.readCount || 2}× Read
+                      <span>{item.durationDays} day{item.durationDays > 1 ? 's' : ''}</span>
+                      <span className="text-[var(--accent-primary)] font-semibold">
+                        ~{item.pagesPerDay} pp/day
                       </span>
                     </div>
                   </div>
                 ))}
               </div>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* 6. 2,800-Year Publication Era Timeline */}
-      <section aria-labelledby="timeline-heading" className="space-y-4">
-        <div className="flex items-center justify-between pb-2 border-b border-[var(--border-ledger)]">
-          <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-[var(--accent-gold)]" />
-            <h2
-              id="timeline-heading"
-              className="font-serif-editorial text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-ink)]"
-            >
-              2,800-Year Temporal Horizons
-            </h2>
-          </div>
-          <span className="text-xs text-[var(--text-muted)] hidden sm:inline">
-            Comparing completed works vs. queued TBR across classical to modern eras
-          </span>
-        </div>
-
-        <div className="p-6 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs space-y-4">
-          <div className="flex items-center gap-4 text-xs font-mono-tabular mb-2">
-            <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded bg-[var(--accent-secondary)]" />
-              <span className="text-[var(--text-ink)]">Completed (Read)</span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded bg-[var(--accent-gold)]/60" />
-              <span className="text-[var(--text-ink)]">Queued (To-Read)</span>
+
+            <div className="p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs">
+              <div className="flex items-center gap-1.5 text-xs font-mono-tabular uppercase tracking-wider text-[var(--accent-secondary)] font-bold mb-3">
+                <Clock className="w-3.5 h-3.5" />
+                <span>Longest Slow Burns</span>
+              </div>
+              <div className="space-y-3">
+                {longestBurns.map((item, idx) => (
+                  <div
+                    key={idx}
+                    onClick={() => onSelectBook(item.book)}
+                    className="p-2.5 rounded-lg bg-[var(--bg-surface)] hover:bg-[var(--bg-surface)]/80 border border-transparent hover:border-[var(--accent-secondary)]/40 transition-colors cursor-pointer group"
+                  >
+                    <div className="font-serif-editorial text-xs font-bold text-[var(--text-ink)] group-hover:text-[var(--accent-secondary)] truncate">
+                      {item.book.cleanTitle || item.book.title}
+                    </div>
+                    <div className="flex items-center justify-between text-[11px] font-mono-tabular text-[var(--text-muted)] mt-1">
+                      <span>{item.durationDays} days under study</span>
+                      <span>{item.book.pageCount} pp</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
 
-          <div className="space-y-4">
-            {eraTimeline.map((era) => {
-              const maxTotal = Math.max(...eraTimeline.map((e) => e.total), 1);
-              const readPct = (era.readCount / maxTotal) * 100;
-              const toReadPct = (era.toReadCount / maxTotal) * 100;
-
-              return (
-                <div key={era.id} className="space-y-1 text-xs">
-                  <div className="flex items-center justify-between font-mono-tabular">
-                    <span className="font-serif-editorial font-bold text-sm text-[var(--text-ink)]">
-                      {era.label}
-                    </span>
-                    <span className="text-[var(--text-muted)]">
-                      {era.readCount} read · {era.toReadCount} to-read ({era.total} total)
-                    </span>
-                  </div>
-
-                  <div className="flex h-3 rounded-full bg-[var(--bg-surface)] overflow-hidden">
+            <div className="p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs">
+              <div className="flex items-center gap-1.5 text-xs font-mono-tabular uppercase tracking-wider text-[var(--accent-gold)] font-bold mb-3">
+                <Flame className="w-3.5 h-3.5" />
+                <span>Re-Read Hall of Fame</span>
+              </div>
+              {reReadHallOfFame.length === 0 ? (
+                <p className="text-xs text-[var(--text-muted)] italic">
+                  No explicit re-read volumes recorded.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {reReadHallOfFame.slice(0, 4).map((book) => (
                     <div
-                      className="bg-[var(--accent-secondary)] transition-all duration-500"
-                      style={{ width: `${readPct}%` }}
-                      title={`${era.readCount} Read`}
-                    />
-                    <div
-                      className="bg-[var(--accent-gold)]/60 transition-all duration-500"
-                      style={{ width: `${toReadPct}%` }}
-                      title={`${era.toReadCount} To-Read`}
-                    />
-                  </div>
+                      key={book.id}
+                      onClick={() => onSelectBook(book)}
+                      className="p-2.5 rounded-lg bg-[var(--bg-surface)] hover:bg-[var(--bg-surface)]/80 border border-transparent hover:border-[var(--accent-gold)]/40 transition-colors cursor-pointer group"
+                    >
+                      <div className="font-serif-editorial text-xs font-bold text-[var(--text-ink)] group-hover:text-[var(--accent-gold)] truncate">
+                        {book.cleanTitle || book.title}
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] font-mono-tabular text-[var(--text-muted)] mt-1">
+                        <span>{book.author}</span>
+                        <span className="font-semibold text-[var(--accent-gold)]">
+                          {book.readCount || 2}× Read
+                        </span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              );
-            })}
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* 2,800-Year Publication Era Timeline */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between pb-2 border-b border-[var(--border-ledger)]">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-[var(--accent-gold)]" />
+              <h3 className="font-serif-editorial text-lg sm:text-xl font-bold tracking-tight text-[var(--text-ink)]">
+                2,800-Year Temporal Horizons
+              </h3>
+            </div>
+            <span className="text-xs text-[var(--text-muted)] hidden sm:inline">
+              Completed works vs. queued TBR across classical to modern eras
+            </span>
+          </div>
+
+          <div className="p-6 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs space-y-4">
+            <div className="flex items-center gap-4 text-xs font-mono-tabular mb-2">
+              <div className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded bg-[var(--accent-secondary)]" />
+                <span className="text-[var(--text-ink)]">Completed (Read)</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded bg-[var(--accent-gold)]/60" />
+                <span className="text-[var(--text-ink)]">Queued (To-Read)</span>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {eraTimeline.map((era) => {
+                const maxTotal = Math.max(...eraTimeline.map((e) => e.total), 1);
+                const readPct = (era.readCount / maxTotal) * 100;
+                const toReadPct = (era.toReadCount / maxTotal) * 100;
+
+                return (
+                  <div key={era.id} className="space-y-1 text-xs">
+                    <div className="flex items-center justify-between font-mono-tabular">
+                      <span className="font-serif-editorial font-bold text-sm text-[var(--text-ink)]">
+                        {era.label}
+                      </span>
+                      <span className="text-[var(--text-muted)]">
+                        {era.readCount} read · {era.toReadCount} to-read ({era.total} total)
+                      </span>
+                    </div>
+
+                    <div className="flex h-3 rounded-full bg-[var(--bg-surface)] overflow-hidden">
+                      <div
+                        className="bg-[var(--accent-secondary)] transition-all duration-500"
+                        style={{ width: `${readPct}%` }}
+                        title={`${era.readCount} Read`}
+                      />
+                      <div
+                        className="bg-[var(--accent-gold)]/60 transition-all duration-500"
+                        style={{ width: `${toReadPct}%` }}
+                        title={`${era.toReadCount} To-Read`}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* 7. Author Loyalty Leaderboard */}
+      {/* SECTION 5: Author Loyalty Leaderboard */}
       <section aria-labelledby="authors-heading" className="space-y-4">
         <div className="flex items-center justify-between pb-2 border-b border-[var(--border-ledger)]">
           <div className="flex items-center gap-2">
@@ -1336,15 +1278,24 @@ export const ObservatoryView: React.FC<ObservatoryViewProps> = ({
                 <tr key={idx} className="hover:bg-[var(--bg-surface)]/60 transition-colors">
                   <td className="py-3 px-4 font-mono-tabular font-bold text-[var(--text-muted)]">
                     {idx === 0
-                      ? '🥇 01'
+                      ? '01'
                       : idx === 1
-                      ? '🥈 02'
+                      ? '02'
                       : idx === 2
-                      ? '🥉 03'
-                      : `0${idx + 1}`}
+                      ? '03'
+                      : idx < 9
+                      ? `0${idx + 1}`
+                      : `${idx + 1}`}
                   </td>
                   <td className="py-3 px-4 font-serif-editorial font-bold text-sm text-[var(--text-ink)]">
-                    {auth.author}
+                    <a
+                      href={getGoodreadsAuthorUrl(auth.author)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:underline hover:text-[var(--accent-primary)] transition-colors"
+                    >
+                      {auth.author}
+                    </a>
                   </td>
                   <td className="py-3 px-3 text-right font-mono-tabular text-[var(--text-ink)] font-semibold">
                     {auth.booksRead}
@@ -1366,1001 +1317,6 @@ export const ObservatoryView: React.FC<ObservatoryViewProps> = ({
               ))}
             </tbody>
           </table>
-        </div>
-      </section>
-
-      {/* 8. The Reading Friction Index & Abandonment Post-Mortem */}
-      <section aria-labelledby="dnf-heading" className="space-y-6">
-        <div className="flex items-center justify-between pb-2 border-b border-[var(--border-ledger)]">
-          <div className="flex items-center gap-2">
-            <ShieldAlert className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-            <h2
-              id="dnf-heading"
-              className="font-serif-editorial text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-ink)]"
-            >
-              The Reading Friction Index &amp; Abandonment Post-Mortem
-            </h2>
-            <span className="text-xs font-mono-tabular px-2 py-0.5 rounded bg-amber-500/10 text-amber-700 dark:text-amber-300 font-semibold border border-amber-500/20">
-              {frictionMetrics.dnfCount} volumes relinquished
-            </span>
-          </div>
-          <span className="text-xs text-[var(--text-muted)] hidden sm:inline font-mono-tabular">
-            Editorial triage &amp; cognitive boundary defense
-          </span>
-        </div>
-
-        {/* Editorial Discernment & Pages Preserved Banner */}
-        <div className="p-6 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Metric 1: Total Pages Preserved */}
-            <div className="p-4 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)]">
-              <span className="text-[10px] font-mono-tabular uppercase tracking-wider text-[var(--accent-secondary)] font-bold block mb-1">
-                Pages Preserved (Saved)
-              </span>
-              <div className="font-serif-editorial text-2xl sm:text-3xl font-bold text-[var(--accent-secondary)]">
-                +{frictionMetrics.totalPagesSaved.toLocaleString()} pp.
-              </div>
-              <p className="text-xs text-[var(--text-muted)] mt-1">
-                Unread bulk consciously preserved across {frictionMetrics.dnfCount} abandoned works
-              </p>
-            </div>
-
-            {/* Metric 2: Drop-Off Archetypes */}
-            <div className="p-4 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)]">
-              <span className="text-[10px] font-mono-tabular uppercase tracking-wider text-[var(--text-muted)] font-bold block mb-1">
-                Drop-Off Archetype Split
-              </span>
-              <div className="space-y-1.5 text-xs font-mono-tabular pt-0.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[var(--text-ink)]">⚡ Early Exit (&lt;25%):</span>
-                  <strong className="text-[var(--text-ink)]">{frictionMetrics.dropOffCounts.earlyExit}</strong>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[var(--text-ink)]">🌊 Midpoint Drift (25–60%):</span>
-                  <strong className="text-[var(--text-ink)]">{frictionMetrics.dropOffCounts.midpointDrift}</strong>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[var(--text-ink)]">🛑 Late Exit (&gt;60%):</span>
-                  <strong className="text-[var(--text-ink)]">{frictionMetrics.dropOffCounts.lateExit}</strong>
-                </div>
-              </div>
-            </div>
-
-            {/* Metric 3: Recurrent Friction Patterns */}
-            <div className="p-4 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)]">
-              <span className="text-[10px] font-mono-tabular uppercase tracking-wider text-[var(--text-muted)] font-bold block mb-1">
-                Recurrent Friction Signatures
-              </span>
-              {frictionMetrics.frictionPatternCounts.length === 0 ? (
-                <p className="text-xs text-[var(--text-muted)] italic">No repetitive structural patterns.</p>
-              ) : (
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  {frictionMetrics.frictionPatternCounts.map((fp) => (
-                    <span
-                      key={fp.label}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono-tabular bg-[var(--bg-card)] border border-[var(--border-ledger)] text-[var(--text-ink)]"
-                    >
-                      <span>{fp.label}</span>
-                      <strong className="text-amber-700 dark:text-amber-300">({fp.count})</strong>
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="text-xs font-serif-editorial italic text-[var(--text-muted)] leading-relaxed pt-1 border-t border-[var(--border-ledger)]/60">
-            &ldquo;Abandonment is not reading failure; it is active editorial stewardship. Every doorstopper set aside early preserves cognitive margin for books worthy of deep savor.&rdquo;
-          </div>
-        </div>
-
-        {/* Detailed DNF Forensic Dossiers */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {frictionMetrics.dnfBooks.map((item) => {
-            const { book, pagesRead, totalPages, pagesSaved, percentAtExit, dropOffLabel, frictionTags } = item;
-            return (
-              <div
-                key={book.id}
-                onClick={() => onSelectBook(book)}
-                className="p-5 rounded-lg bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs hover:border-[var(--accent-primary)] transition-all cursor-pointer group flex flex-col justify-between space-y-3"
-              >
-                <div>
-                  <div className="flex items-center justify-between gap-2 mb-1.5">
-                    <span className="text-[10px] font-mono-tabular uppercase tracking-wider px-2 py-0.5 rounded bg-[var(--bg-surface)] text-[var(--text-muted)] border border-[var(--border-ledger)] font-semibold">
-                      {dropOffLabel}
-                    </span>
-                    <span className="inline-flex items-center gap-1 text-[11px] font-mono-tabular px-2 py-0.5 rounded bg-[var(--accent-secondary)]/15 text-[var(--accent-secondary)] border border-[var(--accent-secondary)]/30 font-bold">
-                      +{pagesSaved} pp. saved
-                    </span>
-                  </div>
-
-                  <h3 className="font-serif-editorial text-base font-bold text-[var(--text-ink)] group-hover:text-[var(--accent-primary)] transition-colors leading-snug">
-                    {book.cleanTitle || book.title}
-                  </h3>
-                  <p className="text-xs text-[var(--text-muted)] font-medium mt-0.5">by {book.author}</p>
-
-                  {/* Progress at exit & friction tags */}
-                  <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-                    <span className="text-[11px] font-mono-tabular text-[var(--text-muted)]">
-                      Exited at ~{pagesRead} of {totalPages} pp. ({percentAtExit}%)
-                    </span>
-                    {frictionTags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="text-[10px] font-mono-tabular px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-800 dark:text-amber-200 border border-amber-500/25"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* Review / Exit Statement */}
-                  {book.myReview ? (
-                    <p className="mt-3 text-xs text-[var(--text-muted)] italic border-l-2 border-[var(--accent-primary)]/40 pl-2.5 line-clamp-3 font-serif-editorial">
-                      &ldquo;{book.myReview.replace(/<[^>]+>/g, '')}&rdquo;
-                    </p>
-                  ) : (
-                    <p className="mt-2.5 text-xs text-[var(--text-muted)]/60 italic font-serif-editorial">
-                      Relinquished without written exit statement.
-                    </p>
-                  )}
-                </div>
-
-                <div className="pt-3 border-t border-[var(--border-ledger)]/60 flex items-center justify-between text-[11px] font-mono-tabular text-[var(--text-muted)]">
-                  <span>
-                    Abandoned {book.dateRead ? book.dateRead.slice(0, 10) : 'Date unrecorded'}
-                  </span>
-                  <span className="text-[var(--accent-primary)] font-semibold group-hover:underline">
-                    Inspect Dossier →
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* Optional Goodreads Client Platform Split from DSAR Archive */}
-      {circadian?.platformBreakdown && (
-        <div className="px-5 py-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs flex flex-wrap items-center justify-between gap-3 text-xs font-mono-tabular">
-          <span className="text-[var(--text-muted)] font-semibold uppercase tracking-wider text-[11px]">
-            Goodreads Activity Platform Breakdown:
-          </span>
-          <div className="flex flex-wrap items-center gap-2">
-            {Object.entries(circadian.platformBreakdown).map(([platform, count]) => (
-              <div
-                key={platform}
-                className="px-2.5 py-1 rounded bg-[var(--bg-surface)] text-[var(--text-ink)] border border-[var(--border-ledger)]"
-              >
-                <strong>{platform}:</strong> {count.toLocaleString()} sessions
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* 9B. Literary Frontier Radar: Superpowers vs. Uncharted TBR Horizons (Lucien's Grant) */}
-      {literaryHorizons &&
-        (literaryHorizons.superpowers.length > 0 ||
-          literaryHorizons.unchartedHorizons.length > 0) && (
-          <section aria-labelledby="literary-horizons-heading" className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-[var(--border-ledger)]">
-              <div className="flex items-center gap-2">
-                <Compass className="w-4 h-4 text-[var(--accent-primary)]" />
-                <h2
-                  id="literary-horizons-heading"
-                  className="font-serif-editorial text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-ink)]"
-                >
-                  Literary Frontier Radar · Superpowers &amp; Terra Incognita
-                </h2>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="px-2.5 py-1 rounded-full bg-[var(--accent-gold)]/15 border border-[var(--accent-gold)]/30 text-xs font-mono-tabular font-semibold text-[var(--text-ink)]">
-                  Exploration Breadth: <strong>{literaryHorizons.explorationRatio}</strong>/100
-                </span>
-                {onOpenBookplate && (
-                  <button
-                    type="button"
-                    onClick={onOpenBookplate}
-                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md border border-[var(--accent-primary)]/40 bg-[var(--bg-card)] hover:bg-[var(--accent-primary)]/10 text-xs font-serif-editorial font-semibold text-[var(--accent-primary)] transition-colors cursor-pointer shadow-2xs"
-                  >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>Open Broadside Almanac &amp; Ex Libris Seal</span>
-                  </button>
-                )}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Left Column: Proven Literary Superpowers */}
-              <div className="p-6 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="text-xs font-mono-tabular uppercase tracking-wider text-[var(--accent-secondary)] font-bold flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>Proven Literary Superpowers</span>
-                  </div>
-                  <span className="text-[11px] text-[var(--text-muted)] italic">
-                    High-affinity completed clusters
-                  </span>
-                </div>
-
-                <div className="space-y-3">
-                  {literaryHorizons.superpowers.slice(0, 4).map((sp) => (
-                    <div
-                      key={sp.id}
-                      className="p-4 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] space-y-2"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <span className="text-[10px] font-mono-tabular uppercase tracking-wider px-1.5 py-0.5 rounded bg-[var(--accent-secondary)]/10 text-[var(--accent-secondary)] font-semibold">
-                            {sp.dimension}
-                          </span>
-                          <h3 className="font-serif-editorial text-sm sm:text-base font-bold text-[var(--text-ink)] mt-1">
-                            {sp.title}
-                          </h3>
-                        </div>
-                        <div className="text-right font-mono-tabular text-xs shrink-0">
-                          <div className="font-bold text-[var(--accent-gold)]">
-                            {sp.avgMyRating.toFixed(2)}★ avg
-                          </div>
-                          <div className="text-[11px] text-[var(--text-muted)]">
-                            {sp.readCount} read
-                          </div>
-                        </div>
-                      </div>
-
-                      <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-                        {sp.summary}
-                      </p>
-
-                      {sp.signatureBooks.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 pt-1">
-                          {sp.signatureBooks.slice(0, 3).map((b) => (
-                            <button
-                              key={b.id}
-                              type="button"
-                              onClick={() => onSelectBook(b)}
-                              className="px-2 py-0.5 rounded bg-[var(--bg-card)] border border-[var(--border-ledger)] hover:border-[var(--accent-secondary)] text-[11px] font-serif-editorial text-[var(--text-ink)] hover:text-[var(--accent-secondary)] transition-colors cursor-pointer truncate max-w-[200px]"
-                            >
-                              {b.cleanTitle || b.title}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Right Column: Uncharted Horizons Waiting on TBR */}
-              <div className="p-6 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="text-xs font-mono-tabular uppercase tracking-wider text-[var(--accent-primary)] font-bold flex items-center gap-1.5">
-                    <Globe className="w-3.5 h-3.5" />
-                    <span>Uncharted Horizons (Terra Incognita)</span>
-                  </div>
-                  <span className="text-[11px] text-[var(--text-muted)] italic">
-                    Untapped territories waiting on your TBR
-                  </span>
-                </div>
-
-                <div className="space-y-3">
-                  {literaryHorizons.unchartedHorizons.slice(0, 4).map((uh) => (
-                    <div
-                      key={uh.id}
-                      className="p-4 rounded-lg bg-[var(--bg-surface)] border border-dashed border-[var(--accent-primary)]/40 space-y-2"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <span className="text-[10px] font-mono-tabular uppercase tracking-wider px-1.5 py-0.5 rounded bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] font-semibold">
-                            {uh.dimension} · Frontier
-                          </span>
-                          <h3 className="font-serif-editorial text-sm sm:text-base font-bold text-[var(--text-ink)] mt-1">
-                            {uh.title}
-                          </h3>
-                        </div>
-                        <div className="text-right font-mono-tabular text-xs shrink-0">
-                          <div className="font-bold text-[var(--accent-primary)]">
-                            {uh.tbrCount} on TBR
-                          </div>
-                          <div className="text-[11px] text-[var(--text-muted)]">
-                            {uh.readCount} read so far
-                          </div>
-                        </div>
-                      </div>
-
-                      <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-                        {uh.callToAdventure}
-                      </p>
-
-                      {uh.sampleTbrBooks.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 pt-1">
-                          {uh.sampleTbrBooks.slice(0, 3).map((b) => {
-                            const gr = getGoodreadsBookUrl(b);
-                            return (
-                              <span
-                                key={b.id}
-                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[var(--bg-card)] border border-[var(--border-ledger)] text-[11px]"
-                              >
-                                <button
-                                  type="button"
-                                  onClick={() => onSelectBook(b)}
-                                  className="font-serif-editorial text-[var(--text-ink)] hover:text-[var(--accent-primary)] transition-colors cursor-pointer truncate max-w-[175px]"
-                                >
-                                  → {b.cleanTitle || b.title}
-                                </button>
-                                <a
-                                  href={gr.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-[var(--text-muted)] hover:text-[var(--accent-gold)]"
-                                  title={gr.label}
-                                >
-                                  <ExternalLink className="w-2.5 h-2.5" />
-                                </a>
-                              </span>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Frontier Expedition Bridges (Anchor -> Frontier Pairings) */}
-            {literaryHorizons.expeditionPairs.length > 0 && (
-              <div className="space-y-3">
-                <div className="text-xs font-mono-tabular uppercase tracking-wider text-[var(--accent-gold)] font-bold flex items-center gap-1.5">
-                  <ArrowRight className="w-3.5 h-3.5" />
-                  <span>Frontier Expedition Bridges (Beloved Anchor → Uncharted TBR Step)</span>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {literaryHorizons.expeditionPairs.map((pair) => (
-                    <div
-                      key={pair.id}
-                      className="p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] hover:border-[var(--accent-gold)]/60 transition-all shadow-2xs flex flex-col justify-between space-y-3"
-                    >
-                      <div className="space-y-2.5">
-                        <div className="flex items-center justify-between gap-2 text-[10px] font-mono-tabular uppercase tracking-wider">
-                          <span className="px-2 py-0.5 rounded bg-[var(--accent-gold)]/15 text-[var(--text-ink)] font-semibold">
-                            {pair.horizonTag}
-                          </span>
-                          <span className="text-[var(--text-muted)]">~{pair.estimatedHours}h</span>
-                        </div>
-
-                        <h4 className="font-serif-editorial text-base font-bold text-[var(--text-ink)]">
-                          {pair.title}
-                        </h4>
-
-                        <div className="p-2.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] space-y-1.5 text-xs">
-                          <div
-                            onClick={() => onSelectBook(pair.anchorBook)}
-                            className="cursor-pointer hover:text-[var(--accent-secondary)] transition-colors"
-                          >
-                            <span className="font-mono-tabular text-[10px] uppercase text-[var(--accent-secondary)] font-bold block">
-                              1. Proven Anchor ({pair.anchorBook.myRating || 5}★):
-                            </span>
-                            <span className="font-serif-editorial font-semibold text-[var(--text-ink)]">
-                              {pair.anchorBook.cleanTitle || pair.anchorBook.title}
-                            </span>
-                          </div>
-
-                          <div className="border-t border-[var(--border-ledger)]/60 pt-1.5">
-                            <div
-                              onClick={() => onSelectBook(pair.frontierBook)}
-                              className="cursor-pointer hover:text-[var(--accent-primary)] transition-colors"
-                            >
-                              <span className="font-mono-tabular text-[10px] uppercase text-[var(--accent-primary)] font-bold block">
-                                2. Frontier Expedition (On TBR):
-                              </span>
-                              <span className="font-serif-editorial font-semibold text-[var(--text-ink)]">
-                                {pair.frontierBook.cleanTitle || pair.frontierBook.title}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <p className="text-xs text-[var(--text-muted)] italic leading-relaxed">
-                          {pair.bridgeRationale}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </section>
-        )}
-
-      {/* 9B. The Screen & The Codex: Adaptation Forensics */}
-      {adaptationForensics && adaptationForensics.divergenceItems.length > 0 && (
-        <section aria-labelledby="adaptation-forensics-heading" className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2 border-b border-[var(--border-ledger)] gap-2">
-            <div className="flex items-center gap-2">
-              <Film className="w-5 h-5 text-[var(--accent-primary)]" />
-              <div>
-                <h2
-                  id="adaptation-forensics-heading"
-                  className="font-serif-editorial text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-ink)]"
-                >
-                  The Screen &amp; The Codex · Adaptation Forensics
-                </h2>
-              </div>
-            </div>
-            <span className="text-xs font-mono-tabular text-[var(--text-muted)]">
-              {adaptationForensics.divergenceItems.length} Cross-Matched Works · Letterboxd Bridge
-            </span>
-          </div>
-
-          {/* Personal Divergence Delta Banner */}
-          <div className="p-6 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-xs relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-80 h-80 bg-[var(--accent-primary)]/5 rounded-full blur-3xl pointer-events-none" />
-
-            <div className="relative z-10 grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
-              {/* Divergence Metric Score */}
-              <div className="md:col-span-5 space-y-2 border-b md:border-b-0 md:border-r border-[var(--border-ledger)] pb-4 md:pb-0 md:pr-6">
-                <div className="text-[11px] font-mono-tabular uppercase tracking-wider text-[var(--text-muted)] font-bold">
-                  Personal Divergence Delta
-                </div>
-                <div className="flex items-baseline gap-3">
-                  <span className="font-serif-editorial text-3xl sm:text-4xl font-black text-[var(--text-ink)]">
-                    {adaptationForensics.averageDelta !== null
-                      ? adaptationForensics.averageDelta > 0
-                        ? `+${adaptationForensics.averageDelta}★`
-                        : `${adaptationForensics.averageDelta}★`
-                      : 'Parity'}
-                  </span>
-                  <span className="text-xs font-mono-tabular uppercase px-2 py-0.5 rounded bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] font-bold">
-                    {adaptationForensics.averageDelta !== null && adaptationForensics.averageDelta > 0
-                      ? 'Codex Preferred'
-                      : adaptationForensics.averageDelta !== null && adaptationForensics.averageDelta < 0
-                      ? 'Cinema Preferred'
-                      : 'Equal Appreciation'}
-                  </span>
-                </div>
-                <p className="text-xs font-serif-editorial italic text-[var(--text-muted)] leading-relaxed">
-                  {adaptationForensics.averageDelta !== null
-                    ? adaptationForensics.averageDelta > 0
-                      ? `You rate literary originals +${adaptationForensics.averageDelta}★ higher on average than their cinematic adaptations.`
-                      : adaptationForensics.averageDelta < 0
-                      ? `You rate cinematic adaptations +${Math.abs(
-                          adaptationForensics.averageDelta
-                        )}★ higher on average than their literary sources.`
-                      : 'Perfect parity: your scores for literary sources and cinematic adaptations balance equally.'
-                    : 'Awaiting paired ratings across your cataloged books and Letterboxd diary.'}
-                </p>
-              </div>
-
-              {/* Stat Chips */}
-              <div className="md:col-span-7 grid grid-cols-2 sm:grid-cols-4 gap-3 text-center font-mono-tabular">
-                <div className="p-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)]">
-                  <div className="text-xs text-[var(--text-muted)]">Codex Higher</div>
-                  <div className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
-                    {adaptationForensics.favorsBookCount}
-                  </div>
-                </div>
-                <div className="p-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)]">
-                  <div className="text-xs text-[var(--text-muted)]">Twin Parity</div>
-                  <div className="text-lg font-bold text-[var(--accent-gold)]">
-                    {adaptationForensics.parityCount}
-                  </div>
-                </div>
-                <div className="p-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)]">
-                  <div className="text-xs text-[var(--text-muted)]">Cinema Higher</div>
-                  <div className="text-lg font-bold text-[#7C5CFF]">
-                    {adaptationForensics.favorsFilmCount}
-                  </div>
-                </div>
-                <div className="p-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)]">
-                  <div className="text-xs text-[var(--text-muted)]">Total Paired</div>
-                  <div className="text-lg font-bold text-[var(--text-ink)]">
-                    {adaptationForensics.divergenceItems.length}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Adaptation Divergence Leaderboard */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="font-serif-editorial text-base font-bold text-[var(--text-ink)] flex items-center gap-2">
-                <Scale className="w-4 h-4 text-[var(--accent-gold)]" />
-                <span>The Divergence Leaderboard (Book vs. Screen)</span>
-              </h3>
-              <span className="text-xs font-mono-tabular text-[var(--text-muted)]">
-                Ranked by rating differential
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {adaptationForensics.divergenceItems.map((item) => {
-                const book = books.find((b) => b.id === item.bookId);
-
-                return (
-                  <div
-                    key={item.id}
-                    className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] hover:border-[var(--accent-primary)]/40 transition-all flex flex-col justify-between space-y-3 shadow-2xs group"
-                  >
-                    <div className="space-y-2.5">
-                      {/* Header with Title and Verdict Badge */}
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <button
-                            type="button"
-                            onClick={() => book && onSelectBook(book)}
-                            className="font-serif-editorial font-bold text-sm text-[var(--text-ink)] hover:text-[var(--accent-primary)] text-left cursor-pointer transition-colors block"
-                          >
-                            {item.bookTitle}
-                          </button>
-                          <p className="text-[11px] text-[var(--text-muted)] font-serif-editorial">
-                            by {item.bookAuthor}
-                          </p>
-                        </div>
-
-                        {item.delta !== null ? (
-                          <span
-                            className={`px-2 py-0.5 rounded text-[10px] font-mono-tabular font-bold shrink-0 ${
-                              item.verdict === 'favors-book'
-                                ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30'
-                                : item.verdict === 'favors-film'
-                                ? 'bg-[#7C5CFF]/15 text-[#7C5CFF] border border-[#7C5CFF]/30'
-                                : 'bg-[var(--accent-gold)]/15 text-[var(--accent-gold)] border border-[var(--accent-gold)]/30'
-                            }`}
-                          >
-                            {item.delta > 0
-                              ? `+${item.delta}★ Codex`
-                              : item.delta < 0
-                              ? `${item.delta}★ Screen`
-                              : 'Faithful Twin'}
-                          </span>
-                        ) : (
-                          <span className="px-2 py-0.5 rounded text-[10px] font-mono-tabular bg-[var(--bg-surface)] text-[var(--text-muted)]">
-                            Unrated
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Side-by-side Score Matrix */}
-                      <div className="grid grid-cols-2 gap-2 p-2.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] text-xs font-mono-tabular">
-                        <div className="space-y-0.5 border-r border-[var(--border-ledger)] pr-2">
-                          <span className="text-[10px] text-[var(--text-muted)] uppercase block">
-                            Literary Codex
-                          </span>
-                          <span className="font-bold text-[var(--text-ink)]">
-                            {item.bookRating ? `${item.bookRating}★` : '—'}
-                          </span>
-                        </div>
-                        <div className="space-y-0.5 pl-1">
-                          <span className="text-[10px] text-[var(--text-muted)] uppercase block truncate">
-                            Film ({item.filmYear})
-                          </span>
-                          <span className="font-bold text-[var(--accent-primary)]">
-                            {item.filmRating ? formatStarRating(item.filmRating) : '—'}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Letterboxd Micro-Review Quote if present */}
-                      {item.filmReview && (
-                        <blockquote className="p-2.5 rounded-lg bg-[var(--bg-surface)]/60 border border-[var(--border-ledger)] text-xs font-serif-editorial italic text-[var(--text-muted)] leading-relaxed line-clamp-3">
-                          &ldquo;{item.filmReview}&rdquo;
-                        </blockquote>
-                      )}
-                    </div>
-
-                    {/* Footer with Letterboxd Link */}
-                    <div className="pt-2 border-t border-[var(--border-ledger)]/60 flex items-center justify-between text-[11px] font-mono-tabular">
-                      <span className="text-[var(--text-muted)]">
-                        {item.filmTitle} ({item.filmYear})
-                      </span>
-                      <a
-                        href={item.filmUri}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex items-center gap-1 text-[var(--accent-primary)] hover:underline"
-                        title="View on Letterboxd"
-                      >
-                        <span>Diary</span>
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* The Total Narrative Diet Timeline */}
-          {adaptationForensics.dietTimeline.length > 0 && (
-            <div className="p-6 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-xs space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[var(--border-ledger)]">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                    <h3 className="font-serif-editorial text-base font-bold text-[var(--text-ink)]">
-                      The Total Narrative Diet Timeline (2024–2026)
-                    </h3>
-                  </div>
-                  <p className="text-xs text-[var(--text-muted)] font-mono-tabular">
-                    Comparative monthly cadence: Pages Traversed vs. Films Screened
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-3 text-xs font-mono-tabular">
-                  <span className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-sm bg-emerald-500" />
-                    <span>Pages Read</span>
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-sm bg-[var(--accent-primary)]" />
-                    <span>Films Watched</span>
-                  </span>
-                </div>
-              </div>
-
-              {/* Monthly Flow Chart */}
-              <div className="overflow-x-auto pb-2">
-                <div className="min-w-[700px] grid grid-cols-12 gap-1.5 pt-4">
-                  {adaptationForensics.dietTimeline
-                    .filter((m) => m.year >= 2025)
-                    .map((m) => {
-                      const pagesHeight =
-                        adaptationForensics.maxMonthlyPages > 0
-                          ? Math.round((m.pagesRead / adaptationForensics.maxMonthlyPages) * 75)
-                          : 0;
-                      const filmsHeight =
-                        adaptationForensics.maxMonthlyFilms > 0
-                          ? Math.round((m.filmsWatched / adaptationForensics.maxMonthlyFilms) * 75)
-                          : 0;
-
-                      return (
-                        <div
-                          key={m.yearMonth}
-                          className={`p-2 rounded-lg flex flex-col justify-end items-center text-center space-y-2 border transition-all ${
-                            m.isCinemaSurge
-                              ? 'border-[var(--accent-primary)]/50 bg-[var(--accent-primary)]/5'
-                              : 'border-[var(--border-ledger)] bg-[var(--bg-surface)]'
-                          }`}
-                          title={`${m.label}: ${m.pagesRead.toLocaleString()} pages (${m.booksRead} vol) · ${m.filmsWatched} films screened`}
-                        >
-                          {/* Cinema Surge Badge */}
-                          {m.isCinemaSurge && (
-                            <span className="text-[9px] font-mono-tabular uppercase px-1 py-0.2 rounded bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] font-bold">
-                              Surge
-                            </span>
-                          )}
-
-                          {/* Dual Bars */}
-                          <div className="h-20 w-full flex items-end justify-center gap-1 px-1">
-                            {/* Pages Bar */}
-                            <div
-                              style={{ height: `${Math.max(4, pagesHeight)}%` }}
-                              className="w-1/2 bg-emerald-500/80 hover:bg-emerald-500 rounded-t-xs transition-all"
-                            />
-                            {/* Films Bar */}
-                            <div
-                              style={{ height: `${Math.max(4, filmsHeight)}%` }}
-                              className="w-1/2 bg-[var(--accent-primary)]/80 hover:bg-[var(--accent-primary)] rounded-t-xs transition-all"
-                            />
-                          </div>
-
-                          {/* Month Label & Counts */}
-                          <div className="space-y-0.5 font-mono-tabular text-[10px] w-full">
-                            <div className="font-bold text-[var(--text-ink)] truncate">{m.label}</div>
-                            <div className="text-[9px] text-[var(--text-muted)] truncate">
-                              {m.pagesRead}p · {m.filmsWatched}f
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                </div>
-              </div>
-
-              <p className="text-[11px] text-[var(--text-muted)] font-serif-editorial italic pt-1">
-                Notice: Apparent reading pauses (such as high-intake cinema months) represent an active narrative swap—where hundreds of literary pages are seamlessly counterbalanced by cinematic storytelling.
-              </p>
-            </div>
-          )}
-        </section>
-      )}
-
-      {/* 9.5. Annual Reading Reviews & Multi-Year Trends */}
-      {annualReviews.length > 0 && activeReview && (
-        <section aria-labelledby="annual-reviews-heading" className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-[var(--border-ledger)]">
-            <div className="flex items-center gap-2">
-              <CalendarDays className="w-5 h-5 text-[var(--accent-primary)]" />
-              <div>
-                <h2
-                  id="annual-reviews-heading"
-                  className="font-serif-editorial text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-ink)]"
-                >
-                  Annual Reading Reviews · Multi-Year Horizons
-                </h2>
-                <p className="text-xs text-[var(--text-muted)] font-serif-editorial">
-                  Comparative intake, pacing dynamics, and cinematic balances year over year.
-                </p>
-              </div>
-            </div>
-
-            {/* Year Selector Tabs */}
-            <div className="flex items-center gap-1.5 p-1 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] self-start sm:self-auto">
-              {annualReviews.map((rev) => (
-                <button
-                  key={rev.year}
-                  type="button"
-                  onClick={() => setSelectedReviewYear(rev.year)}
-                  className={`px-3 py-1 rounded text-xs font-mono-tabular transition-all cursor-pointer ${
-                    selectedReviewYear === rev.year
-                      ? 'bg-[var(--accent-primary)] text-white font-bold shadow-2xs'
-                      : 'text-[var(--text-muted)] hover:text-[var(--text-ink)]'
-                  }`}
-                >
-                  {rev.year}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-6">
-            {/* Top KPI Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs space-y-1">
-                <div className="text-[10px] font-mono-tabular uppercase tracking-wider text-[var(--text-muted)]">
-                  Volumes Read
-                </div>
-                <div className="text-2xl font-bold font-serif-editorial text-[var(--text-ink)]">
-                  {activeReview.volumesRead}
-                </div>
-                <div className="text-[11px] font-mono-tabular text-[var(--text-muted)]">
-                  in {activeReview.year}
-                </div>
-              </div>
-
-              <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs space-y-1">
-                <div className="text-[10px] font-mono-tabular uppercase tracking-wider text-[var(--text-muted)]">
-                  Pages Read
-                </div>
-                <div className="text-2xl font-bold font-serif-editorial text-[var(--text-ink)]">
-                  {activeReview.pagesRead.toLocaleString()}
-                </div>
-                <div className="text-[11px] font-mono-tabular text-[var(--text-muted)]">
-                  {activeReview.medianDaysPerBook ? `~${activeReview.medianDaysPerBook} days/vol` : 'Steady intake'}
-                </div>
-              </div>
-
-              <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs space-y-1">
-                <div className="text-[10px] font-mono-tabular uppercase tracking-wider text-[var(--text-muted)]">
-                  Average Rating
-                </div>
-                <div className="text-2xl font-bold font-serif-editorial text-[var(--accent-gold)] flex items-center gap-1">
-                  <Star className="w-5 h-5 fill-[var(--accent-gold)]" />
-                  {activeReview.averageRating ? `${activeReview.averageRating}★` : '—'}
-                </div>
-                <div className="text-[11px] font-mono-tabular text-[var(--text-muted)]">
-                  {activeReview.canon5StarBooks.length} titles in 5★ canon
-                </div>
-              </div>
-
-              <div className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs space-y-1">
-                <div className="text-[10px] font-mono-tabular uppercase tracking-wider text-[var(--text-muted)]">
-                  Narrative Balance
-                </div>
-                <div className="text-sm font-bold font-mono-tabular text-[var(--text-ink)] pt-1">
-                  {activeReview.narrativeDiet.booksRead} Codex / {activeReview.narrativeDiet.filmsWatched} Screen
-                </div>
-                <div className="text-[11px] font-serif-editorial italic text-[var(--text-muted)]">
-                  {activeReview.narrativeDiet.filmsWatched > 0 ? 'Multi-medium diet' : 'Pure reading year'}
-                </div>
-              </div>
-            </div>
-
-            {/* Pacing Extremes & Canon */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Sprint vs Savor */}
-              <div className="p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] space-y-3">
-                <h3 className="font-serif-editorial text-sm font-bold text-[var(--text-ink)] uppercase tracking-wide">
-                  Pacing Extremes · {activeReview.year}
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono-tabular">
-                  {activeReview.fastestSprintBook ? (
-                    <div
-                      onClick={() => onSelectBookById(activeReview.fastestSprintBook!.id, activeReview.fastestSprintBook!.title)}
-                      className="p-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] hover:border-[var(--accent-primary)] transition-all cursor-pointer space-y-1"
-                    >
-                      <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wider">
-                        ⚡ Quickest Read
-                      </div>
-                      <div className="font-serif-editorial font-bold text-[var(--text-ink)] truncate">
-                        {activeReview.fastestSprintBook.title}
-                      </div>
-                      <div className="text-[10px] text-[var(--text-muted)]">
-                        {activeReview.fastestSprintBook.author} · {activeReview.fastestSprintBook.pageCount} pp
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="p-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] text-[var(--text-muted)] italic text-xs">
-                      No sprint recorded
-                    </div>
-                  )}
-
-                  {activeReview.deepestSavorBook ? (
-                    <div
-                      onClick={() => onSelectBookById(activeReview.deepestSavorBook!.id, activeReview.deepestSavorBook!.title)}
-                      className="p-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] hover:border-[var(--accent-primary)] transition-all cursor-pointer space-y-1"
-                    >
-                      <div className="text-[10px] text-[var(--accent-primary)] font-bold uppercase tracking-wider">
-                        🏔️ Deepest Savor
-                      </div>
-                      <div className="font-serif-editorial font-bold text-[var(--text-ink)] truncate">
-                        {activeReview.deepestSavorBook.title}
-                      </div>
-                      <div className="text-[10px] text-[var(--text-muted)]">
-                        {activeReview.deepestSavorBook.author} · {activeReview.deepestSavorBook.pageCount} pp
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="p-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] text-[var(--text-muted)] italic text-xs">
-                      No savor recorded
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* 5★ Canon of the Year */}
-              <div className="p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-serif-editorial text-sm font-bold text-[var(--text-ink)] uppercase tracking-wide">
-                    5★ Canon of {activeReview.year}
-                  </h3>
-                  <span className="text-xs font-mono-tabular text-[var(--accent-gold)] font-bold">
-                    {activeReview.canon5StarBooks.length} works
-                  </span>
-                </div>
-
-                {activeReview.canon5StarBooks.length > 0 ? (
-                  <div className="space-y-1.5">
-                    {activeReview.canon5StarBooks.slice(0, 4).map((book) => (
-                      <div
-                        key={book.id}
-                        onClick={() => onSelectBookById(book.id, book.title)}
-                        className="p-2 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] hover:border-[var(--accent-gold)] transition-all cursor-pointer flex items-center justify-between gap-2 group"
-                      >
-                        <div className="min-w-0">
-                          <div className="font-serif-editorial font-bold text-xs text-[var(--text-ink)] group-hover:text-[var(--accent-gold)] truncate transition-colors">
-                            {book.title}
-                          </div>
-                          <div className="text-[10px] text-[var(--text-muted)] font-serif-editorial truncate">
-                            {book.author}
-                          </div>
-                        </div>
-                        <span className="text-xs font-mono-tabular text-[var(--accent-gold)] font-bold shrink-0">
-                          ★★★★★
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-xs text-[var(--text-muted)] italic font-serif-editorial">
-                    No 5-star ratings recorded in {activeReview.year}.
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* 10. Annual Goals, 12 Challenge Badges Trophy Case, & Favorite Genres */}
-      <section aria-labelledby="trophy-heading" className="space-y-6">
-        <div className="flex items-center justify-between pb-2 border-b border-[var(--border-ledger)]">
-          <div className="flex items-center gap-2">
-            <Trophy className="w-4 h-4 text-[var(--accent-gold)]" />
-            <h2
-              id="trophy-heading"
-              className="font-serif-editorial text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-ink)]"
-            >
-              Trophy Case &amp; Reading Milestones
-            </h2>
-          </div>
-          <span className="text-xs text-[var(--text-muted)] hidden sm:inline">
-            Official reading goals &amp; challenge achievement badges
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Achievement Badges */}
-          <div className="lg:col-span-2 p-6 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs">
-            <div className="text-xs font-mono-tabular uppercase tracking-wider text-[var(--accent-gold)] font-bold mb-4 flex items-center gap-1.5">
-              <Award className="w-4 h-4" />
-              <span>Challenge Badges ({achievements.length} Medallions Earned)</span>
-            </div>
-
-            {achievements.length === 0 ? (
-              <p className="text-xs text-[var(--text-muted)] italic">
-                No challenge badges in imported archive.
-              </p>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                {achievements.map((badge, idx) => (
-                  <div
-                    key={idx}
-                    className="p-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] text-center flex flex-col items-center justify-center hover:border-[var(--accent-gold)] transition-colors"
-                  >
-                    <div className="w-10 h-10 rounded-full bg-[var(--accent-gold)]/10 text-[var(--accent-gold)] flex items-center justify-center mb-2 border border-[var(--accent-gold)]/30 shadow-xs">
-                      <Trophy className="w-5 h-5" />
-                    </div>
-                    <div className="font-serif-editorial text-xs font-bold text-[var(--text-ink)] line-clamp-2">
-                      {badge.achievementName}
-                    </div>
-                    <div className="text-[10px] font-mono-tabular text-[var(--text-muted)] mt-1">
-                      {badge.earnDate ? badge.earnDate.slice(0, 10) : 'Earned'}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Goals & Favorite Genres */}
-          <div className="space-y-6">
-            {goals.length > 0 && (
-              <div className="p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs">
-                <div className="text-xs font-mono-tabular uppercase tracking-wider text-[var(--accent-secondary)] font-bold mb-3">
-                  Annual Reading Challenge
-                </div>
-                {goals.map((goal, idx) => (
-                  <div key={idx} className="space-y-2">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-serif-editorial font-bold text-base text-[var(--text-ink)]">
-                        Target: {goal.goalValue} Volumes
-                      </span>
-                      {goal.hasBeenCongratulated && (
-                        <span className="px-2 py-0.5 rounded bg-[var(--accent-secondary)]/10 text-[var(--accent-secondary)] text-[10px] font-mono-tabular font-bold">
-                          ✓ Achieved
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-[var(--text-muted)] font-mono-tabular">
-                      Logged {goal.createDate.slice(0, 10)}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {favoriteGenres && (
-              <div className="p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs">
-                <div className="text-xs font-mono-tabular uppercase tracking-wider text-[var(--text-muted)] font-semibold mb-3">
-                  Affinity Genres &amp; Subjects
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {favoriteGenres.genres?.map((g, idx) => (
-                    <span
-                      key={idx}
-                      className="px-2.5 py-1 rounded-md bg-[var(--bg-surface)] text-xs text-[var(--text-ink)] border border-[var(--border-ledger)] font-medium"
-                    >
-                      {g}
-                    </span>
-                  ))}
-                  {favoriteGenres.additionalGenres?.map((g, idx) => (
-                    <span
-                      key={`add-${idx}`}
-                      className="px-2.5 py-1 rounded-md bg-[var(--bg-surface)]/60 text-xs text-[var(--text-muted)] border border-[var(--border-ledger)]"
-                    >
-                      {g}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
         </div>
       </section>
     </div>

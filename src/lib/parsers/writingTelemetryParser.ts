@@ -4,40 +4,116 @@ import type {
   DraftedFileRecord,
 } from '../../types/library';
 
+const DATE_KEY_RX = /^\d{4}-\d{2}-\d{2}$/;
+const STRUCTURAL_FOLDER_RX =
+  /^(chapters?|scenes?|drafts?|archives?|final|characters?.*|lore|maybe|manuscript\s*archive)$/i;
+const SKIP_UMBRELLA_SUB_RX = /^(archive|archives|essays|eskiler|eski̇ler)$/i;
+
+function isLegacyKeepTheRhythmPayload(data: Record<string, any>): boolean {
+  return Boolean(
+    data.source === 'keep-the-rhythm' ||
+      (data.stats && Array.isArray(data.stats.dailyActivity)) ||
+      Array.isArray(data.dailyActivity)
+  );
+}
+
+function cleanProjectLabel(rawVal: unknown): string | null {
+  if (!rawVal || typeof rawVal !== 'string') return null;
+  let cleaned = rawVal.trim().replace(/^["']|["']$/g, '').trim();
+  const wiki = cleaned.match(/^\[\[([^\]|]+)(?:\|[^\]]+)?\]\]$/);
+  if (wiki) cleaned = wiki[1].trim();
+  if (!cleaned || /^(true|false|null|none)$/i.test(cleaned)) return null;
+  return cleaned === 'Warband' ? 'Ioren' : cleaned;
+}
+
 /**
- * Checks whether a raw string or parsed JSON object is an Obsidian Keep the Rhythm data.json
- * or writing telemetry payload.
+ * Checks whether a raw string or parsed JSON object is an Obsidian Scriptor
+ * (`data.json` / `scriptor_telemetry_*.json`) or compatible writing telemetry payload.
+ * Legacy Keep the Rhythm payloads are explicitly rejected.
  */
-export function isKeepTheRhythmJson(raw: string): boolean {
+export function isScriptorJson(raw: string): boolean {
   if (!raw || typeof raw !== 'string') return false;
+  const clean = raw.replace(/^\uFEFF/, '').trim();
+  if (!clean.startsWith('{')) return false;
+
   try {
-    const clean = raw.replace(/^\uFEFF/, '').trim();
-    if (!clean.startsWith('{')) return false;
     const data = JSON.parse(clean);
     if (!data || typeof data !== 'object') return false;
 
-    // Direct Keep the Rhythm plugin schema signatures
-    if (data.stats && Array.isArray(data.stats.dailyActivity)) return true;
-    if (Array.isArray(data.dailyActivity)) return true;
-    if (data.source === 'keep-the-rhythm' || data.source === 'obsidian-vault') return true;
+    if (isLegacyKeepTheRhythmPayload(data)) return false;
 
-    // Pre-aggregated telemetry export format
+    if (data.history && typeof data.history === 'object' && !Array.isArray(data.history)) {
+      return true;
+    }
+    if (data.source === 'scriptor' || data.source === 'obsidian-vault') return true;
     if (data.dailyTotals && typeof data.dailyTotals === 'object') return true;
-    if (data.writingTelemetry && typeof data.writingTelemetry === 'object') return true;
+    if (data.writingTelemetry && typeof data.writingTelemetry === 'object') {
+      return !isLegacyKeepTheRhythmPayload(data.writingTelemetry);
+    }
 
-    // Generic vault daily stats mapping (keys formatted as YYYY-MM-DD)
-    const keys = Object.keys(data);
-    const dateKeys = keys.filter((k) => /^\d{4}-\d{2}-\d{2}$/.test(k));
-    if (dateKeys.length >= 2) return true;
-
-    return false;
+    const dateKeys = Object.keys(data).filter((k) => DATE_KEY_RX.test(k));
+    return dateKeys.length >= 2;
   } catch {
-    // If it fails standard parse, check if it has Keep the Rhythm signatures in raw text
-    return (
-      raw.includes('dailyActivity') ||
-      raw.includes('keep-the-rhythm') ||
-      raw.includes('dailyTotals')
+    if (raw.includes('dailyActivity') || raw.includes('keep-the-rhythm')) {
+      return false;
+    }
+    return Boolean(
+      (raw.includes('"history"') &&
+        (raw.includes('"netWords"') ||
+          raw.includes('"filesGross"') ||
+          raw.includes('"hourlyCounts"'))) ||
+        raw.includes('"dailyTotals"') ||
+        raw.includes('"scriptor"')
     );
+  }
+}
+
+function salvageTruncatedHistoryJson(clean: string): string | null {
+  const match = clean.match(/"history"\s*:\s*\{/);
+  if (!match || match.index === undefined) return null;
+
+  const objStart = match.index + match[0].length - 1;
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+  let lastCompleteDayEnd = -1;
+
+  for (let i = objStart; i < clean.length; i++) {
+    const ch = clean[i];
+    if (escape) {
+      escape = false;
+      continue;
+    }
+    if (ch === '\\') {
+      escape = true;
+      continue;
+    }
+    if (ch === '"') {
+      inString = !inString;
+      continue;
+    }
+    if (inString) continue;
+
+    if (ch === '{') {
+      depth++;
+    } else if (ch === '}') {
+      depth--;
+      if (depth === 1) {
+        lastCompleteDayEnd = i;
+      } else if (depth === 0) {
+        break;
+      }
+    }
+  }
+
+  if (lastCompleteDayEnd === -1) return null;
+  const salvagedHistory = clean.slice(objStart, lastCompleteDayEnd + 1) + '}';
+  const candidate = `{"history":${salvagedHistory}}`;
+  try {
+    JSON.parse(candidate);
+    return candidate;
+  } catch {
+    return null;
   }
 }
 
@@ -51,9 +127,8 @@ export function repairBrokenJson(raw: string): {
   warnings: string[];
 } {
   const warnings: string[] = [];
-  let clean = (raw || '').replace(/^\uFEFF/, '').trim();
+  const clean = (raw || '').replace(/^\uFEFF/, '').trim();
 
-  // Test if already valid
   try {
     JSON.parse(clean);
     return { repaired: clean, wasRepaired: false, warnings: [] };
@@ -69,15 +144,12 @@ export function repairBrokenJson(raw: string): {
   // 2. Remove trailing commas before object or array closers
   text = text.replace(/,\s*([}\]])/g, '$1');
 
-  // 3. Remove trailing comma at the very end of truncated input
+  // 3. Remove trailing comma or incomplete key/value fragments at EOF
   text = text.replace(/,\s*$/, '');
-
-  // 4. Handle truncated endings by balancing unclosed braces and brackets
-  // First strip any trailing incomplete key-value fragment like `"date":` or `"chan`
   text = text.replace(/,\s*"[^"]*":?\s*$/, '');
   text = text.replace(/:\s*"[^"]*$/, '');
 
-  // Count open brackets
+  // 4. Balance unclosed strings, braces, and brackets
   const openStack: string[] = [];
   let inString = false;
   let escape = false;
@@ -107,73 +179,157 @@ export function repairBrokenJson(raw: string): {
     }
   }
 
-  // If ended while in string, close it
   if (inString) {
     text += '"';
     warnings.push('Closed dangling string literal');
   }
 
-  // Remove any trailing comma that was left before closing
   text = text.replace(/,\s*$/, '');
 
-  // Close remaining open brackets in reverse order
   if (openStack.length > 0) {
     const closers = openStack.reverse().join('');
     text += closers;
     warnings.push(`Balanced and closed ${openStack.length} open bracket(s): ${closers}`);
   }
 
-  // Final verification
   try {
     JSON.parse(text);
     return { repaired: text, wasRepaired: true, warnings };
   } catch (secondErr: any) {
-    // Aggressive fallback: if still broken, attempt to salvage valid dailyActivity array
-    const activityMatch = clean.match(/"dailyActivity"\s*:\s*(\[[\s\S]*)/);
-    if (activityMatch) {
-      let arrayText = activityMatch[1];
-      arrayText = arrayText.replace(/,\s*([}\]])/g, '$1');
-      const lastCloseObj = arrayText.lastIndexOf('}');
-      if (lastCloseObj !== -1) {
-        const salvagedArray = arrayText.slice(0, lastCloseObj + 1) + ']';
-        const fallbackObj = `{"stats":{"dailyActivity":${salvagedArray}}}`;
-        try {
-          JSON.parse(fallbackObj);
-          warnings.push('Aggressively salvaged dailyActivity array from truncated stream');
-          return { repaired: fallbackObj, wasRepaired: true, warnings };
-        } catch {
-          // Continue to error
-        }
-      }
+    const salvaged = salvageTruncatedHistoryJson(clean);
+    if (salvaged) {
+      warnings.push('Salvaged complete Scriptor history entries from truncated JSON stream');
+      return { repaired: salvaged, wasRepaired: true, warnings };
     }
     throw new Error(`Failed to auto-repair JSON: ${secondErr?.message || 'Unrecoverable syntax'}`);
   }
 }
 
+function detectUmbrellaFolders(historyObj: Record<string, any>): Set<string> {
+  const umbrellaCandidates: Record<string, Set<string>> = {};
+  for (const rec of Object.values(historyObj)) {
+    if (!rec || typeof rec !== 'object' || !rec.filesGross || typeof rec.filesGross !== 'object') {
+      continue;
+    }
+    for (const fg of Object.values(rec.filesGross) as Array<any>) {
+      const fp = String(fg?.filePath || '').replace(/\\/g, '/');
+      if (!fp) continue;
+      const parts = fp.split('/').filter(Boolean);
+      if (parts.length >= 4 && STRUCTURAL_FOLDER_RX.test(parts[2])) {
+        const top = parts[0];
+        if (!umbrellaCandidates[top]) umbrellaCandidates[top] = new Set();
+        umbrellaCandidates[top].add(parts[1]);
+      }
+    }
+  }
+
+  const umbrellas = new Set<string>();
+  for (const [top, subs] of Object.entries(umbrellaCandidates)) {
+    if (subs.size >= 2) umbrellas.add(top);
+  }
+  return umbrellas;
+}
+
+function resolveScriptorProjectName(name: string, fg: any, umbrellas: Set<string>): string {
+  const stamped = cleanProjectLabel(fg?.project);
+  if (stamped) return stamped;
+
+  const rawPath = String(fg?.filePath || '').replace(/\\/g, '/');
+  if (rawPath) {
+    const parts = rawPath.split('/').filter(Boolean);
+    if (parts.length > 1) {
+      const top = parts[0];
+      if (umbrellas.has(top)) {
+        if (parts.length >= 3 && !SKIP_UMBRELLA_SUB_RX.test(parts[1])) {
+          return parts[1] === 'Warband' ? 'Ioren' : parts[1];
+        }
+        if (parts.length === 2 && /review/i.test(parts[1])) {
+          return 'Essays & Reviews';
+        }
+      }
+      return top === 'Warband' ? 'Ioren' : top;
+    }
+  }
+
+  return /review/i.test(name) ? 'Essays & Reviews' : 'Loose Notes';
+}
+
+function recordFileContribution(
+  dt: string,
+  name: string,
+  words: number,
+  rawFilePath: string | undefined,
+  projectName: string,
+  dailyFiles: Record<string, DraftedFileRecord[]>,
+  projectsMap: Map<string, { words: number; files: Set<string>; days: Set<string> }>
+): void {
+  if (words <= 0) return;
+
+  const normalized = (rawFilePath || name).replace(/\\/g, '/');
+  const parts = normalized.split('/').filter(Boolean);
+  const rawLeaf = parts.pop() || name;
+  const fileName = rawLeaf.endsWith('.md') ? rawLeaf : `${rawLeaf}.md`;
+  const folder = parts.join('/') || 'Root';
+  const filePath = normalized.endsWith('.md') ? normalized : `${normalized}.md`;
+
+  if (!projectsMap.has(projectName)) {
+    projectsMap.set(projectName, { words: 0, files: new Set(), days: new Set() });
+  }
+  const proj = projectsMap.get(projectName)!;
+  proj.words += words;
+  proj.files.add(filePath);
+  proj.days.add(dt);
+
+  if (!dailyFiles[dt]) dailyFiles[dt] = [];
+  const existingFile = dailyFiles[dt].find((f) => f.filePath === filePath);
+  if (existingFile) {
+    existingFile.words += words;
+  } else {
+    dailyFiles[dt].push({
+      filePath,
+      fileName,
+      folder,
+      words,
+    });
+  }
+}
+
 /**
- * Parses Obsidian Keep the Rhythm `data.json` or writing telemetry JSON into a unified `WritingTelemetryData` object.
+ * Parses Obsidian Scriptor (`data.json` / `scriptor_telemetry_*.json`) or compatible
+ * writing telemetry JSON into a unified `WritingTelemetryData` object.
  * Incorporates the Auto-Repair Engine for zero-friction recovery of sync-damaged files.
  */
-export function parseKeepTheRhythmJson(
+export function parseScriptorJson(
   raw: string,
   existingTelemetry?: WritingTelemetryData | null
 ): WritingTelemetryData {
-  let clean = (raw || '').replace(/^\uFEFF/, '').trim();
+  const clean = (raw || '').replace(/^\uFEFF/, '').trim();
   let parsed: any;
 
   try {
     parsed = JSON.parse(clean);
   } catch {
-    // Invoke Auto-Repair Engine
+    if (clean.includes('dailyActivity') || clean.includes('keep-the-rhythm')) {
+      throw new Error(
+        'Keep the Rhythm format is no longer supported. Please import a Scriptor .json file.'
+      );
+    }
     const { repaired } = repairBrokenJson(clean);
     parsed = JSON.parse(repaired);
   }
 
-  const now = new Date().toISOString();
+  if (!parsed || typeof parsed !== 'object') {
+    throw new Error('Invalid Scriptor JSON payload.');
+  }
 
-  // If parsed object is wrapped inside writingTelemetry
   const data = parsed.writingTelemetry || parsed;
+  if (isLegacyKeepTheRhythmPayload(parsed) || isLegacyKeepTheRhythmPayload(data)) {
+    throw new Error(
+      'Keep the Rhythm format is no longer supported. Please import a Scriptor .json file.'
+    );
+  }
 
+  const now = new Date().toISOString();
   const dailyTotals: Record<string, number> = {};
   const hourlyTotals: number[] = Array(24).fill(0);
   const dailyFiles: Record<string, DraftedFileRecord[]> = {};
@@ -182,132 +338,117 @@ export function parseKeepTheRhythmJson(
   let totalWords = 0;
   let totalChars = 0;
 
-  // Case A: Standard Keep the Rhythm data.json with stats.dailyActivity
-  const activities: Array<{
-    date: string;
-    filePath?: string;
-    changes?: Array<{ w?: number; c?: number; timeKey?: string }>;
-  }> = data.stats?.dailyActivity || data.dailyActivity || [];
+  const historyObj: Record<string, any> | null =
+    data.history && typeof data.history === 'object' && !Array.isArray(data.history)
+      ? data.history
+      : null;
 
-  if (activities.length > 0) {
-    for (const a of activities) {
-      if (!a.date) continue;
-      const dt = a.date;
-      let dayWords = 0;
+  if (historyObj) {
+    const umbrellas = detectUmbrellaFolders(historyObj);
 
-      for (const c of a.changes || []) {
-        const w = Number(c.w) || 0;
-        const charCount = Number(c.c) || 0;
-        if (w > 0) {
-          dayWords += w;
-          totalWords += w;
-          totalChars += charCount;
+    for (const [dt, rec] of Object.entries(historyObj)) {
+      if (!DATE_KEY_RX.test(dt) || !rec || typeof rec !== 'object') continue;
 
-          if (c.timeKey && typeof c.timeKey === 'string') {
-            const hr = parseInt(c.timeKey.split(':')[0], 10);
-            if (!isNaN(hr) && hr >= 0 && hr < 24) {
-              hourlyTotals[hr] += w;
-            }
+      const grossAdded = Number(rec.grossWordsAdded) || 0;
+      const netWords = Number(rec.netWords) || 0;
+      const fallbackWords = Number(rec.words) || Number(rec.w) || 0;
+      const dayWords =
+        grossAdded > 0 ? grossAdded : netWords > 0 ? netWords : Math.max(0, fallbackWords);
+
+      dailyTotals[dt] = dayWords;
+      totalWords += dayWords;
+
+      if (Array.isArray(rec.hourlyCounts) && rec.hourlyCounts.length === 24) {
+        for (let h = 0; h < 24; h++) {
+          hourlyTotals[h] += Math.max(0, Number(rec.hourlyCounts[h]) || 0);
+        }
+      } else if (Array.isArray(rec.sessions)) {
+        for (const s of rec.sessions) {
+          const hr = parseInt(String(s?.startTime || '').split(':')[0], 10);
+          const sessionWords = Math.max(0, Number(s?.grossAdded) || Number(s?.words) || 0);
+          if (!isNaN(hr) && hr >= 0 && hr < 24 && sessionWords > 0) {
+            hourlyTotals[hr] += sessionWords;
           }
         }
       }
 
-      dailyTotals[dt] = (dailyTotals[dt] || 0) + dayWords;
-
-      // Group project & file
-      if (a.filePath) {
-        const fp = a.filePath.replace(/\\/g, '/');
-        const parts = fp.split('/');
-        const fileName = parts.pop() || fp;
-        const folder = parts.join('/') || 'Root';
-
-        // Project identification
-        let projectName = parts[0] || 'Vault Root';
-        if (fp.includes('yenimegaproje2025')) projectName = 'yenimegaproje2025';
-        else if (fp.includes('Warband')) projectName = 'Warband';
-        else if (fp.includes('Ioren')) projectName = 'Ioren';
-        else if (fp.includes('Les Citoyens')) projectName = 'Les Citoyens';
-        else if (fp.includes('Kısa Hikayeler')) projectName = 'Kısa Hikayeler';
-        else if (fp.includes('Starship Troopers')) projectName = 'Essays & Reviews';
-
-        if (!projectsMap.has(projectName)) {
-          projectsMap.set(projectName, { words: 0, files: new Set(), days: new Set() });
+      const filesGrossEntries =
+        rec.filesGross && typeof rec.filesGross === 'object' ? Object.entries(rec.filesGross) : [];
+      if (filesGrossEntries.length > 0) {
+        for (const [name, fg] of filesGrossEntries as Array<[string, any]>) {
+          const w = Math.max(0, Number(fg?.added) || Number(fg?.net) || 0);
+          if (w <= 0) continue;
+          const projName = resolveScriptorProjectName(name, fg, umbrellas);
+          recordFileContribution(dt, name, w, fg?.filePath, projName, dailyFiles, projectsMap);
         }
-        const proj = projectsMap.get(projectName)!;
-        proj.words += dayWords;
-        proj.files.add(fp);
-        proj.days.add(dt);
-
-        if (!dailyFiles[dt]) dailyFiles[dt] = [];
-        const existingFile = dailyFiles[dt].find((f) => f.filePath === fp);
-        if (existingFile) {
-          existingFile.words += dayWords;
-        } else {
-          dailyFiles[dt].push({
-            filePath: fp,
-            fileName,
-            folder,
-            words: dayWords,
-          });
+      } else if (rec.filesTouched && typeof rec.filesTouched === 'object') {
+        for (const [name, wVal] of Object.entries(rec.filesTouched)) {
+          const w = Math.max(0, Number(wVal) || 0);
+          if (w <= 0) continue;
+          const projName = resolveScriptorProjectName(name, null, umbrellas);
+          recordFileContribution(dt, name, w, undefined, projName, dailyFiles, projectsMap);
         }
+      }
+
+      if (dailyFiles[dt]) {
+        dailyFiles[dt].sort((a, b) => b.words - a.words || a.fileName.localeCompare(b.fileName));
       }
     }
 
-    // Sort files within each day (highest word count first, then alphabetical)
-    for (const dt of Object.keys(dailyFiles)) {
-      dailyFiles[dt].sort((a, b) => b.words - a.words || a.fileName.localeCompare(b.fileName));
-    }
+    totalChars = Number(data.totalChars) || totalWords * 6;
   } else if (data.dailyTotals && typeof data.dailyTotals === 'object') {
-    // Case B: Pre-aggregated dailyTotals format
     for (const [dt, wordsVal] of Object.entries(data.dailyTotals)) {
-      const w = Number(wordsVal) || 0;
+      const w = Math.max(0, Number(wordsVal) || 0);
       dailyTotals[dt] = w;
       totalWords += w;
     }
-    totalChars = data.totalChars || totalWords * 6;
+    totalChars = Number(data.totalChars) || totalWords * 6;
     if (Array.isArray(data.hourlyTotals) && data.hourlyTotals.length === 24) {
       data.hourlyTotals.forEach((v: number, i: number) => {
-        hourlyTotals[i] = v;
+        hourlyTotals[i] = Math.max(0, Number(v) || 0);
       });
     }
     if (data.dailyFiles && typeof data.dailyFiles === 'object') {
       Object.assign(dailyFiles, data.dailyFiles);
     }
   } else {
-    // Case C: Generic key-value dates or nested stats
     for (const [k, v] of Object.entries(data)) {
-      if (/^\d{4}-\d{2}-\d{2}$/.test(k)) {
-        const w =
-          typeof v === 'number'
-            ? v
-            : typeof v === 'object' && v !== null
-            ? Number((v as any).words || (v as any).w || 0)
-            : 0;
-        dailyTotals[k] = w;
-        totalWords += w;
+      if (!DATE_KEY_RX.test(k)) continue;
+      let w = 0;
+      if (typeof v === 'number') {
+        w = Math.max(0, v);
+      } else if (v && typeof v === 'object') {
+        const rec = v as Record<string, any>;
+        const gross = Number(rec.grossWordsAdded) || 0;
+        const net = Number(rec.netWords) || 0;
+        const fallback = Number(rec.words) || Number(rec.w) || 0;
+        w = gross > 0 ? gross : net > 0 ? net : Math.max(0, fallback);
       }
+      dailyTotals[k] = w;
+      totalWords += w;
     }
     totalChars = totalWords * 6;
   }
 
-  // Active days count: count of dates with words > 0
   const activeDaysCount = Object.values(dailyTotals).filter((w) => w > 0).length;
 
-  // Daily goal: extract from settings or default to 300
   const dailyGoal =
     Number(data.settings?.dailyGoal) ||
     Number(data.dailyGoal) ||
     existingTelemetry?.dailyGoal ||
     300;
 
-  // Completed goal days
   const completedGoalDates = Object.entries(dailyTotals)
-    .filter(([_, w]) => w >= dailyGoal)
+    .filter(([dt, w]) => {
+      if (historyObj && typeof historyObj[dt]?.goalMet === 'boolean') {
+        return historyObj[dt].goalMet;
+      }
+      return w >= dailyGoal;
+    })
     .map(([dt]) => dt)
     .sort();
   const completedGoalDaysCount = completedGoalDates.length;
 
-  // Format projects
   let projects: WritingProjectStat[] = [];
   if (projectsMap.size > 0) {
     projects = Array.from(projectsMap.entries())
@@ -324,7 +465,6 @@ export function parseKeepTheRhythmJson(
     projects = existingTelemetry.projects;
   }
 
-  // Matched reviews: preserve existing or fallback
   const matchedReviews =
     data.matchedReviews && typeof data.matchedReviews === 'object'
       ? data.matchedReviews
@@ -333,7 +473,7 @@ export function parseKeepTheRhythmJson(
   return {
     version: '1.0',
     updatedAt: now,
-    source: 'keep-the-rhythm',
+    source: 'scriptor',
     totalWords,
     totalChars,
     dailyGoal,
@@ -399,36 +539,55 @@ export function exportTelemetryToCsv(telemetry: WritingTelemetryData): string {
 }
 
 /**
- * Generates a clean, repaired Keep the Rhythm data.json ready to replace a corrupt file on disk.
+ * Generates a clean, repaired Scriptor telemetry JSON ready to replace a corrupt file on disk.
  */
-export function generateRepairedKeepTheRhythmJson(telemetry: WritingTelemetryData): string {
-  const dailyActivity: Array<{
-    date: string;
-    filePath: string;
-    changes: Array<{ w: number; c: number; timeKey: string }>;
-  }> = [];
+export function generateRepairedScriptorJson(telemetry: WritingTelemetryData): string {
+  const history: Record<string, Record<string, any>> = {};
+  const sortedDates = Array.from(
+    new Set([
+      ...Object.keys(telemetry.dailyTotals || {}),
+      ...Object.keys(telemetry.dailyFiles || {}),
+    ])
+  ).sort();
 
-  for (const [dt, files] of Object.entries(telemetry.dailyFiles || {})) {
+  for (const dt of sortedDates) {
+    const dayWords = telemetry.dailyTotals?.[dt] || 0;
+    const files = telemetry.dailyFiles?.[dt] || [];
+    const filesTouched: Record<string, number> = {};
+    const filesGross: Record<string, Record<string, any>> = {};
+
     for (const f of files) {
-      dailyActivity.push({
-        date: dt,
+      const baseName = f.fileName.replace(/\.md$/, '');
+      filesTouched[baseName] = (filesTouched[baseName] || 0) + f.words;
+      filesGross[baseName] = {
+        added: f.words,
+        removed: 0,
+        net: f.words,
         filePath: f.filePath,
-        changes: [{ w: f.words, c: f.words * 6, timeKey: '12:00' }],
-      });
+      };
     }
+
+    history[dt] = {
+      date: dt,
+      netWords: dayWords,
+      grossWordsAdded: dayWords,
+      grossWordsRemoved: 0,
+      goalMet: dayWords >= telemetry.dailyGoal,
+      isRevision: false,
+      filesTouched,
+      filesGross,
+      hourlyCounts: Array(24).fill(0),
+    };
   }
 
   const exportPayload = {
+    version: '1.0.0',
+    source: 'scriptor',
     settings: {
       dailyGoal: telemetry.dailyGoal,
-      weeklyGoal: telemetry.dailyGoal * 7,
-      monthlyGoal: telemetry.dailyGoal * 30,
+      logFolder: 'scriptor-plugin',
     },
-    stats: {
-      dailyActivity,
-      totalWords: telemetry.totalWords,
-      totalChars: telemetry.totalChars,
-    },
+    history,
     exLibrisColophon: {
       repairedAt: new Date().toISOString(),
       engine: 'Ex Libris Telemetry Doctor',

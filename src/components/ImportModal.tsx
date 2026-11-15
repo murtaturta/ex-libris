@@ -30,8 +30,8 @@ import {
   mergeSingleLetterboxdCsv,
 } from '../lib/parsers/letterboxdParser';
 import {
-  isKeepTheRhythmJson,
-  parseKeepTheRhythmJson,
+  isScriptorJson,
+  parseScriptorJson,
 } from '../lib/parsers/writingTelemetryParser';
 import type { LetterboxdArchiveData, WritingTelemetryData } from '../types/library';
 import {
@@ -50,7 +50,6 @@ import {
   FileDown,
   FolderArchive,
   ArrowRight,
-  Film,
 } from 'lucide-react';
 
 export interface ImportModalProps {
@@ -216,25 +215,25 @@ export const ImportModal: React.FC<ImportModalProps> = ({
           );
         }
       }
-      // 4. JSON: Obsidian Keep the Rhythm data.json or Writing Telemetry (.json)
+      // 4. JSON: Obsidian Scriptor telemetry (.json)
       else if (fileName.endsWith('.json')) {
         const text = await file.text();
-        if (isKeepTheRhythmJson(text)) {
-          setStatusMessage(`Parsing Obsidian Keep the Rhythm writing telemetry from ${file.name}...`);
-          const writingData = parseKeepTheRhythmJson(text, userState?.writingTelemetry);
+        if (isScriptorJson(text)) {
+          setStatusMessage(`Parsing Obsidian Scriptor writing telemetry from ${file.name}...`);
+          const writingData = parseScriptorJson(text, userState?.writingTelemetry);
           onWritingTelemetryImported?.(writingData);
           setStatus('success');
           setStatusMessage(
-            `Synced Obsidian Keep the Rhythm telemetry from ${file.name}: ${writingData.totalWords.toLocaleString()} words drafted across ${writingData.activeDaysCount} active days (${writingData.projects.length} projects). Scriptorium matrix updated!`
+            `Synced Obsidian Scriptor telemetry from ${file.name}: ${writingData.totalWords.toLocaleString()} words drafted across ${writingData.activeDaysCount} active days (${writingData.projects.length} projects). Scriptorium matrix updated!`
           );
         } else {
           throw new Error(
-            `${file.name} does not match Obsidian Keep the Rhythm format. Expected a plugin data.json with dailyActivity or vault drafting telemetry.`
+            `${file.name} does not match Obsidian Scriptor format. Expected a Scriptor data.json or scriptor_telemetry_*.json export.`
           );
         }
       } else {
         throw new Error(
-          'Unsupported format. Please select a Goodreads .csv, Letterboxd .csv/.zip, Keep the Rhythm data.json, full export .zip, Kindle Notebook .html, or My Clippings.txt file.'
+          'Unsupported format. Please select a Goodreads .csv, Scriptor .json (data.json or scriptor_telemetry_*.json), full export .zip, Kindle Notebook .html, or My Clippings.txt file.'
         );
       }
     } catch (err: any) {
@@ -398,7 +397,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
                 Archive, Profiles &amp; Literature Notes
               </h2>
               <p className="text-xs text-[var(--text-muted)] font-mono-tabular">
-                Public Profile URL · File Drops (.csv, .zip, .html, .txt) · Markdown Exporter
+                Public Profile URL · File Drops (.csv, .zip, .html, .txt, .json) · Markdown Exporter
               </p>
             </div>
           </div>
@@ -498,7 +497,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
                 <div className="flex items-center gap-2">
                   <Archive className="w-4 h-4 text-[var(--accent-secondary)] shrink-0" />
                   <h3 className="text-xs font-mono-tabular uppercase tracking-wider text-[var(--text-ink)] font-bold">
-                    Or Drop Classic Files (.csv, .zip, .html, .txt)
+                    Or Drop Files (.csv, .zip, .html, .txt, .json)
                   </h3>
                 </div>
 
@@ -521,7 +520,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
                     Drag and drop your file here
                   </p>
                   <p className="text-xs text-[var(--text-muted)] mt-1 max-w-sm">
-                    Drop a <strong className="text-[var(--text-ink)]">goodreads_library_export.csv</strong>, Letterboxd <strong className="text-[var(--text-ink)]">diary.csv / .zip</strong>, account export <strong className="text-[var(--text-ink)]">.zip</strong>, Kindle <strong className="text-[var(--text-ink)]">Notebook.html</strong>, or <strong className="text-[var(--text-ink)]">My Clippings.txt</strong>.
+                    Drop a <strong className="text-[var(--text-ink)]">goodreads_library_export.csv</strong>, account export <strong className="text-[var(--text-ink)]">.zip</strong>, Kindle <strong className="text-[var(--text-ink)]">Notebook.html / My Clippings.txt</strong>, or Scriptor <strong className="text-[var(--text-ink)]">.json</strong>.
                   </p>
 
                   <button
@@ -574,11 +573,11 @@ export const ImportModal: React.FC<ImportModalProps> = ({
 
                   <div className="p-2.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)]">
                     <div className="flex items-center gap-1.5 font-semibold text-xs text-[var(--text-ink)] mb-1">
-                      <Film className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-                      <span>Letterboxd .CSV / .ZIP</span>
+                      <Feather className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                      <span>Scriptor .JSON</span>
                     </div>
                     <p className="text-[11px] text-[var(--text-muted)] leading-tight">
-                      diary.csv, watched.csv, or account export .zip for screen intake.
+                      data.json or scriptor_telemetry_*.json for Scriptorium writing telemetry.
                     </p>
                   </div>
                 </div>

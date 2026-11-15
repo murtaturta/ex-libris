@@ -244,7 +244,7 @@ describe('Kindle Reading Matrix & Heatmap Engine', () => {
       writingTelemetry: {
         version: '1.0',
         updatedAt: '2026-03-23T15:00:00.000Z',
-        source: 'keep-the-rhythm',
+        source: 'scriptor',
         totalWords: 1500,
         totalChars: 8500,
         dailyGoal: 300,

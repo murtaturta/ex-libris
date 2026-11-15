@@ -69,20 +69,15 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
   const [selectedFormat, setSelectedFormat] = useState<string>('all');
 
   // Boolean toggles
+  const [showMoreFilters, setShowMoreFilters] = useState(false);
   const [seriesOnly, setSeriesOnly] = useState(false);
   const [hasReviewOnly, setHasReviewOnly] = useState(false);
-  const [kindleNotesOnly, setKindleNotesOnly] = useState(false);
+  const [hasMarginaliaOnly, setHasMarginaliaOnly] = useState(false);
   const [multiSessionOnly, setMultiSessionOnly] = useState(false);
   const [onHoldOnly, setOnHoldOnly] = useState(false);
-  const [hasClippingsOnly, setHasClippingsOnly] = useState(false);
 
   // Sorting
   const [sortBy, setSortBy] = useState<string>('dateReadDesc');
-
-  // Dedicated spine shelf filters
-  const [spineFilter5Star, setSpineFilter5Star] = useState<boolean>(false);
-  const [spineFilterMarginalia, setSpineFilterMarginalia] = useState<boolean>(false);
-  const [spineFilterTranslations, setSpineFilterTranslations] = useState<boolean>(false);
 
   // Spine Shelf scale mode: uniform ('regularized') or proportional (1, 2, or 4 pages per pixel)
   const [spineScale, setSpineScale] = useState<'regularized' | 1 | 2 | 4>(2);
@@ -112,13 +107,9 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
     setSelectedFormat('all');
     setSeriesOnly(false);
     setHasReviewOnly(false);
-    setKindleNotesOnly(false);
+    setHasMarginaliaOnly(false);
     setMultiSessionOnly(false);
     setOnHoldOnly(false);
-    setHasClippingsOnly(false);
-    setSpineFilter5Star(false);
-    setSpineFilterMarginalia(false);
-    setSpineFilterTranslations(false);
     setSortBy('dateReadDesc');
     setVisibleCount(48);
   };
@@ -232,7 +223,13 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
       // 9. Boolean toggles
       if (seriesOnly && !book.seriesName) return false;
       if (hasReviewOnly && !book.myReview?.trim()) return false;
-      if (kindleNotesOnly && (!book.kindleNotes || book.kindleNotes.length === 0)) return false;
+      if (
+        hasMarginaliaOnly &&
+        !clippingsBookIdSet.has(book.id) &&
+        (!book.kindleNotes || book.kindleNotes.length === 0)
+      ) {
+        return false;
+      }
       if (
         multiSessionOnly &&
         !(book.readCount > 1 || (book.readingSessions && book.readingSessions.length > 1))
@@ -240,7 +237,6 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
         return false;
       }
       if (onHoldOnly && override?.nightstandState !== 'on-hold') return false;
-      if (hasClippingsOnly && !clippingsBookIdSet.has(book.id)) return false;
 
       return true;
     });
@@ -259,10 +255,9 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
     selectedFormat,
     seriesOnly,
     hasReviewOnly,
-    kindleNotesOnly,
+    hasMarginaliaOnly,
     multiSessionOnly,
     onHoldOnly,
-    hasClippingsOnly,
     clippingsBookIdSet,
   ]);
 
@@ -321,34 +316,8 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
     });
   }, [filteredBooks, sortBy]);
 
-  // Spine Shelf filtered books
-  const shelfBooks = useMemo(() => {
-    return sortedBooks.filter((book) => {
-      if (spineFilter5Star && book.myRating !== 5) return false;
-      if (spineFilterMarginalia) {
-        const hasNotes =
-          (book.kindleNotes && book.kindleNotes.length > 0) || clippingsBookIdSet.has(book.id);
-        if (!hasNotes) return false;
-      }
-      if (spineFilterTranslations) {
-        const profile = classifyBookLanguageAndFormat(
-          book,
-          userState?.bookOverrides?.[book.id],
-          enrichmentCache?.[book.id]
-        );
-        if (!profile.isTranslation) return false;
-      }
-      return true;
-    });
-  }, [
-    sortedBooks,
-    spineFilter5Star,
-    spineFilterMarginalia,
-    spineFilterTranslations,
-    userState,
-    enrichmentCache,
-    clippingsBookIdSet,
-  ]);
+  // Spine Shelf displays the main sorted & filtered book list directly
+  const shelfBooks = sortedBooks;
 
   // Spine Shelf: cluster series volumes together (anchored at the first member's sorted position,
   // ordered internally by series number). Only series with 2+ visible volumes form a group.
@@ -395,22 +364,25 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
   }, [shelfBooks, groupSeries]);
 
   const visibleBooks = sortedBooks.slice(0, visibleCount);
+  const activeAdvancedFilterCount = [
+    selectedEditionLang !== 'all',
+    selectedOriginalLang !== 'all',
+    selectedTranslationMode !== 'all',
+    selectedFormat !== 'all',
+    selectedLength !== 'all',
+    selectedEra !== 'all',
+    onHoldOnly,
+    hasMarginaliaOnly,
+    seriesOnly,
+    hasReviewOnly,
+    multiSessionOnly,
+  ].filter(Boolean).length;
+
   const isFiltered =
     searchQuery.trim() !== '' ||
     selectedShelf !== 'all' ||
     selectedRating !== 'all' ||
-    selectedLength !== 'all' ||
-    selectedEra !== 'all' ||
-    selectedEditionLang !== 'all' ||
-    selectedOriginalLang !== 'all' ||
-    selectedTranslationMode !== 'all' ||
-    selectedFormat !== 'all' ||
-    seriesOnly ||
-    hasReviewOnly ||
-    kindleNotesOnly ||
-    multiSessionOnly ||
-    onHoldOnly ||
-    hasClippingsOnly;
+    activeAdvancedFilterCount > 0;
 
   return (
     <div className="space-y-6 pb-20">
@@ -523,6 +495,30 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
               <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--text-muted)]" />
             </div>
 
+            <button
+              type="button"
+              onClick={() => setShowMoreFilters((prev) => !prev)}
+              aria-expanded={showMoreFilters}
+              className={`flex items-center gap-1.5 px-2.5 py-2 rounded-md border text-xs font-medium transition-colors cursor-pointer ${
+                showMoreFilters || activeAdvancedFilterCount > 0
+                  ? 'border-[var(--accent-primary)]/60 bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] font-semibold'
+                  : 'border-[var(--border-ledger)] bg-[var(--bg-surface)] text-[var(--text-muted)] hover:text-[var(--text-ink)]'
+              }`}
+              title="Toggle language, format, length, era, and status filters"
+            >
+              <span>More Filters</span>
+              {activeAdvancedFilterCount > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full bg-[var(--accent-primary)] text-white text-[10px] font-mono-tabular font-bold leading-none">
+                  {activeAdvancedFilterCount}
+                </span>
+              )}
+              <ChevronDown
+                className={`w-3.5 h-3.5 transition-transform duration-150 ${
+                  showMoreFilters ? 'rotate-180' : ''
+                }`}
+              />
+            </button>
+
             {isFiltered && (
               <button
                 onClick={handleResetFilters}
@@ -602,189 +598,188 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
           </div>
         </div>
 
-        {/* Row 3: v0.2 Language Passport & Format Filter Console */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2 border-t border-[var(--border-ledger)]/60 text-xs">
-          {/* Reading Edition Language */}
-          <div className="flex items-center gap-1.5">
-            <Globe className="w-3.5 h-3.5 text-[var(--accent-secondary)] shrink-0" />
-            <span className="text-[var(--text-muted)] shrink-0">Reading Lang:</span>
-            <select
-              value={selectedEditionLang}
-              onChange={(e) => {
-                setSelectedEditionLang(e.target.value);
-                setVisibleCount(48);
-              }}
-              className="w-full py-1 px-2 rounded bg-[var(--bg-surface)] border border-[var(--border-ledger)] text-xs text-[var(--text-ink)] cursor-pointer truncate"
-            >
-              <option value="all">All Languages</option>
-              <option value="EN">English (EN)</option>
-              <option value="TR">Turkish (TR)</option>
-              <option value="FR">French (FR)</option>
-              <option value="Other">Other Languages</option>
-            </select>
-          </div>
+        {/* Rows 3 & 4: Collapsible Language, Format, Length, Era & Feature Filters */}
+        {showMoreFilters && (
+          <div className="space-y-4">
+            {/* Row 3: v0.2 Language Passport & Format Filter Console */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2 border-t border-[var(--border-ledger)]/60 text-xs">
+              {/* Reading Edition Language */}
+              <div className="flex items-center gap-1.5">
+                <Globe className="w-3.5 h-3.5 text-[var(--accent-secondary)] shrink-0" />
+                <span className="text-[var(--text-muted)] shrink-0">Reading Lang:</span>
+                <select
+                  value={selectedEditionLang}
+                  onChange={(e) => {
+                    setSelectedEditionLang(e.target.value);
+                    setVisibleCount(48);
+                  }}
+                  className="w-full py-1 px-2 rounded bg-[var(--bg-surface)] border border-[var(--border-ledger)] text-xs text-[var(--text-ink)] cursor-pointer truncate"
+                >
+                  <option value="all">All Languages</option>
+                  <option value="EN">English (EN)</option>
+                  <option value="TR">Turkish (TR)</option>
+                  <option value="FR">French (FR)</option>
+                  <option value="Other">Other Languages</option>
+                </select>
+              </div>
 
-          {/* Original Language */}
-          <div className="flex items-center gap-1.5">
-            <Languages className="w-3.5 h-3.5 text-[var(--accent-gold)] shrink-0" />
-            <span className="text-[var(--text-muted)] shrink-0">Original Lang:</span>
-            <select
-              value={selectedOriginalLang}
-              onChange={(e) => {
-                setSelectedOriginalLang(e.target.value);
-                setVisibleCount(48);
-              }}
-              className="w-full py-1 px-2 rounded bg-[var(--bg-surface)] border border-[var(--border-ledger)] text-xs text-[var(--text-ink)] cursor-pointer truncate"
-            >
-              <option value="all">All Originals</option>
-              <option value="EN">English (EN)</option>
-              <option value="TR">Turkish (TR)</option>
-              <option value="FR">French (FR)</option>
-              <option value="DE">German (DE)</option>
-              <option value="RU">Russian (RU)</option>
-              <option value="JA">Japanese (JA)</option>
-              <option value="PL">Polish (PL)</option>
-              <option value="ZH">Chinese (ZH)</option>
-              <option value="GRC">Ancient Greek (GRC)</option>
-              <option value="Other">ES/IT/PT/Other</option>
-            </select>
-          </div>
+              {/* Original Language */}
+              <div className="flex items-center gap-1.5">
+                <Languages className="w-3.5 h-3.5 text-[var(--accent-gold)] shrink-0" />
+                <span className="text-[var(--text-muted)] shrink-0">Original Lang:</span>
+                <select
+                  value={selectedOriginalLang}
+                  onChange={(e) => {
+                    setSelectedOriginalLang(e.target.value);
+                    setVisibleCount(48);
+                  }}
+                  className="w-full py-1 px-2 rounded bg-[var(--bg-surface)] border border-[var(--border-ledger)] text-xs text-[var(--text-ink)] cursor-pointer truncate"
+                >
+                  <option value="all">All Originals</option>
+                  <option value="EN">English (EN)</option>
+                  <option value="TR">Turkish (TR)</option>
+                  <option value="FR">French (FR)</option>
+                  <option value="DE">German (DE)</option>
+                  <option value="RU">Russian (RU)</option>
+                  <option value="JA">Japanese (JA)</option>
+                  <option value="PL">Polish (PL)</option>
+                  <option value="ZH">Chinese (ZH)</option>
+                  <option value="GRC">Ancient Greek (GRC)</option>
+                  <option value="Other">ES/IT/PT/Other</option>
+                </select>
+              </div>
 
-          {/* Translation Mode */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-[var(--text-muted)] shrink-0">Translation:</span>
-            <select
-              value={selectedTranslationMode}
-              onChange={(e) => {
-                setSelectedTranslationMode(e.target.value as any);
-                setVisibleCount(48);
-              }}
-              className="w-full py-1 px-2 rounded bg-[var(--bg-surface)] border border-[var(--border-ledger)] text-xs text-[var(--text-ink)] cursor-pointer truncate"
-            >
-              <option value="all">All Works</option>
-              <option value="original">Read in Original</option>
-              <option value="translated">Read in Translation</option>
-            </select>
-          </div>
+              {/* Translation Mode */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-[var(--text-muted)] shrink-0">Translation:</span>
+                <select
+                  value={selectedTranslationMode}
+                  onChange={(e) => {
+                    setSelectedTranslationMode(e.target.value as any);
+                    setVisibleCount(48);
+                  }}
+                  className="w-full py-1 px-2 rounded bg-[var(--bg-surface)] border border-[var(--border-ledger)] text-xs text-[var(--text-ink)] cursor-pointer truncate"
+                >
+                  <option value="all">All Works</option>
+                  <option value="original">Read in Original</option>
+                  <option value="translated">Read in Translation</option>
+                </select>
+              </div>
 
-          {/* Format */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-[var(--text-muted)] shrink-0">Format:</span>
-            <select
-              value={selectedFormat}
-              onChange={(e) => {
-                setSelectedFormat(e.target.value);
-                setVisibleCount(48);
-              }}
-              className="w-full py-1 px-2 rounded bg-[var(--bg-surface)] border border-[var(--border-ledger)] text-xs text-[var(--text-ink)] cursor-pointer truncate"
-            >
-              <option value="all">All Formats</option>
-              <option value="prose">Prose</option>
-              <option value="comic-manga">Graphic Novel / Manga</option>
-              <option value="short-essay">Short / Essay (&lt;80p)</option>
-              <option value="academic-ref">Academic / Reference</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Row 4: Length, Era, & Feature Badges */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-[var(--border-ledger)]/60 text-xs">
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Length Dropdown */}
-            <div className="flex items-center gap-1.5">
-              <span className="text-[var(--text-muted)]">Length:</span>
-              <select
-                value={selectedLength}
-                onChange={(e) => {
-                  setSelectedLength(e.target.value);
-                  setVisibleCount(48);
-                }}
-                className="py-1 px-2 rounded bg-[var(--bg-surface)] border border-[var(--border-ledger)] text-xs text-[var(--text-ink)] cursor-pointer"
-              >
-                <option value="all">All Lengths</option>
-                <option value="novella">&lt; 200 pp (Novella)</option>
-                <option value="standard">200–400 pp (Standard)</option>
-                <option value="hefty">400–700 pp (Hefty)</option>
-                <option value="tome">700+ pp (Tome)</option>
-              </select>
+              {/* Format */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-[var(--text-muted)] shrink-0">Format:</span>
+                <select
+                  value={selectedFormat}
+                  onChange={(e) => {
+                    setSelectedFormat(e.target.value);
+                    setVisibleCount(48);
+                  }}
+                  className="w-full py-1 px-2 rounded bg-[var(--bg-surface)] border border-[var(--border-ledger)] text-xs text-[var(--text-ink)] cursor-pointer truncate"
+                >
+                  <option value="all">All Formats</option>
+                  <option value="prose">Prose</option>
+                  <option value="comic-manga">Graphic Novel / Manga</option>
+                  <option value="short-essay">Short / Essay (&lt;80p)</option>
+                  <option value="academic-ref">Academic / Reference</option>
+                </select>
+              </div>
             </div>
 
-            {/* Era Dropdown */}
-            <div className="flex items-center gap-1.5">
-              <span className="text-[var(--text-muted)]">Era:</span>
-              <select
-                value={selectedEra}
-                onChange={(e) => {
-                  setSelectedEra(e.target.value);
-                  setVisibleCount(48);
-                }}
-                className="py-1 px-2 rounded bg-[var(--bg-surface)] border border-[var(--border-ledger)] text-xs text-[var(--text-ink)] cursor-pointer"
-              >
-                <option value="all">All Eras</option>
-                <option value="classical">Classical / BCE (&lt; 500)</option>
-                <option value="pre-modern">Pre-Modern (500–1800)</option>
-                <option value="19th">19th Century (1801–1900)</option>
-                <option value="20th">20th Century (1901–2000)</option>
-                <option value="contemporary">Contemporary (2001+)</option>
-              </select>
+            {/* Row 4: Length, Era, & Feature Badges */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-[var(--border-ledger)]/60 text-xs">
+              <div className="flex flex-wrap items-center gap-3">
+                {/* Length Dropdown */}
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[var(--text-muted)]">Length:</span>
+                  <select
+                    value={selectedLength}
+                    onChange={(e) => {
+                      setSelectedLength(e.target.value);
+                      setVisibleCount(48);
+                    }}
+                    className="py-1 px-2 rounded bg-[var(--bg-surface)] border border-[var(--border-ledger)] text-xs text-[var(--text-ink)] cursor-pointer"
+                  >
+                    <option value="all">All Lengths</option>
+                    <option value="novella">&lt; 200 pp (Novella)</option>
+                    <option value="standard">200–400 pp (Standard)</option>
+                    <option value="hefty">400–700 pp (Hefty)</option>
+                    <option value="tome">700+ pp (Tome)</option>
+                  </select>
+                </div>
+
+                {/* Era Dropdown */}
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[var(--text-muted)]">Era:</span>
+                  <select
+                    value={selectedEra}
+                    onChange={(e) => {
+                      setSelectedEra(e.target.value);
+                      setVisibleCount(48);
+                    }}
+                    className="py-1 px-2 rounded bg-[var(--bg-surface)] border border-[var(--border-ledger)] text-xs text-[var(--text-ink)] cursor-pointer"
+                  >
+                    <option value="all">All Eras</option>
+                    <option value="classical">Classical / BCE (&lt; 500)</option>
+                    <option value="pre-modern">Pre-Modern (500–1800)</option>
+                    <option value="19th">19th Century (1801–1900)</option>
+                    <option value="20th">20th Century (1901–2000)</option>
+                    <option value="contemporary">Contemporary (2001+)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Boolean Feature Chips */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                {[
+                  {
+                    label: 'On Hold',
+                    active: onHoldOnly,
+                    icon: <PauseCircle className="w-3 h-3" />,
+                    toggle: () => setOnHoldOnly(!onHoldOnly),
+                  },
+                  {
+                    label: 'Has Marginalia',
+                    active: hasMarginaliaOnly,
+                    icon: <BookmarkCheck className="w-3 h-3" />,
+                    toggle: () => setHasMarginaliaOnly(!hasMarginaliaOnly),
+                  },
+                  {
+                    label: 'Series Only',
+                    active: seriesOnly,
+                    icon: null,
+                    toggle: () => setSeriesOnly(!seriesOnly),
+                  },
+                  {
+                    label: 'Has Review',
+                    active: hasReviewOnly,
+                    icon: null,
+                    toggle: () => setHasReviewOnly(!hasReviewOnly),
+                  },
+                  {
+                    label: 'Multi-Session',
+                    active: multiSessionOnly,
+                    icon: null,
+                    toggle: () => setMultiSessionOnly(!multiSessionOnly),
+                  },
+                ].map((chip, idx) => (
+                  <button
+                    key={idx}
+                    onClick={chip.toggle}
+                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors cursor-pointer border ${
+                      chip.active
+                        ? 'bg-[var(--accent-secondary)] text-white border-[var(--accent-secondary)] font-semibold shadow-2xs'
+                        : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border-[var(--border-ledger)] hover:text-[var(--text-ink)]'
+                    }`}
+                  >
+                    {chip.icon}
+                    <span>{chip.label}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
-
-          {/* Boolean Feature Chips */}
-          <div className="flex flex-wrap items-center gap-1.5">
-            {[
-              {
-                label: 'On Hold',
-                active: onHoldOnly,
-                icon: <PauseCircle className="w-3 h-3" />,
-                toggle: () => setOnHoldOnly(!onHoldOnly),
-              },
-              {
-                label: 'Has Clippings',
-                active: hasClippingsOnly,
-                icon: <BookmarkCheck className="w-3 h-3" />,
-                toggle: () => setHasClippingsOnly(!hasClippingsOnly),
-              },
-              {
-                label: 'Series Only',
-                active: seriesOnly,
-                icon: null,
-                toggle: () => setSeriesOnly(!seriesOnly),
-              },
-              {
-                label: 'Has Review',
-                active: hasReviewOnly,
-                icon: null,
-                toggle: () => setHasReviewOnly(!hasReviewOnly),
-              },
-              {
-                label: 'Kindle Notes',
-                active: kindleNotesOnly,
-                icon: null,
-                toggle: () => setKindleNotesOnly(!kindleNotesOnly),
-              },
-              {
-                label: 'Multi-Session',
-                active: multiSessionOnly,
-                icon: null,
-                toggle: () => setMultiSessionOnly(!multiSessionOnly),
-              },
-            ].map((chip, idx) => (
-              <button
-                key={idx}
-                onClick={chip.toggle}
-                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors cursor-pointer border ${
-                  chip.active
-                    ? 'bg-[var(--accent-secondary)] text-white border-[var(--accent-secondary)] font-semibold shadow-2xs'
-                    : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border-[var(--border-ledger)] hover:text-[var(--text-ink)]'
-                }`}
-              >
-                {chip.icon}
-                <span>{chip.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
+        )}
       </section>
 
       {/* 3. Empty State */}
@@ -1055,100 +1050,6 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
       {/* 5. MODE 2: Continuous Full-Page Top-to-Bottom Stacked Spine Shelf View */}
       {viewMode === 'shelf' && sortedBooks.length > 0 && (
         <div className="flex flex-col w-full space-y-3">
-          {/* Tactile Spine Shelf Controls: Sort Presets & Quick Filter Strip */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-3.5 py-2.5 rounded-lg bg-[var(--bg-card)] border border-[var(--border-ledger)] text-xs font-mono-tabular shadow-2xs">
-            {/* Left: Tactile Sort Presets */}
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-[var(--text-muted)] font-semibold uppercase text-[10px] tracking-wider mr-1">
-                Spine Order:
-              </span>
-              {[
-                { id: 'dateReadDesc', label: 'Reading Flow', title: 'Chronological reading flow (most recent first)' },
-                { id: 'pagesDesc', label: 'Doorstoppers', title: 'Thickest to thinnest volume' },
-                { id: 'pagesAsc', label: 'Slim Volumes', title: 'Thinnest to thickest volume' },
-                { id: 'ratingDesc', label: '5★ Canon', title: 'Critical canon (highest rating first)' },
-                { id: 'pubYearAsc', label: 'Publication Era', title: 'Antiquity to contemporary chronology' },
-              ].map((s) => (
-                <button
-                  key={s.id}
-                  type="button"
-                  onClick={() => setSortBy(s.id)}
-                  title={s.title}
-                  className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-colors cursor-pointer ${
-                    sortBy === s.id
-                      ? 'bg-[var(--accent-primary)] text-white shadow-2xs'
-                      : 'bg-[var(--bg-surface)] text-[var(--text-muted)] hover:text-[var(--text-ink)] border border-[var(--border-ledger)]'
-                  }`}
-                >
-                  {s.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Right: Quick Filter Toggles */}
-            <div className="flex flex-wrap items-center gap-1.5 pt-2 sm:pt-0 border-t sm:border-t-0 border-[var(--border-ledger)]/60">
-              <span className="text-[var(--text-muted)] font-semibold uppercase text-[10px] tracking-wider mr-1">
-                Focus:
-              </span>
-              <button
-                type="button"
-                onClick={() => setSpineFilter5Star((v) => !v)}
-                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-semibold transition-colors cursor-pointer border ${
-                  spineFilter5Star
-                    ? 'bg-amber-400/20 border-amber-400/60 text-amber-700 dark:text-amber-200'
-                    : 'bg-[var(--bg-surface)] border-[var(--border-ledger)] text-[var(--text-muted)] hover:text-[var(--text-ink)]'
-                }`}
-                title="Filter to 5-star canon works only"
-              >
-                <Star className={`w-3 h-3 ${spineFilter5Star ? 'fill-current' : ''}`} />
-                <span>5★ Canon</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setSpineFilterMarginalia((v) => !v)}
-                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-semibold transition-colors cursor-pointer border ${
-                  spineFilterMarginalia
-                    ? 'bg-emerald-500/20 border-emerald-400/60 text-emerald-800 dark:text-emerald-200'
-                    : 'bg-[var(--bg-surface)] border-[var(--border-ledger)] text-[var(--text-muted)] hover:text-[var(--text-ink)]'
-                }`}
-                title="Filter to books with Kindle notes or highlights"
-              >
-                <Feather className="w-3 h-3" />
-                <span>With Marginalia</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setSpineFilterTranslations((v) => !v)}
-                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-semibold transition-colors cursor-pointer border ${
-                  spineFilterTranslations
-                    ? 'bg-[var(--accent-gold)]/20 border-[var(--accent-gold)]/60 text-[var(--text-ink)]'
-                    : 'bg-[var(--bg-surface)] border-[var(--border-ledger)] text-[var(--text-muted)] hover:text-[var(--text-ink)]'
-                }`}
-                title="Filter to translated editions only"
-              >
-                <Languages className="w-3 h-3" />
-                <span>Translations</span>
-              </button>
-
-              {(spineFilter5Star || spineFilterMarginalia || spineFilterTranslations) && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSpineFilter5Star(false);
-                    setSpineFilterMarginalia(false);
-                    setSpineFilterTranslations(false);
-                  }}
-                  className="px-1.5 py-1 text-[10px] text-[var(--text-muted)] hover:text-[var(--accent-primary)] cursor-pointer"
-                  title="Clear spine filters"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              )}
-            </div>
-          </div>
-
           {/* Spine Scale Toggle Bar */}
           <div className="flex flex-wrap items-center justify-between gap-3 px-3.5 py-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-ledger)] text-xs font-mono-tabular shadow-2xs">
             <div className="flex items-center gap-2 text-[var(--text-muted)]">
@@ -1223,28 +1124,6 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
 
           {/* Continuous Top-to-Bottom Spine Stack */}
           <div className="flex flex-col w-full">
-            {shelfBooks.length === 0 ? (
-              <div className="py-12 text-center rounded-lg bg-[var(--bg-card)] border border-dashed border-[var(--border-ledger)] my-2">
-                <BookOpen className="w-8 h-8 text-[var(--text-muted)]/50 mx-auto mb-2" />
-                <p className="font-serif-editorial text-sm font-bold text-[var(--text-ink)]">
-                  No volumes match current shelf filters
-                </p>
-                <p className="text-xs text-[var(--text-muted)] mt-0.5">
-                  Try clearing the 5★ Canon, Marginalia, or Translations filters above.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSpineFilter5Star(false);
-                    setSpineFilterMarginalia(false);
-                    setSpineFilterTranslations(false);
-                  }}
-                  className="mt-3 px-3 py-1 rounded bg-[var(--accent-primary)] text-white text-xs font-semibold cursor-pointer shadow-xs"
-                >
-                  Clear Shelf Filters
-                </button>
-              </div>
-            ) : (
               <div className="flex flex-col gap-[3px] w-full">
                 {shelfGroups.map((group) => {
                 const spines = group.books.map((book) => {
@@ -1439,7 +1318,6 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                 );
               })}
             </div>
-            )}
 
             {/* Single Full-Width Wooden Plinth at the Base of the Continuous Stack */}
             <div className="shelf-wood-ledge h-6 w-full rounded-b-sm shadow-md flex items-center justify-between px-4 border-t border-amber-900/40">

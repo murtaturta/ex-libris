@@ -123,7 +123,7 @@ describe('Scriptor Obsidian Plugin Verification Suite', () => {
     expect(styles).toContain('var(--interactive-accent)');
   });
 
-  it('implements Hero 7-Day Velocity Sparkline, Per-File Pruning Engine, and Project Horizon telemetry', () => {
+  it('implements Hero 7-Day Velocity Sparkline, Per-File Pruning Engine, and dynamic Project Horizon telemetry', () => {
     const mainJs = fs.readFileSync(path.join(pluginDir, 'main.js'), 'utf8');
     const styles = fs.readFileSync(path.join(pluginDir, 'styles.css'), 'utf8');
 
@@ -132,9 +132,27 @@ describe('Scriptor Obsidian Plugin Verification Suite', () => {
     expect(mainJs).toContain('filesGross');
     expect(mainJs).toContain('scriptor-pruning-row');
     expect(mainJs).toContain('computeProjectAndCadenceMetrics');
+    expect(mainJs).toContain('extractNoteProject');
+    expect(mainJs).toContain('cleanProjectValue');
+    expect(mainJs).toContain('seg-rank-');
     expect(mainJs).toContain('formatChapterMilestone');
     expect(styles).toContain('.scriptor-sparkline-bar');
     expect(styles).toContain('.scriptor-horizon-card');
+    expect(styles).toContain('.scriptor-alloc-seg.seg-rank-1');
+    expect(styles).toContain('.scriptor-alloc-seg.seg-rank-5');
+  });
+
+  it('uses local timezone date keys and persists active sessions without closing on disk sync', () => {
+    const mainJs = fs.readFileSync(path.join(pluginDir, 'main.js'), 'utf8');
+
+    expect(mainJs).toContain('getLocalDateStr');
+    expect(mainJs).not.toContain('toISOString().slice(0, 10)');
+    expect(mainJs).toContain('syncActiveSessionToRecord');
+
+    const saveMatch = mainJs.match(/async saveTelemetryToDisk\(\)\s*\{[\s\S]*?\}/);
+    expect(saveMatch).not.toBeNull();
+    expect(saveMatch![0]).toContain('syncActiveSessionToRecord');
+    expect(saveMatch![0]).not.toContain('closeActiveSession');
   });
 
   it('implements lightweight real-time live matrix shading updates on active typing', () => {

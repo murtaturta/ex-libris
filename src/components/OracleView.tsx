@@ -8,32 +8,24 @@ import {
   LibraryBundle,
   UserLocalState,
 } from '../types/library';
-import { ExternalDiscoverySection } from './ExternalDiscoverySection';
 import {
   OracleFilters,
   OracleCandidate,
-  ReadingFlight,
   getOracleCandidates,
   getUnfinishedSeries,
   getTrustedAuthorPicks,
   computeFormatVelocity,
-  generateReadingFlights,
-  computeAdaptationBridge,
 } from '../lib/analytics/engine';
-import { formatStarRating } from '../lib/parsers/letterboxdParser';
 import {
   classifyBookLanguageAndFormat,
   FORMAT_LABELS,
-  LANGUAGE_LABELS,
 } from '../lib/classifiers/languageAndFormat';
 import { formatPublicationYear } from '../lib/formatters';
 import { getGoodreadsBookUrl, getGoodreadsAuthorUrl } from '../lib/links/goodreadsLinks';
 import {
   Sparkles,
   Shuffle,
-  BookOpen,
   Star,
-  Clock,
   Compass,
   ArrowRight,
   CheckCircle2,
@@ -43,8 +35,8 @@ import {
   Languages,
   Zap,
   ExternalLink,
-  Film,
-  BookmarkCheck,
+  SlidersHorizontal,
+  RotateCcw,
 } from 'lucide-react';
 
 interface OracleViewProps {
@@ -61,22 +53,20 @@ interface OracleViewProps {
 export const OracleView: React.FC<OracleViewProps> = ({
   bundle,
   onSelectBook,
-  onSelectBookById,
   userState,
   enrichmentCache,
   onOpenEnrichModal,
-  onToggleWantList,
-  onRemoveWantListItem,
 }) => {
-  // Oracle Core Filters
+  // Primary filters
   const [commitment, setCommitment] = useState<'any' | 'sprint' | 'deep' | 'epic'>('any');
   const [dust, setDust] = useState<'any' | 'forgotten' | 'recent'>('any');
   const [era, setEra] = useState<
     'any' | 'classical' | 'premodern' | 'nineteenth' | 'twentieth' | 'contemporary'
   >('any');
-
-  // v0.2 Language & Format filters
   const [editionLanguage, setEditionLanguage] = useState<LanguageCode | 'any'>('any');
+
+  // Secondary filters (collapsed under More Filters)
+  const [showMoreFilters, setShowMoreFilters] = useState(false);
   const [originalLanguage, setOriginalLanguage] = useState<LanguageCode | 'any'>('any');
   const [translationMode, setTranslationMode] = useState<
     'any' | 'original' | 'translated' | 'trusted-translator' | 'turkish-edition'
@@ -86,17 +76,27 @@ export const OracleView: React.FC<OracleViewProps> = ({
   const [isDealing, setIsDealing] = useState(false);
   const [dealSeed, setDealSeed] = useState(0);
 
-  // B-06: Curated 3-Book Reading Flights
-  const readingFlights = useMemo(
-    () => generateReadingFlights(bundle, userState, enrichmentCache),
-    [bundle, userState, enrichmentCache]
-  );
+  const secondaryFilterCount =
+    (originalLanguage !== 'any' ? 1 : 0) +
+    (translationMode !== 'any' ? 1 : 0) +
+    (format !== 'any' ? 1 : 0);
 
-  // The Adaptation Oracle (Codex ⇄ Screen Bridge)
-  const adaptationBridges = useMemo(
-    () => computeAdaptationBridge(bundle, userState, enrichmentCache),
-    [bundle, userState, enrichmentCache]
-  );
+  const hasAnyActiveFilter =
+    commitment !== 'any' ||
+    dust !== 'any' ||
+    era !== 'any' ||
+    editionLanguage !== 'any' ||
+    secondaryFilterCount > 0;
+
+  const resetFilters = () => {
+    setCommitment('any');
+    setDust('any');
+    setEra('any');
+    setEditionLanguage('any');
+    setOriginalLanguage('any');
+    setTranslationMode('any');
+    setFormat('any');
+  };
 
   // Format velocity cache
   const velocityMap = useMemo(() => {
@@ -126,7 +126,6 @@ export const OracleView: React.FC<OracleViewProps> = ({
       console.warn('getOracleCandidates fallback:', e);
     }
 
-    // Graceful fallback TBR matching
     const toRead = bundle.books.filter((b) => b.exclusiveShelf === 'to-read');
     return toRead.slice(0, 3).map((book) => ({
       book,
@@ -173,8 +172,6 @@ export const OracleView: React.FC<OracleViewProps> = ({
     }
   }, [bundle]);
 
-  // External Discovery is handled via ExternalDiscoverySection in Section 5
-
   const handleDeal = () => {
     setIsDealing(true);
     setTimeout(() => {
@@ -184,7 +181,7 @@ export const OracleView: React.FC<OracleViewProps> = ({
   };
 
   return (
-    <div className="space-y-12 pb-20">
+    <div className="space-y-10 pb-20">
       {/* 1. Header Banner & Filter Console */}
       <section className="relative p-6 sm:p-8 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-xs overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-[var(--accent-primary)]/5 rounded-full blur-3xl pointer-events-none" />
@@ -192,30 +189,23 @@ export const OracleView: React.FC<OracleViewProps> = ({
         <div className="max-w-3xl">
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[var(--accent-gold)]/10 text-[var(--accent-gold)] border border-[var(--accent-gold)]/20 text-xs font-semibold mb-3">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>Literary Divination &amp; TBR Engine</span>
+            <span>TBR Selector &amp; Recommendation Engine</span>
           </div>
 
           <h1 className="font-serif-editorial text-2xl sm:text-4xl font-bold tracking-tight text-[var(--text-ink)]">
             The Oracle
           </h1>
 
-          <p className="font-serif-editorial text-base sm:text-lg italic text-[var(--text-muted)] mt-2 leading-relaxed">
-            “A library is a house of potential: an oracle waiting for the right question to unlock
-            your next profound obsession.”
-          </p>
-
           <p className="text-xs sm:text-sm text-[var(--text-muted)] mt-2">
-            Configure your mood, time budget, reading language, and format constraints below. The
-            Oracle consults your unread TBR catalog and deals 3 calibrated candidates with explicit
-            bibliographic reasoning.
+            Narrow down your unread shelf by length, age on shelf, era, or language to draw 3
+            calibrated candidates for your next read.
           </p>
         </div>
 
-        {/* Filter Controls Row */}
+        {/* Filter Controls */}
         <div className="mt-6 pt-6 border-t border-[var(--border-ledger)]/80 space-y-4">
-          {/* Row 1: Core constraints */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-            {/* Commitment */}
+          {/* Primary Row: Commitment, Shelf Dust, Era, Reading In */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
             <div className="flex items-center gap-1.5">
               <span className="font-mono-tabular text-[11px] uppercase tracking-wider text-[var(--text-muted)] font-semibold shrink-0">
                 Commitment:
@@ -225,14 +215,13 @@ export const OracleView: React.FC<OracleViewProps> = ({
                 onChange={(e) => setCommitment(e.target.value as any)}
                 className="w-full py-1.5 px-2 rounded-md bg-[var(--bg-surface)] border border-[var(--border-ledger)] text-xs text-[var(--text-ink)] font-medium cursor-pointer"
               >
-                <option value="any">Any Commitment</option>
+                <option value="any">Any Length</option>
                 <option value="sprint">Brisk Sprint (&lt; 250 pp)</option>
                 <option value="deep">Deep Immersion (250–500 pp)</option>
                 <option value="epic">Monolithic Epic (500+ pp)</option>
               </select>
             </div>
 
-            {/* Shelf Dust */}
             <div className="flex items-center gap-1.5">
               <span className="font-mono-tabular text-[11px] uppercase tracking-wider text-[var(--text-muted)] font-semibold shrink-0">
                 Shelf Dust:
@@ -242,13 +231,12 @@ export const OracleView: React.FC<OracleViewProps> = ({
                 onChange={(e) => setDust(e.target.value as any)}
                 className="w-full py-1.5 px-2 rounded-md bg-[var(--bg-surface)] border border-[var(--border-ledger)] text-xs text-[var(--text-ink)] font-medium cursor-pointer"
               >
-                <option value="any">Any Age on Shelf</option>
-                <option value="forgotten">Forgotten Relics (&gt; 2 yrs ago)</option>
-                <option value="recent">Recent Whims (Added recently)</option>
+                <option value="any">Any Age</option>
+                <option value="forgotten">Forgotten (&gt; 2 yrs ago)</option>
+                <option value="recent">Added Recently</option>
               </select>
             </div>
 
-            {/* Era */}
             <div className="flex items-center gap-1.5">
               <span className="font-mono-tabular text-[11px] uppercase tracking-wider text-[var(--text-muted)] font-semibold shrink-0">
                 Era:
@@ -266,11 +254,7 @@ export const OracleView: React.FC<OracleViewProps> = ({
                 <option value="contemporary">Contemporary (21st C)</option>
               </select>
             </div>
-          </div>
 
-          {/* Row 2: v0.2 Language & Format Selectors */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-            {/* Reading Language */}
             <div className="flex items-center gap-1.5">
               <Globe className="w-3.5 h-3.5 text-[var(--accent-secondary)] shrink-0" />
               <span className="font-mono-tabular text-[11px] uppercase tracking-wider text-[var(--text-muted)] font-semibold shrink-0">
@@ -289,75 +273,104 @@ export const OracleView: React.FC<OracleViewProps> = ({
                 <option value="IT">Italian (IT)</option>
               </select>
             </div>
-
-            {/* Original Work Language */}
-            <div className="flex items-center gap-1.5">
-              <Languages className="w-3.5 h-3.5 text-[var(--accent-gold)] shrink-0" />
-              <span className="font-mono-tabular text-[11px] uppercase tracking-wider text-[var(--text-muted)] font-semibold shrink-0">
-                Original:
-              </span>
-              <select
-                value={originalLanguage}
-                onChange={(e) => setOriginalLanguage(e.target.value as any)}
-                className="w-full py-1.5 px-2 rounded-md bg-[var(--bg-surface)] border border-[var(--border-ledger)] text-xs text-[var(--text-ink)] font-medium cursor-pointer"
-              >
-                <option value="any">Any Original</option>
-                <option value="EN">English (EN)</option>
-                <option value="TR">Turkish (TR)</option>
-                <option value="FR">French (FR)</option>
-                <option value="DE">German (DE)</option>
-                <option value="RU">Russian (RU)</option>
-                <option value="JA">Japanese (JA)</option>
-                <option value="PL">Polish (PL)</option>
-                <option value="ZH">Chinese (ZH)</option>
-                <option value="GRC">Ancient Greek (GRC)</option>
-                <option value="ES">Spanish (ES)</option>
-                <option value="IT">Italian (IT)</option>
-              </select>
-            </div>
-
-            {/* Translation Mode */}
-            <div className="flex items-center gap-1.5">
-              <span className="font-mono-tabular text-[11px] uppercase tracking-wider text-[var(--text-muted)] font-semibold shrink-0">
-                Mode:
-              </span>
-              <select
-                value={translationMode}
-                onChange={(e) => setTranslationMode(e.target.value as any)}
-                className="w-full py-1.5 px-2 rounded-md bg-[var(--bg-surface)] border border-[var(--border-ledger)] text-xs text-[var(--text-ink)] font-medium cursor-pointer"
-              >
-                <option value="any">Any Voice / Mode</option>
-                <option value="original">Read in Original Voice</option>
-                <option value="translated">In Translation</option>
-                <option value="trusted-translator">Trusted Translators</option>
-                <option value="turkish-edition">Turkish Editions</option>
-              </select>
-            </div>
-
-            {/* Format Selector */}
-            <div className="flex items-center gap-1.5">
-              <span className="font-mono-tabular text-[11px] uppercase tracking-wider text-[var(--text-muted)] font-semibold shrink-0">
-                Format:
-              </span>
-              <select
-                value={format}
-                onChange={(e) => setFormat(e.target.value as any)}
-                className="w-full py-1.5 px-2 rounded-md bg-[var(--bg-surface)] border border-[var(--border-ledger)] text-xs text-[var(--text-ink)] font-medium cursor-pointer"
-              >
-                <option value="any">Any Format</option>
-                <option value="prose">Prose</option>
-                <option value="comic-manga">Graphic Novel / Manga</option>
-                <option value="short-essay">Short / Essay (&lt;80p)</option>
-                <option value="academic-ref">Academic / Reference</option>
-              </select>
-            </div>
           </div>
 
-          {/* Deal Button */}
-          <div className="flex items-center justify-between pt-2">
-            <span className="text-xs text-[var(--text-muted)] italic">
-              Example: &ldquo;Give me a book read in French under 250 pages&rdquo;
-            </span>
+          {/* Collapsible Secondary Filters (Original, Mode, Format) */}
+          {showMoreFilters && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-2 border-t border-[var(--border-ledger)]/60">
+              <div className="flex items-center gap-1.5">
+                <Languages className="w-3.5 h-3.5 text-[var(--accent-gold)] shrink-0" />
+                <span className="font-mono-tabular text-[11px] uppercase tracking-wider text-[var(--text-muted)] font-semibold shrink-0">
+                  Original:
+                </span>
+                <select
+                  value={originalLanguage}
+                  onChange={(e) => setOriginalLanguage(e.target.value as any)}
+                  className="w-full py-1.5 px-2 rounded-md bg-[var(--bg-surface)] border border-[var(--border-ledger)] text-xs text-[var(--text-ink)] font-medium cursor-pointer"
+                >
+                  <option value="any">Any Original</option>
+                  <option value="EN">English (EN)</option>
+                  <option value="TR">Turkish (TR)</option>
+                  <option value="FR">French (FR)</option>
+                  <option value="DE">German (DE)</option>
+                  <option value="RU">Russian (RU)</option>
+                  <option value="JA">Japanese (JA)</option>
+                  <option value="PL">Polish (PL)</option>
+                  <option value="ZH">Chinese (ZH)</option>
+                  <option value="GRC">Ancient Greek (GRC)</option>
+                  <option value="ES">Spanish (ES)</option>
+                  <option value="IT">Italian (IT)</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <span className="font-mono-tabular text-[11px] uppercase tracking-wider text-[var(--text-muted)] font-semibold shrink-0">
+                  Mode:
+                </span>
+                <select
+                  value={translationMode}
+                  onChange={(e) => setTranslationMode(e.target.value as any)}
+                  className="w-full py-1.5 px-2 rounded-md bg-[var(--bg-surface)] border border-[var(--border-ledger)] text-xs text-[var(--text-ink)] font-medium cursor-pointer"
+                >
+                  <option value="any">Any Voice / Mode</option>
+                  <option value="original">Read in Original Voice</option>
+                  <option value="translated">In Translation</option>
+                  <option value="trusted-translator">Trusted Translators</option>
+                  <option value="turkish-edition">Turkish Editions</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <span className="font-mono-tabular text-[11px] uppercase tracking-wider text-[var(--text-muted)] font-semibold shrink-0">
+                  Format:
+                </span>
+                <select
+                  value={format}
+                  onChange={(e) => setFormat(e.target.value as any)}
+                  className="w-full py-1.5 px-2 rounded-md bg-[var(--bg-surface)] border border-[var(--border-ledger)] text-xs text-[var(--text-ink)] font-medium cursor-pointer"
+                >
+                  <option value="any">Any Format</option>
+                  <option value="prose">Prose</option>
+                  <option value="comic-manga">Graphic Novel / Manga</option>
+                  <option value="short-essay">Short / Essay (&lt;80p)</option>
+                  <option value="academic-ref">Academic / Reference</option>
+                </select>
+              </div>
+            </div>
+          )}
+
+          {/* Action Row: More Filters + Reset + Deal Button */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowMoreFilters((v) => !v)}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-xs font-mono-tabular font-medium transition-colors cursor-pointer ${
+                  showMoreFilters || secondaryFilterCount > 0
+                    ? 'bg-[var(--accent-primary)]/10 border-[var(--accent-primary)]/40 text-[var(--accent-primary)]'
+                    : 'bg-[var(--bg-surface)] border-[var(--border-ledger)] text-[var(--text-muted)] hover:text-[var(--text-ink)]'
+                }`}
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+                <span>More Filters</span>
+                {secondaryFilterCount > 0 && (
+                  <span className="px-1.5 py-0.2 rounded-full bg-[var(--accent-primary)] text-white text-[10px] font-bold">
+                    {secondaryFilterCount}
+                  </span>
+                )}
+              </button>
+
+              {hasAnyActiveFilter && (
+                <button
+                  type="button"
+                  onClick={resetFilters}
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-[var(--border-ledger)] bg-[var(--bg-surface)] text-xs font-mono-tabular text-[var(--text-muted)] hover:text-[var(--accent-primary)] transition-colors cursor-pointer"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  <span>Reset Filters</span>
+                </button>
+              )}
+            </div>
 
             <button
               onClick={handleDeal}
@@ -381,7 +394,7 @@ export const OracleView: React.FC<OracleViewProps> = ({
             </h2>
           </div>
           <span className="text-xs text-[var(--text-muted)] italic hidden sm:inline">
-            Each candidate paired with format-calibrated reading pace &amp; enriched metadata
+            Paired with format-calibrated reading pace &amp; enriched metadata
           </span>
         </div>
 
@@ -407,7 +420,6 @@ export const OracleView: React.FC<OracleViewProps> = ({
               const enriched = enrichmentCache?.[book.id];
               const profile = classifyBookLanguageAndFormat(book, override, enriched);
 
-              // Format-calibrated reading time calculation
               const pages = book.pageCount || 300;
               const vInfo = velocityMap[profile.format];
               const speedPagesPerDay = vInfo ? vInfo.avgPagesPerDay : 32;
@@ -426,7 +438,7 @@ export const OracleView: React.FC<OracleViewProps> = ({
                   }`}
                   style={{ animationDelay: `${idx * 80}ms` }}
                 >
-                  {/* Top tarot badge & format-calibrated velocity */}
+                  {/* Top option badge & format-calibrated estimate */}
                   <div className="flex items-center justify-between text-xs font-mono-tabular mb-3">
                     <span className="px-2 py-0.5 rounded bg-[var(--bg-surface)] text-[var(--text-muted)] font-semibold border border-[var(--border-ledger)]">
                       Option 0{idx + 1}
@@ -443,7 +455,6 @@ export const OracleView: React.FC<OracleViewProps> = ({
                   </div>
 
                   <div>
-                    {/* Series or Standalone */}
                     {book.seriesName ? (
                       <div className="text-xs font-semibold text-[var(--accent-secondary)] mb-1 truncate">
                         {book.seriesName} {book.seriesNumber ? `#${book.seriesNumber}` : ''}
@@ -454,7 +465,6 @@ export const OracleView: React.FC<OracleViewProps> = ({
                       </div>
                     )}
 
-                    {/* Book Clean Title + Cover */}
                     <div className="flex gap-3 items-start mb-2">
                       {showCover && (
                         <img
@@ -479,7 +489,6 @@ export const OracleView: React.FC<OracleViewProps> = ({
                       </div>
                     </div>
 
-                    {/* Language Passport Pill & Format */}
                     <div className="flex flex-wrap items-center gap-1.5 my-3 text-[10px] font-mono-tabular">
                       <span
                         className={`px-2 py-0.5 rounded font-semibold ${
@@ -506,7 +515,6 @@ export const OracleView: React.FC<OracleViewProps> = ({
                       )}
                     </div>
 
-                    {/* Enriched Synopsis (if present) */}
                     {enriched?.synopsis ? (
                       <div className="p-2.5 rounded bg-[var(--bg-surface)] border border-[var(--border-ledger)]/70 text-xs text-[var(--text-ink)] font-serif-editorial italic leading-relaxed line-clamp-3 my-2">
                         &ldquo;{enriched.synopsis}&rdquo;
@@ -522,7 +530,6 @@ export const OracleView: React.FC<OracleViewProps> = ({
                       </div>
                     )}
 
-                    {/* Why This Match? Pills */}
                     <div className="mt-4 pt-3 border-t border-[var(--border-ledger)]/60">
                       <div className="text-[10px] font-mono-tabular uppercase tracking-wider text-[var(--accent-primary)] font-bold mb-2">
                         Why This Match?
@@ -548,13 +555,11 @@ export const OracleView: React.FC<OracleViewProps> = ({
                     </div>
                   </div>
 
-                  {/* Card Actions */}
                   <div className="mt-6 pt-4 border-t border-[var(--border-ledger)] flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className="text-xs font-mono-tabular text-[var(--text-muted)]">
                         {book.pageCount ? `${book.pageCount} pp.` : 'Length unlisted'}
                       </div>
-                      {/* Tactile Goodreads link (B-01) */}
                       {(() => {
                         const gr = getGoodreadsBookUrl(book);
                         return (
@@ -588,309 +593,6 @@ export const OracleView: React.FC<OracleViewProps> = ({
           </div>
         )}
       </section>
-
-      {/* B-06: Curated 3-Book Reading Flights */}
-      {readingFlights.length > 0 && (
-        <section aria-labelledby="reading-flights-heading" className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-[var(--border-ledger)]">
-            <div className="flex items-center gap-2">
-              <Compass className="w-5 h-5 text-[var(--accent-primary)]" />
-              <h2
-                id="reading-flights-heading"
-                className="font-serif-editorial text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-ink)]"
-              >
-                Curated Reading Flights
-              </h2>
-            </div>
-            <span className="text-xs text-[var(--text-muted)] font-mono-tabular">
-              Thematic 3-book narrative trajectories calibrated from your unread shelf
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {readingFlights.map((flight) => (
-              <div
-                key={flight.id}
-                className="p-5 sm:p-6 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] hover:border-[var(--accent-primary)]/50 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between"
-              >
-                <div>
-                  {/* Badges & Meta */}
-                  <div className="flex flex-wrap items-center gap-1.5 mb-2">
-                    {flight.badges.map((badge, bIdx) => (
-                      <span
-                        key={bIdx}
-                        className="px-2 py-0.5 rounded text-[10px] font-mono-tabular uppercase font-semibold bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] border border-[var(--accent-primary)]/20"
-                      >
-                        {badge}
-                      </span>
-                    ))}
-                    <span className="text-[11px] font-mono-tabular text-[var(--text-muted)] ml-auto">
-                      {flight.totalPages} pp. · ~{flight.estimatedDays} days
-                    </span>
-                  </div>
-
-                  {/* Title & Subtitle */}
-                  <h3 className="font-serif-editorial text-lg sm:text-xl font-bold text-[var(--text-ink)]">
-                    {flight.title}
-                  </h3>
-                  <p className="text-xs text-[var(--accent-secondary)] font-medium mt-0.5">
-                    {flight.subtitle}
-                  </p>
-
-                  {/* Curatorial Rationale */}
-                  <p className="text-xs text-[var(--text-muted)] italic leading-relaxed my-3 border-l-2 border-[var(--border-ledger)] pl-2.5">
-                    &ldquo;{flight.rationale}&rdquo;
-                  </p>
-
-                  {/* 3 Sequenced Books */}
-                  <div className="space-y-2.5 pt-2 border-t border-[var(--border-ledger)]/60">
-                    {flight.books.map((b, bIdx) => {
-                      const profile = classifyBookLanguageAndFormat(
-                        b,
-                        userState?.bookOverrides?.[b.id],
-                        enrichmentCache?.[b.id]
-                      );
-                      const gr = getGoodreadsBookUrl(b);
-                      return (
-                        <div
-                          key={b.id || bIdx}
-                          onClick={() => onSelectBook(b)}
-                          className="group p-2.5 rounded-lg bg-[var(--bg-surface)] hover:bg-[var(--bg-surface)]/80 border border-transparent hover:border-[var(--accent-primary)]/40 transition-all cursor-pointer flex items-center justify-between gap-3"
-                        >
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <span className="w-5 h-5 rounded-full bg-[var(--bg-card)] border border-[var(--border-ledger)] flex items-center justify-center font-mono-tabular text-[10px] font-bold text-[var(--accent-primary)] shrink-0">
-                              {bIdx + 1}
-                            </span>
-                            <div className="min-w-0">
-                              <h4 className="font-serif-editorial text-xs font-bold text-[var(--text-ink)] group-hover:text-[var(--accent-primary)] truncate transition-colors">
-                                {b.cleanTitle || b.title}
-                              </h4>
-                              <p className="text-[11px] text-[var(--text-muted)] truncate">
-                                by {b.author}
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-2 shrink-0">
-                            <div className="text-right text-[10px] font-mono-tabular">
-                              <span className="px-1.5 py-0.5 rounded bg-[var(--bg-card)] border border-[var(--border-ledger)] text-[var(--text-muted)]">
-                                {profile.translationFlow}
-                              </span>
-                              <div className="text-[var(--text-muted)] mt-0.5">
-                                {b.pageCount ? `${b.pageCount}p` : ''}
-                              </div>
-                            </div>
-
-                            <a
-                              href={gr.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              className="p-1 rounded hover:bg-[var(--accent-gold)]/15 text-[var(--text-muted)] hover:text-[var(--accent-gold)] transition-colors"
-                              title={gr.label}
-                              aria-label={`Open ${b.cleanTitle || b.title} on Goodreads`}
-                            >
-                              <ExternalLink className="w-3 h-3" />
-                            </a>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* 2B. The Adaptation Oracle · Codex ⇄ Screen */}
-      {(adaptationBridges.queuedOnWatchlist.length > 0 || adaptationBridges.fromScreenToNightstand.length > 0) && (
-        <section aria-labelledby="adaptation-oracle-heading" className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-[var(--border-ledger)]">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center border border-purple-500/30 shadow-2xs">
-                <Film className="w-4 h-4" />
-              </div>
-              <div>
-                <h2
-                  id="adaptation-oracle-heading"
-                  className="font-serif-editorial text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-ink)]"
-                >
-                  The Adaptation Oracle · Codex ⇄ Screen
-                </h2>
-                <p className="text-xs text-[var(--text-muted)]">
-                  Cross-referencing finished and shelved codex volumes with your Letterboxd cinema diary &amp; watchlist
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className="font-mono-tabular text-xs text-[var(--text-muted)]">
-                {adaptationBridges.totalBridgesCount} Linked Adaptations
-              </span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Stream 1: Adaptations Queued on Watchlist */}
-            <div className="p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs space-y-4">
-              <div className="flex items-center justify-between pb-2 border-b border-[var(--border-ledger)]">
-                <div className="flex items-center gap-2">
-                  <BookmarkCheck className="w-4 h-4 text-purple-500" />
-                  <h3 className="font-serif-editorial text-base font-bold text-[var(--text-ink)]">
-                    Adaptations Waiting on Watchlist
-                  </h3>
-                </div>
-                <span className="font-mono-tabular text-xs text-purple-600 dark:text-purple-400 font-bold">
-                  {adaptationBridges.queuedOnWatchlist.length} Queued
-                </span>
-              </div>
-              <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-                Books you have completed or shelved whose cinematic adaptations are currently waiting on your Letterboxd watchlist:
-              </p>
-
-              <div className="space-y-3">
-                {adaptationBridges.queuedOnWatchlist.map((item) => (
-                  <div
-                    key={item.id}
-                    className="p-3.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] hover:border-purple-500/40 transition-all space-y-2.5 shadow-2xs group"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="text-[10px] uppercase font-mono-tabular tracking-wider text-[var(--text-muted)] flex items-center gap-1.5 mb-0.5">
-                          <span>Source Codex:</span>
-                          <span className="px-1.5 py-0.2 rounded bg-[var(--bg-card)] border border-[var(--border-ledger)] font-semibold text-[var(--text-ink)]">
-                            {item.bookShelf === 'read' ? 'Completed' : item.bookShelf}
-                          </span>
-                        </div>
-                        <h4
-                          onClick={() => {
-                            const b = bundle.books.find((x) => x.id === item.bookId);
-                            if (b) onSelectBook(b);
-                          }}
-                          className="font-serif-editorial font-bold text-sm text-[var(--text-ink)] hover:text-[var(--accent-primary)] cursor-pointer transition-colors"
-                        >
-                          {item.bookTitle}
-                          <span className="font-mono-tabular text-xs font-normal text-[var(--text-muted)] ml-1">
-                            by {item.bookAuthor}
-                          </span>
-                        </h4>
-                      </div>
-
-                      {item.filmUri && (
-                        <a
-                          href={item.filmUri}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-mono-tabular font-semibold text-purple-600 dark:text-purple-400 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 transition-colors shadow-2xs shrink-0"
-                          title="Open on Letterboxd"
-                        >
-                          <span>Watchlist</span>
-                          <ExternalLink className="w-3 h-3" />
-                        </a>
-                      )}
-                    </div>
-
-                    <div className="flex items-center justify-between text-xs pt-1.5 border-t border-[var(--border-ledger)]/60 font-mono-tabular">
-                      <div className="flex items-center gap-2">
-                        <Film className="w-3.5 h-3.5 text-purple-500" />
-                        <span className="font-serif-editorial font-bold text-[var(--text-ink)]">
-                          {item.filmTitle} {item.filmYear ? `(${item.filmYear})` : ''}
-                        </span>
-                      </div>
-                      <span className="text-[11px] text-[var(--text-muted)] truncate max-w-[200px]">
-                        {item.rationale}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Stream 2: From Screen to Nightstand */}
-            <div className="p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs space-y-4">
-              <div className="flex items-center justify-between pb-2 border-b border-[var(--border-ledger)]">
-                <div className="flex items-center gap-2">
-                  <Star className="w-4 h-4 text-amber-500" />
-                  <h3 className="font-serif-editorial text-base font-bold text-[var(--text-ink)]">
-                    From Screen to Nightstand
-                  </h3>
-                </div>
-                <span className="font-mono-tabular text-xs text-amber-500 font-bold">
-                  {adaptationBridges.fromScreenToNightstand.length} Acclaimed
-                </span>
-              </div>
-              <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-                Films you rated ≥ 4★ or reviewed whose original literary source material is preserved in your library:
-              </p>
-
-              <div className="space-y-3">
-                {adaptationBridges.fromScreenToNightstand.map((item) => (
-                  <div
-                    key={item.id}
-                    className="p-3.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] hover:border-amber-500/40 transition-all space-y-2.5 shadow-2xs group"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <h4 className="font-serif-editorial font-bold text-sm text-[var(--text-ink)]">
-                            🎬 {item.filmTitle} {item.filmYear ? `(${item.filmYear})` : ''}
-                          </h4>
-                          {item.filmRating && (
-                            <span className="font-mono-tabular text-xs font-bold text-amber-500">
-                              {formatStarRating(item.filmRating)}
-                            </span>
-                          )}
-                          {item.filmRewatch && (
-                            <span className="px-1.5 py-0.2 rounded text-[9px] font-mono-tabular bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30">
-                              Rewatch
-                            </span>
-                          )}
-                        </div>
-
-                        {item.filmReview && (
-                          <p className="text-xs font-serif-editorial italic text-[var(--text-muted)] pl-2 border-l-2 border-purple-400/60 line-clamp-2 mt-1">
-                            &ldquo;{item.filmReview}&rdquo;
-                          </p>
-                        )}
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const b = bundle.books.find((x) => x.id === item.bookId);
-                          if (b) onSelectBook(b);
-                        }}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-mono-tabular font-semibold text-[var(--accent-primary)] bg-[var(--accent-primary)]/10 hover:bg-[var(--accent-primary)]/20 border border-[var(--accent-primary)]/30 transition-colors shadow-2xs shrink-0 cursor-pointer"
-                        title="Inspect Book Dossier"
-                      >
-                        <span>Dossier</span>
-                        <ArrowRight className="w-3 h-3" />
-                      </button>
-                    </div>
-
-                    <div className="flex items-center justify-between text-xs pt-1.5 border-t border-[var(--border-ledger)]/60 font-mono-tabular">
-                      <div className="flex items-center gap-1.5 truncate">
-                        <BookOpen className="w-3.5 h-3.5 text-[var(--accent-gold)] shrink-0" />
-                        <span className="text-[var(--text-ink)] font-medium truncate">
-                          {item.bookTitle}
-                        </span>
-                        <span className="text-[var(--text-muted)] text-[11px]">
-                          ({item.bookAuthor})
-                        </span>
-                      </div>
-                      <span className="px-2 py-0.5 rounded text-[10px] font-mono-tabular bg-[var(--bg-card)] border border-[var(--border-ledger)] text-[var(--text-muted)] shrink-0">
-                        {item.bookShelf === 'read' ? 'Completed' : item.bookShelf === 'currently-reading' ? 'Active' : 'TBR Queue'}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
 
       {/* 3. Unfinished Series on Your Shelf */}
       {unfinishedSeries.length > 0 && (
@@ -933,7 +635,6 @@ export const OracleView: React.FC<OracleViewProps> = ({
                       </span>
                     </div>
 
-                    {/* Progress Bar */}
                     <div className="w-full h-1.5 rounded-full bg-[var(--bg-surface)] overflow-hidden my-2">
                       <div
                         className="h-full bg-[var(--accent-secondary)] transition-all"
@@ -941,7 +642,6 @@ export const OracleView: React.FC<OracleViewProps> = ({
                       />
                     </div>
 
-                    {/* Next Book in Sequence */}
                     {nextBook ? (
                       <div
                         onClick={() => onSelectBook(nextBook)}
@@ -1037,7 +737,6 @@ export const OracleView: React.FC<OracleViewProps> = ({
                     archive
                   </p>
 
-                  {/* To-read books from this author */}
                   {authorPick.toReadBooks && authorPick.toReadBooks.length > 0 && (
                     <div className="mt-3 space-y-1.5">
                       <div className="text-[10px] uppercase font-mono-tabular text-[var(--text-muted)] font-semibold">
@@ -1074,17 +773,6 @@ export const OracleView: React.FC<OracleViewProps> = ({
           </div>
         </section>
       )}
-
-      {/* 5. The Acquisitions Desk · 3-Engine External Discovery ("Beyond Your Shelves") */}
-      <ExternalDiscoverySection
-        bundle={bundle}
-        enrichmentCache={enrichmentCache}
-        userState={userState}
-        showCovers={userState.showCovers}
-        onToggleWantList={onToggleWantList || (() => {})}
-        onRemoveWantListItem={onRemoveWantListItem}
-        onSelectBookById={onSelectBookById}
-      />
     </div>
   );
 };

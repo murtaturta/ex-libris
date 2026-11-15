@@ -1,30 +1,36 @@
 import { describe, it, expect } from 'vitest';
 import {
-  isKeepTheRhythmJson,
+  isScriptorJson,
   repairBrokenJson,
-  parseKeepTheRhythmJson,
+  parseScriptorJson,
   exportTelemetryToFrontmatter,
   exportTelemetryToCsv,
-  generateRepairedKeepTheRhythmJson,
+  generateRepairedScriptorJson,
 } from '../src/lib/parsers/writingTelemetryParser';
 import { computeAdaptationForensics } from '../src/lib/analytics/engine';
 import type { LibraryBundle, UserLocalState, WritingTelemetryData } from '../src/types/library';
 
 describe('Scriptorium Parsers, Telemetry Doctor & Adaptation Forensics', () => {
-  describe('isKeepTheRhythmJson', () => {
-    it('detects valid Keep the Rhythm JSON with stats.dailyActivity', () => {
+  describe('isScriptorJson', () => {
+    it('detects valid Scriptor JSON with history entries', () => {
       const valid = JSON.stringify({
-        stats: {
-          dailyActivity: [
-            {
-              date: '2026-03-01',
-              filePath: 'Vault/Drafts/Chapter1.md',
-              changes: [{ w: 450, c: 2200, timeKey: '18:00' }],
+        version: '1.0.0',
+        settings: { dailyGoal: 300, logFolder: 'scriptor-plugin' },
+        history: {
+          '2026-03-01': {
+            date: '2026-03-01',
+            netWords: 450,
+            grossWordsAdded: 450,
+            grossWordsRemoved: 0,
+            goalMet: true,
+            filesGross: {
+              Chapter1: { added: 450, removed: 0, net: 450, filePath: 'Drafts/Chapter1.md' },
             },
-          ],
+            hourlyCounts: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 450, 0, 0, 0, 0, 0],
+          },
         },
       });
-      expect(isKeepTheRhythmJson(valid)).toBe(true);
+      expect(isScriptorJson(valid)).toBe(true);
     });
 
     it('detects pre-aggregated dailyTotals schema', () => {
@@ -35,19 +41,29 @@ describe('Scriptorium Parsers, Telemetry Doctor & Adaptation Forensics', () => {
         },
         totalWords: 1250,
       });
-      expect(isKeepTheRhythmJson(valid)).toBe(true);
+      expect(isScriptorJson(valid)).toBe(true);
     });
 
-    it('detects broken JSON containing Keep the Rhythm signatures', () => {
-      const broken = '{"stats": {"dailyActivity": [{"date": "2026-03-01", "filePath": "draft.md"';
-      expect(isKeepTheRhythmJson(broken)).toBe(true);
+    it('detects broken JSON containing Scriptor signatures', () => {
+      const broken =
+        '{"settings": {"dailyGoal": 300}, "history": {"2026-03-01": {"netWords": 400, "filesGross": {"draft"';
+      expect(isScriptorJson(broken)).toBe(true);
     });
 
-    it('returns false for unrelated CSV, text, or HTML', () => {
-      expect(isKeepTheRhythmJson('Book Id,Title,Author,My Rating')).toBe(false);
-      expect(isKeepTheRhythmJson('<!DOCTYPE html><html><body>Hello</body></html>')).toBe(false);
-      expect(isKeepTheRhythmJson('')).toBe(false);
-      expect(isKeepTheRhythmJson(null as any)).toBe(false);
+    it('rejects legacy Keep the Rhythm JSON and unrelated formats', () => {
+      const legacyKtr = JSON.stringify({
+        stats: {
+          dailyActivity: [{ date: '2026-03-01', filePath: 'draft.md', changes: [{ w: 300 }] }],
+        },
+      });
+      const legacyTagged = JSON.stringify({ source: 'keep-the-rhythm', dailyTotals: { '2026-03-01': 300 } });
+
+      expect(isScriptorJson(legacyKtr)).toBe(false);
+      expect(isScriptorJson(legacyTagged)).toBe(false);
+      expect(isScriptorJson('Book Id,Title,Author,My Rating')).toBe(false);
+      expect(isScriptorJson('<!DOCTYPE html><html><body>Hello</body></html>')).toBe(false);
+      expect(isScriptorJson('')).toBe(false);
+      expect(isScriptorJson(null as any)).toBe(false);
     });
   });
 
@@ -63,7 +79,7 @@ describe('Scriptorium Parsers, Telemetry Doctor & Adaptation Forensics', () => {
     });
 
     it('repairs single-quoted keys and unclosed braces at EOF', () => {
-      const input = "{\"stats\": {'dailyActivity': [{\"date\": '2026-03-01', \"w\": 300}";
+      const input = "{\"history\": {'2026-03-01': {\"date\": '2026-03-01', \"netWords\": 300}";
       const result = repairBrokenJson(input);
       expect(result.wasRepaired).toBe(true);
       expect(() => JSON.parse(result.repaired)).not.toThrow();
@@ -77,76 +93,122 @@ describe('Scriptorium Parsers, Telemetry Doctor & Adaptation Forensics', () => {
     });
   });
 
-  describe('parseKeepTheRhythmJson', () => {
-    const rawKeepTheRhythm = JSON.stringify({
-      stats: {
-        dailyActivity: [
-          {
-            date: '2026-03-01',
-            filePath: 'Essays/On Calvino.md',
-            changes: [
-              { w: 300, c: 1500, timeKey: '17:30' },
-              { w: 200, c: 1000, timeKey: '18:15' },
-            ],
-          },
-          {
-            date: '2026-03-02',
-            filePath: 'Novels/Borges Cipher.md',
-            changes: [{ w: 650, c: 3200, timeKey: '18:45' }],
-          },
-        ],
-      },
+  describe('parseScriptorJson', () => {
+    const rawScriptor = JSON.stringify({
+      version: '1.0.0',
       settings: {
         dailyGoal: 500,
+        logFolder: 'scriptor-plugin',
+      },
+      history: {
+        '2026-03-01': {
+          date: '2026-03-01',
+          netWords: 500,
+          grossWordsAdded: 500,
+          grossWordsRemoved: 0,
+          goalMet: true,
+          isRevision: false,
+          filesGross: {
+            'On Calvino': {
+              added: 500,
+              removed: 0,
+              net: 500,
+              filePath: 'Essays/On Calvino.md',
+            },
+          },
+          hourlyCounts: [
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 300, 200, 0, 0, 0, 0, 0,
+          ],
+        },
+        '2026-03-02': {
+          date: '2026-03-02',
+          netWords: 600,
+          grossWordsAdded: 650,
+          grossWordsRemoved: 50,
+          goalMet: true,
+          isRevision: false,
+          filesGross: {
+            'Chapter One': {
+              added: 450,
+              removed: 20,
+              net: 430,
+              filePath: 'Benim Yazılar/Warband/Chapters/Chapter One.md',
+            },
+            'Prologue Draft': {
+              added: 200,
+              removed: 30,
+              net: 170,
+              filePath: 'Benim Yazılar/yenimegaproje2025/Drafts/Prologue Draft.md',
+            },
+          },
+          hourlyCounts: [
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 650, 0, 0, 0, 0, 0,
+          ],
+        },
       },
     });
 
-    it('computes total words, active days, and daily goal counts', () => {
-      const telemetry = parseKeepTheRhythmJson(rawKeepTheRhythm);
+    it('computes total words, active days, hourly counts, and daily goal counts', () => {
+      const telemetry = parseScriptorJson(rawScriptor);
 
-      expect(telemetry.source).toBe('keep-the-rhythm');
-      expect(telemetry.totalWords).toBe(1150); // 500 + 650
+      expect(telemetry.source).toBe('scriptor');
+      expect(telemetry.totalWords).toBe(1150); // 500 + 650 grossWordsAdded
       expect(telemetry.activeDaysCount).toBe(2);
       expect(telemetry.dailyTotals['2026-03-01']).toBe(500);
       expect(telemetry.dailyTotals['2026-03-02']).toBe(650);
       expect(telemetry.dailyGoal).toBe(500);
       expect(telemetry.completedGoalDaysCount).toBe(2);
+      expect(telemetry.hourlyTotals[17]).toBe(300);
+      expect(telemetry.hourlyTotals[18]).toBe(850);
     });
 
-    it('aggregates projects and daily files accurately', () => {
-      const telemetry = parseKeepTheRhythmJson(rawKeepTheRhythm);
+    it('resolves umbrella projects and aggregates daily files accurately', () => {
+      const telemetry = parseScriptorJson(rawScriptor);
 
-      expect(telemetry.projects.length).toBe(2);
+      expect(telemetry.projects.length).toBe(3);
       const essaysProject = telemetry.projects.find((p) => p.name === 'Essays');
       expect(essaysProject?.words).toBe(500);
 
-      const novelsProject = telemetry.projects.find((p) => p.name === 'Novels');
-      expect(novelsProject?.words).toBe(650);
+      const iorenProject = telemetry.projects.find((p) => p.name === 'Ioren');
+      expect(iorenProject?.words).toBe(450);
+
+      const megaProject = telemetry.projects.find((p) => p.name === 'yenimegaproje2025');
+      expect(megaProject?.words).toBe(200);
 
       expect(telemetry.dailyFiles).toBeDefined();
       expect(telemetry.dailyFiles!['2026-03-01'].length).toBe(1);
       expect(telemetry.dailyFiles!['2026-03-01'][0].fileName).toBe('On Calvino.md');
       expect(telemetry.dailyFiles!['2026-03-01'][0].words).toBe(500);
 
-      expect(telemetry.dailyFiles!['2026-03-02'].length).toBe(1);
-      expect(telemetry.dailyFiles!['2026-03-02'][0].fileName).toBe('Borges Cipher.md');
-      expect(telemetry.dailyFiles!['2026-03-02'][0].words).toBe(650);
+      expect(telemetry.dailyFiles!['2026-03-02'].length).toBe(2);
+      expect(telemetry.dailyFiles!['2026-03-02'][0].fileName).toBe('Chapter One.md');
+      expect(telemetry.dailyFiles!['2026-03-02'][0].words).toBe(450);
     });
 
-    it('handles truncated JSON gracefully via auto-repair', () => {
-      const truncated = '{"stats": {"dailyActivity": [{"date": "2026-03-01", "filePath": "Notes.md", "changes": [{"w": 400}]';
-      const telemetry = parseKeepTheRhythmJson(truncated);
+    it('handles truncated Scriptor JSON gracefully via auto-repair', () => {
+      const truncated =
+        '{"history": {"2026-03-01": {"date": "2026-03-01", "netWords": 400, "grossWordsAdded": 400, "filesGross": {"Notes": {"added": 400}}';
+      const telemetry = parseScriptorJson(truncated);
 
       expect(telemetry.totalWords).toBe(400);
       expect(telemetry.activeDaysCount).toBe(1);
     });
+
+    it('throws an explicit error when legacy Keep the Rhythm data is provided', () => {
+      const legacy = JSON.stringify({
+        stats: {
+          dailyActivity: [{ date: '2026-03-01', filePath: 'Notes.md', changes: [{ w: 300 }] }],
+        },
+      });
+      expect(() => parseScriptorJson(legacy)).toThrow(/no longer supported/i);
+    });
   });
 
-  describe('Exporters: Frontmatter YAML, CSV & Repaired JSON', () => {
+  describe('Exporters: Frontmatter YAML, CSV & Repaired Scriptor JSON', () => {
     const mockTelemetry: WritingTelemetryData = {
       version: '1.0',
       updatedAt: '2026-03-02T12:00:00Z',
-      source: 'keep-the-rhythm',
+      source: 'scriptor',
       dailyTotals: {
         '2026-03-01': 500,
         '2026-03-02': 650,
@@ -188,11 +250,13 @@ describe('Scriptorium Parsers, Telemetry Doctor & Adaptation Forensics', () => {
       expect(csv).toContain('2026-03-02,650,Yes,1,"Draft.md"');
     });
 
-    it('generates pristine repaired Keep the Rhythm JSON schema', () => {
-      const repairedStr = generateRepairedKeepTheRhythmJson(mockTelemetry);
+    it('generates pristine repaired Scriptor JSON schema', () => {
+      const repairedStr = generateRepairedScriptorJson(mockTelemetry);
       expect(() => JSON.parse(repairedStr)).not.toThrow();
       const parsed = JSON.parse(repairedStr);
-      expect(parsed.stats.dailyActivity.length).toBe(2);
+      expect(parsed.source).toBe('scriptor');
+      expect(Object.keys(parsed.history).length).toBe(2);
+      expect(parsed.history['2026-03-01'].grossWordsAdded).toBe(500);
       expect(parsed.settings.dailyGoal).toBe(500);
       expect(parsed.exLibrisColophon.engine).toBe('Ex Libris Telemetry Doctor');
     });

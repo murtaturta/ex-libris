@@ -6,7 +6,6 @@ import {
   EnrichmentCacheMap,
   KindleNote,
   LanguageCode,
-  NightstandState,
   UserLocalState,
 } from '../types/library';
 import {
@@ -14,12 +13,7 @@ import {
   FORMAT_LABELS,
   LANGUAGE_LABELS,
 } from '../lib/classifiers/languageAndFormat';
-import {
-  computeBookPacingArchetype,
-  findFilmAdaptationForBook,
-  PacingArchetype,
-} from '../lib/analytics/engine';
-import { formatStarRating } from '../lib/parsers/letterboxdParser';
+import { computeBookPacingArchetype } from '../lib/analytics/engine';
 import { formatPublicationYear, formatReviewHtml } from '../lib/formatters';
 import { getGoodreadsBookUrl, getGoodreadsAuthorUrl } from '../lib/links/goodreadsLinks';
 import { downloadSingleBookMarkdown } from '../lib/exporters/markdownNoteExporter';
@@ -28,31 +22,22 @@ import {
   ChevronLeft,
   ChevronRight,
   Star,
-  BookOpen,
-  Calendar,
-  Layers,
   Feather,
   AlertTriangle,
   Eye,
   EyeOff,
   Clock,
-  Compass,
   Hash,
   Quote,
   Globe,
-  Languages,
   PauseCircle,
   PlayCircle,
   Sparkles,
   RefreshCw,
   BookmarkCheck,
-  CheckCircle2,
-  Tag,
-  Zap,
   ExternalLink,
   FileDown,
   FolderArchive,
-  Film,
 } from 'lucide-react';
 
 interface BookDossierDrawerProps {
@@ -93,7 +78,6 @@ export const BookDossierDrawer: React.FC<BookDossierDrawerProps> = ({
   onClose,
   onPrevBook,
   onNextBook,
-  onSelectBookById,
   allKindleNotes = [],
   userState,
   onUpdateBookOverride,
@@ -123,7 +107,6 @@ export const BookDossierDrawer: React.FC<BookDossierDrawerProps> = ({
     if (!isOpen) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't intercept if user is typing inside an input/select
       if (['INPUT', 'SELECT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) {
         if (e.key === 'Escape') onClose();
         return;
@@ -163,11 +146,6 @@ export const BookDossierDrawer: React.FC<BookDossierDrawerProps> = ({
     if (!book) return null;
     return userState?.writingTelemetry?.matchedReviews?.[book.id] || null;
   }, [book, userState?.writingTelemetry]);
-
-  // Matched Letterboxd Screen Adaptation
-  const filmAdaptation = useMemo(() => {
-    return findFilmAdaptationForBook(book, userState);
-  }, [book, userState]);
 
   // Combined DSAR Kindle notes
   const combinedKindleNotes = useMemo(() => {
@@ -210,6 +188,11 @@ export const BookDossierDrawer: React.FC<BookDossierDrawerProps> = ({
     );
   }, [book, userState?.kindleClippings]);
 
+  const pacingArchetype = useMemo(() => {
+    if (!book || book.exclusiveShelf !== 'read') return null;
+    return computeBookPacingArchetype(book, userState?.kindleClippings || []);
+  }, [book, userState?.kindleClippings]);
+
   if (!isOpen || !book) return null;
 
   const override = userState?.bookOverrides?.[book.id];
@@ -219,53 +202,16 @@ export const BookDossierDrawer: React.FC<BookDossierDrawerProps> = ({
   const originalYear = formatPublicationYear(book.originalPublicationYear || book.yearPublished);
   const editionYear = formatPublicationYear(book.yearPublished);
 
-  // Rating comparison
   const communityRating = book.averageRating ?? enriched?.communityRating ?? null;
-  const ratingDelta =
-    book.myRating && communityRating ? Number((book.myRating - communityRating).toFixed(2)) : null;
 
-  // Active reading & pacing calculations
+  // Active reading progress calculations
   const totalPages = book.pageCount || 0;
   const currentPageNum = override?.currentPage ?? (book.exclusiveShelf === 'read' ? totalPages : 0);
-  const remainingPages = Math.max(0, totalPages - currentPageNum);
   const progressPct =
     totalPages > 0 ? Math.min(100, Math.round((currentPageNum / totalPages) * 100)) : 0;
 
-  // Pace baseline
-  const formatVelocityMap: Record<BookFormat, number> = {
-    prose: 32,
-    'comic-manga': 140,
-    'short-essay': 45,
-    'academic-ref': 18,
-  };
-  const formatPace = formatVelocityMap[profile.format] || 32;
-  const daysToFinishAtPace = remainingPages > 0 ? Math.ceil(remainingPages / formatPace) : 0;
-  const projectedFinishDate =
-    remainingPages > 0
-      ? new Date(Date.now() + daysToFinishAtPace * 24 * 3600 * 1000).toISOString().split('T')[0]
-      : null;
-
-  // Target deadline pages/day
-  let pagesPerDayNeeded: number | null = null;
-  if (override?.targetFinishDate && remainingPages > 0) {
-    const targetTime = new Date(override.targetFinishDate).getTime();
-    const nowTime = Date.now();
-    const diffDays = Math.ceil((targetTime - nowTime) / (1000 * 3600 * 24));
-    if (diffDays > 0) {
-      pagesPerDayNeeded = Math.ceil(remainingPages / diffDays);
-    } else {
-      pagesPerDayNeeded = remainingPages;
-    }
-  }
-
   const isNightstandActive = (override?.nightstandState ?? 'active') === 'active';
 
-  const pacingArchetype = useMemo(() => {
-    if (book.exclusiveShelf !== 'read') return null;
-    return computeBookPacingArchetype(book, userState?.kindleClippings || []);
-  }, [book, userState?.kindleClippings]);
-
-  // Enrich trigger
   const handleEnrich = async () => {
     if (isEnriching) return;
     setIsEnriching(true);
@@ -301,7 +247,6 @@ export const BookDossierDrawer: React.FC<BookDossierDrawerProps> = ({
           {/* 1. Header Toolbar */}
           <div className="sticky top-0 z-10 flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 bg-[var(--bg-surface)]/95 backdrop-blur-md border-b border-[var(--border-ledger)] gap-2">
             <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-              {/* Prev Book Button */}
               {onPrevBook && (
                 <button
                   onClick={onPrevBook}
@@ -313,7 +258,6 @@ export const BookDossierDrawer: React.FC<BookDossierDrawerProps> = ({
                 </button>
               )}
 
-              {/* Next Book Button */}
               {onNextBook && (
                 <button
                   onClick={onNextBook}
@@ -325,7 +269,6 @@ export const BookDossierDrawer: React.FC<BookDossierDrawerProps> = ({
                 </button>
               )}
 
-              {/* Letterpress Goodreads Archival Stamp (B-01) */}
               {(() => {
                 const gr = getGoodreadsBookUrl(book);
                 return (
@@ -345,7 +288,6 @@ export const BookDossierDrawer: React.FC<BookDossierDrawerProps> = ({
               })()}
             </div>
 
-            {/* Actions: Export .md Note (B-03) + Close Button */}
             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               <button
                 onClick={() => downloadSingleBookMarkdown(book, userState, enriched)}
@@ -371,10 +313,9 @@ export const BookDossierDrawer: React.FC<BookDossierDrawerProps> = ({
           </div>
 
           {/* 2. Main Content Body */}
-          <div className="flex-1 px-6 sm:px-8 py-6 space-y-8">
-            {/* Title, Cover & Author Header */}
+          <div className="flex-1 px-6 sm:px-8 py-6 space-y-6">
+            {/* Title, Cover & Author Hero */}
             <div className="flex gap-4 sm:gap-6 items-start">
-              {/* Cover Image (if showCovers is enabled and coverUrl exists) */}
               {userState?.showCovers && enriched?.coverUrl && (
                 <img
                   src={enriched.coverUrl}
@@ -384,7 +325,6 @@ export const BookDossierDrawer: React.FC<BookDossierDrawerProps> = ({
               )}
 
               <div className="flex-1 min-w-0">
-                {/* Shelf & Series Badge */}
                 <div className="flex flex-wrap items-center gap-2 mb-2 text-xs font-mono-tabular">
                   <span
                     className={`px-2.5 py-0.5 rounded uppercase font-semibold text-[10px] ${
@@ -411,12 +351,10 @@ export const BookDossierDrawer: React.FC<BookDossierDrawerProps> = ({
                   )}
                 </div>
 
-                {/* Title */}
                 <h2 className="font-serif-editorial text-2xl sm:text-3xl font-bold text-[var(--text-ink)] leading-snug tracking-tight">
                   {book.cleanTitle || book.title}
                 </h2>
 
-                {/* Author & Translators */}
                 <div className="mt-2 text-sm text-[var(--text-muted)] font-medium">
                   by{' '}
                   <a
@@ -437,72 +375,88 @@ export const BookDossierDrawer: React.FC<BookDossierDrawerProps> = ({
               </div>
             </div>
 
-            {/* UPGRADE 1: Completed Pacing Archetype vs Active Reading Studio */}
-            {book.exclusiveShelf === 'read' && pacingArchetype ? (
+            {/* Reading History (Read) OR Reading Progress & Nightstand (Unread / On Desk) */}
+            {book.exclusiveShelf === 'read' ? (
               <section
-                aria-labelledby="pacing-archetype-heading"
-                className="p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs space-y-4"
+                aria-labelledby="reading-history-heading"
+                className="p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs space-y-3"
               >
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-[var(--accent-primary)]" />
+                    <Clock className="w-4 h-4 text-[var(--accent-secondary)]" />
                     <h3
-                      id="pacing-archetype-heading"
+                      id="reading-history-heading"
                       className="text-xs font-mono-tabular uppercase tracking-wider text-[var(--text-ink)] font-bold"
                     >
-                      Reading Cadence &amp; Pacing Archetype
+                      Reading History
                     </h3>
                   </div>
 
-                  {/* Archetype Badge */}
-                  <span
-                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono-tabular font-semibold border ${pacingArchetype.badgeClass}`}
-                  >
-                    <span>{pacingArchetype.icon}</span>
-                    <span>{pacingArchetype.label}</span>
+                  <span className="text-xs font-mono-tabular text-[var(--text-muted)]">
+                    {(book.readCount || 1)}× read
                   </span>
                 </div>
 
-                <div className="p-3.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] space-y-2">
-                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-mono-tabular">
-                    <div className="flex items-center gap-2 text-[var(--text-ink)] font-semibold">
-                      <span>{pacingArchetype.days} days duration</span>
-                      {pacingArchetype.pagesPerDay !== null && (
-                        <>
-                          <span className="text-[var(--text-muted)]">·</span>
-                          <span className="text-[var(--accent-primary)]">
-                            ~{pacingArchetype.pagesPerDay} pp/day
-                          </span>
-                        </>
-                      )}
-                    </div>
-
-                    <span className="text-[11px] text-[var(--text-muted)] font-mono-tabular">
-                      {pacingArchetype.groundingSource === 'kindle'
-                        ? 'Grounded in Kindle highlight delta'
-                        : pacingArchetype.groundingSource === 'goodreads'
-                        ? 'Grounded in reading session delta'
-                        : 'Calibrated from format baseline'}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-3.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] text-xs font-mono-tabular">
+                  <div>
+                    <span className="text-[10px] uppercase text-[var(--text-muted)] block">
+                      Date Read
+                    </span>
+                    <span className="font-semibold text-[var(--text-ink)]">
+                      {book.dateRead ? book.dateRead.slice(0, 10) : 'Recorded'}
                     </span>
                   </div>
 
-                  {pacingArchetype.dateRange && (
-                    <div className="text-[11px] font-mono-tabular text-[var(--text-muted)]">
-                      Trajectory:{' '}
-                      <strong className="text-[var(--text-ink)] font-medium">
-                        {pacingArchetype.dateRange.start}
-                      </strong>{' '}
-                      →{' '}
-                      <strong className="text-[var(--text-ink)] font-medium">
-                        {pacingArchetype.dateRange.finish}
-                      </strong>
+                  {pacingArchetype?.days != null && (
+                    <div>
+                      <span className="text-[10px] uppercase text-[var(--text-muted)] block">
+                        Duration
+                      </span>
+                      <span className="font-semibold text-[var(--text-ink)]">
+                        {pacingArchetype.days} days
+                      </span>
                     </div>
                   )}
 
-                  <p className="text-xs font-serif-editorial italic text-[var(--text-ink)]/90 pt-1 border-t border-[var(--border-ledger)]/60">
-                    &ldquo;{pacingArchetype.description}&rdquo;
-                  </p>
+                  {pacingArchetype?.pagesPerDay != null && (
+                    <div>
+                      <span className="text-[10px] uppercase text-[var(--text-muted)] block">
+                        Average Pace
+                      </span>
+                      <span className="font-semibold text-[var(--accent-primary)]">
+                        ~{pacingArchetype.pagesPerDay} pp/day
+                      </span>
+                    </div>
+                  )}
                 </div>
+
+                {pacingArchetype?.dateRange && (
+                  <div className="text-[11px] font-mono-tabular text-[var(--text-muted)]">
+                    Span: <strong className="text-[var(--text-ink)]">{pacingArchetype.dateRange.start}</strong>{' '}
+                    → <strong className="text-[var(--text-ink)]">{pacingArchetype.dateRange.finish}</strong>
+                  </div>
+                )}
+
+                {book.readingSessions && book.readingSessions.length > 0 && (
+                  <div className="space-y-1.5 pt-2 border-t border-[var(--border-ledger)]/60 font-mono-tabular text-xs">
+                    {book.readingSessions.map((session, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between text-[11px] text-[var(--text-muted)]"
+                      >
+                        <span>
+                          Session {idx + 1}:{' '}
+                          {session.startedAt ? session.startedAt.slice(0, 10) : 'Started'}
+                          {session.endedAt ? ` → ${session.endedAt.slice(0, 10)}` : ''}
+                        </span>
+                        <span className="px-1.5 py-0.5 rounded bg-[var(--bg-surface)] text-[10px] text-[var(--text-ink)] border border-[var(--border-ledger)]">
+                          {session.durationDays ? `${session.durationDays}d · ` : ''}
+                          {session.state}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </section>
             ) : (
               <section
@@ -516,11 +470,10 @@ export const BookDossierDrawer: React.FC<BookDossierDrawerProps> = ({
                       id="nightstand-studio-heading"
                       className="text-xs font-mono-tabular uppercase tracking-wider text-[var(--text-ink)] font-bold"
                     >
-                      Active Reading, Nightstand &amp; Target Pace Studio
+                      Reading Progress &amp; Nightstand
                     </h3>
                   </div>
 
-                  {/* Toggle Active ⇄ On Hold */}
                   <button
                     onClick={() =>
                       onUpdateBookOverride(book.id, {
@@ -548,7 +501,6 @@ export const BookDossierDrawer: React.FC<BookDossierDrawerProps> = ({
                   </button>
                 </div>
 
-                {/* Progress Bar & Page logger */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-xs font-mono-tabular">
                     <span className="text-[var(--text-muted)]">
@@ -565,75 +517,34 @@ export const BookDossierDrawer: React.FC<BookDossierDrawerProps> = ({
                   </div>
                 </div>
 
-                {/* Current Page logger + Target Finish Date inputs */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-xs font-mono-tabular">
-                  <div>
-                    <label className="block text-[10px] uppercase tracking-wider text-[var(--text-muted)] font-semibold mb-1">
-                      Log Current Page
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="number"
-                        min={0}
-                        max={totalPages || 9999}
-                        value={localCurrentPage}
-                        onChange={(e) => setLocalCurrentPage(e.target.value)}
-                        onBlur={handlePageCommit}
-                        onKeyDown={(e) => e.key === 'Enter' && handlePageCommit()}
-                        placeholder="0"
-                        className="w-full py-1.5 px-3 rounded-md bg-[var(--bg-surface)] border border-[var(--border-ledger)] text-xs text-[var(--text-ink)] focus:outline-none focus:border-[var(--accent-primary)]"
-                      />
-                      <button
-                        onClick={handlePageCommit}
-                        className="px-3 py-1.5 rounded-md bg-[var(--bg-surface)] hover:bg-[var(--accent-primary)] hover:text-white border border-[var(--border-ledger)] text-xs font-semibold text-[var(--text-ink)] transition-colors cursor-pointer"
-                      >
-                        Save
-                      </button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] uppercase tracking-wider text-[var(--text-muted)] font-semibold mb-1">
-                      Target Finish Date
-                    </label>
+                <div className="pt-1 text-xs font-mono-tabular">
+                  <label className="block text-[10px] uppercase tracking-wider text-[var(--text-muted)] font-semibold mb-1">
+                    Log Current Page
+                  </label>
+                  <div className="flex items-center gap-2 max-w-xs">
                     <input
-                      type="date"
-                      value={override?.targetFinishDate || ''}
-                      onChange={(e) =>
-                        onUpdateBookOverride(book.id, {
-                          targetFinishDate: e.target.value || null,
-                        })
-                      }
-                      className="w-full py-1.5 px-3 rounded-md bg-[var(--bg-surface)] border border-[var(--border-ledger)] text-xs text-[var(--text-ink)] focus:outline-none focus:border-[var(--accent-primary)] cursor-pointer"
+                      type="number"
+                      min={0}
+                      max={totalPages || 9999}
+                      value={localCurrentPage}
+                      onChange={(e) => setLocalCurrentPage(e.target.value)}
+                      onBlur={handlePageCommit}
+                      onKeyDown={(e) => e.key === 'Enter' && handlePageCommit()}
+                      placeholder="0"
+                      className="w-full py-1.5 px-3 rounded-md bg-[var(--bg-surface)] border border-[var(--border-ledger)] text-xs text-[var(--text-ink)] focus:outline-none focus:border-[var(--accent-primary)]"
                     />
+                    <button
+                      onClick={handlePageCommit}
+                      className="px-3 py-1.5 rounded-md bg-[var(--bg-surface)] hover:bg-[var(--accent-primary)] hover:text-white border border-[var(--border-ledger)] text-xs font-semibold text-[var(--text-ink)] transition-colors cursor-pointer"
+                    >
+                      Save
+                    </button>
                   </div>
-                </div>
-
-                {/* Dynamic Velocity & Target Velocity Feedback Banner */}
-                <div className="pt-2 border-t border-[var(--border-ledger)]/60 flex flex-wrap items-center justify-between gap-3 text-xs font-mono-tabular">
-                  <div className="flex items-center gap-1.5 text-[var(--text-muted)]">
-                    <Zap className="w-3.5 h-3.5 text-[var(--accent-gold)]" />
-                    <span>
-                      Format Velocity ({FORMAT_LABELS[profile.format]}):{' '}
-                      <strong className="text-[var(--text-ink)]">~{formatPace} pp/day</strong>
-                    </span>
-                    {projectedFinishDate && (
-                      <span className="text-[11px]">
-                        (ETA: <strong>{projectedFinishDate}</strong>)
-                      </span>
-                    )}
-                  </div>
-
-                  {pagesPerDayNeeded !== null && (
-                    <div className="px-2.5 py-1 rounded bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] font-semibold text-xs border border-[var(--accent-primary)]/20">
-                      Need <strong>{pagesPerDayNeeded} pp/day</strong> to hit deadline
-                    </div>
-                  )}
                 </div>
               </section>
             )}
 
-            {/* UPGRADE 2: Separate Language & Format Passport Panel */}
+            {/* Language & Format Passport */}
             <section
               aria-labelledby="language-passport-heading"
               className="p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs space-y-4"
@@ -649,7 +560,6 @@ export const BookDossierDrawer: React.FC<BookDossierDrawerProps> = ({
                   </h3>
                 </div>
 
-                {/* Translation Flow Badge */}
                 <span
                   className={`px-2.5 py-0.5 rounded text-xs font-mono-tabular font-bold ${
                     profile.isTranslation
@@ -662,7 +572,6 @@ export const BookDossierDrawer: React.FC<BookDossierDrawerProps> = ({
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-mono-tabular">
-                {/* Reading Edition Language Override */}
                 <div>
                   <label className="block text-[10px] uppercase tracking-wider text-[var(--text-muted)] font-semibold mb-1">
                     Reading Edition Lang
@@ -684,7 +593,6 @@ export const BookDossierDrawer: React.FC<BookDossierDrawerProps> = ({
                   </select>
                 </div>
 
-                {/* Original Published Language Override */}
                 <div>
                   <label className="block text-[10px] uppercase tracking-wider text-[var(--text-muted)] font-semibold mb-1">
                     Original Published Lang
@@ -706,7 +614,6 @@ export const BookDossierDrawer: React.FC<BookDossierDrawerProps> = ({
                   </select>
                 </div>
 
-                {/* Format Override */}
                 <div>
                   <label className="block text-[10px] uppercase tracking-wider text-[var(--text-muted)] font-semibold mb-1">
                     Format Category
@@ -737,23 +644,22 @@ export const BookDossierDrawer: React.FC<BookDossierDrawerProps> = ({
               )}
             </section>
 
-            {/* UPGRADE 3: Enriched Synopsis, Subjects & Crowd Rating */}
+            {/* Enriched Synopsis, Subjects & Community Rating */}
             <section
               aria-labelledby="enrichment-heading"
               className="p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] shadow-2xs space-y-4"
             >
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-[var(--accent-gold)]" />
                   <h3
                     id="enrichment-heading"
                     className="text-xs font-mono-tabular uppercase tracking-wider text-[var(--text-ink)] font-bold"
                   >
-                    Enriched Synopsis, Subjects &amp; Crowd Consensus
+                    Synopsis &amp; Community Rating
                   </h3>
                 </div>
 
-                {/* 1-click Fetch Synopsis & Rating button */}
                 <button
                   onClick={handleEnrich}
                   disabled={isEnriching}
@@ -765,8 +671,7 @@ export const BookDossierDrawer: React.FC<BookDossierDrawerProps> = ({
                 </button>
               </div>
 
-              {/* Rating Comparison with Contrarian Delta */}
-              <div className="p-3.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] flex flex-wrap items-center justify-between gap-4 font-mono-tabular text-xs">
+              <div className="p-3.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] grid grid-cols-2 gap-4 font-mono-tabular text-xs">
                 <div>
                   <span className="text-[10px] uppercase text-[var(--text-muted)] block font-semibold">
                     Personal Rating
@@ -786,30 +691,12 @@ export const BookDossierDrawer: React.FC<BookDossierDrawerProps> = ({
                     <span>{communityRating ? `${communityRating.toFixed(2)}★` : '—'}</span>
                   </div>
                 </div>
-
-                {ratingDelta !== null && (
-                  <div>
-                    <span className="text-[10px] uppercase text-[var(--text-muted)] block font-semibold">
-                      Contrarian Divergence
-                    </span>
-                    <span
-                      className={`inline-block font-bold text-xs px-2 py-0.5 rounded mt-0.5 ${
-                        ratingDelta >= 0
-                          ? 'bg-[var(--accent-secondary)]/15 text-[var(--accent-secondary)]'
-                          : 'bg-[var(--accent-primary)]/15 text-[var(--accent-primary)]'
-                      }`}
-                    >
-                      {ratingDelta > 0 ? `+${ratingDelta}` : ratingDelta}★ vs Crowd
-                    </span>
-                  </div>
-                )}
               </div>
 
-              {/* Synopsis Box */}
               {enriched?.synopsis ? (
                 <div className="space-y-1.5">
                   <span className="text-[10px] font-mono-tabular uppercase tracking-wider text-[var(--text-muted)] font-semibold">
-                    Verified Synopsis Archive
+                    Synopsis
                   </span>
                   <p className="font-serif-editorial text-sm leading-relaxed text-[var(--text-ink)] italic p-3.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)]">
                     &ldquo;{enriched.synopsis}&rdquo;
@@ -817,16 +704,15 @@ export const BookDossierDrawer: React.FC<BookDossierDrawerProps> = ({
                 </div>
               ) : (
                 <p className="text-xs text-[var(--text-muted)] italic">
-                  No verified synopsis cached yet. Click &ldquo;Fetch Synopsis &amp; Crowd Rating&rdquo;
-                  above to retrieve metadata.
+                  No synopsis cached yet. Click &ldquo;Fetch Synopsis &amp; Crowd Rating&rdquo; above
+                  to retrieve metadata.
                 </p>
               )}
 
-              {/* Subjects / Genre Pills */}
               {enriched?.subjects && enriched.subjects.length > 0 && (
                 <div className="space-y-1.5">
                   <span className="text-[10px] font-mono-tabular uppercase tracking-wider text-[var(--text-muted)] font-semibold">
-                    Enriched Subjects &amp; Classifications
+                    Subjects
                   </span>
                   <div className="flex flex-wrap gap-1.5">
                     {enriched.subjects.map((s, idx) => (
@@ -841,351 +727,6 @@ export const BookDossierDrawer: React.FC<BookDossierDrawerProps> = ({
                 </div>
               )}
             </section>
-
-            {/* UPGRADE 4: Attached Kindle `My Clippings.txt` Highlights & Paired Notes */}
-            {matchingClippings.length > 0 && (
-              <section aria-labelledby="clippings-heading" className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <BookmarkCheck className="w-4 h-4 text-[var(--accent-secondary)]" />
-                    <h3
-                      id="clippings-heading"
-                      className="text-xs font-mono-tabular uppercase tracking-wider text-[var(--text-ink)] font-bold"
-                    >
-                      Kindle `My Clippings.txt` Passages ({matchingClippings.length})
-                    </h3>
-                  </div>
-                  <span className="text-xs font-mono-tabular text-[var(--text-muted)]">
-                    Local e-reader marginalia
-                  </span>
-                </div>
-
-                <div className="space-y-3">
-                  {matchingClippings.map((clip) => (
-                    <div
-                      key={clip.id}
-                      className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] text-xs shadow-2xs space-y-2"
-                    >
-                      {/* Clipping chapter, color, location & date header */}
-                      <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono-tabular text-[var(--text-muted)]">
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          {clip.highlightColor && (
-                            <span
-                              className="inline-block w-2.5 h-2.5 rounded-full shrink-0 border border-black/15"
-                              style={{
-                                backgroundColor:
-                                  clip.highlightColor === 'pink'
-                                    ? '#e879a0'
-                                    : clip.highlightColor === 'blue'
-                                    ? '#60a5fa'
-                                    : clip.highlightColor === 'orange'
-                                    ? '#fb923c'
-                                    : '#facc15',
-                              }}
-                              title={`${clip.highlightColor} highlight`}
-                            />
-                          )}
-                          {clip.chapter && (
-                            <span className="font-medium text-[var(--text-ink)] truncate max-w-[200px]">
-                              {clip.chapter} ·
-                            </span>
-                          )}
-                          <span className="font-semibold text-[var(--accent-secondary)] shrink-0">
-                            {clip.page
-                              ? `Page ${clip.page}`
-                              : clip.locationStart
-                              ? `Location ${clip.locationStart}${clip.locationEnd ? `–${clip.locationEnd}` : ''}`
-                              : 'Highlight'}
-                          </span>
-                        </div>
-                        {clip.addedAt && <span>{clip.addedAt.slice(0, 10)}</span>}
-                      </div>
-
-                      {/* Passage */}
-                      <blockquote className="font-serif-editorial text-sm italic text-[var(--text-ink)] leading-relaxed border-l-2 border-[var(--accent-secondary)]/50 pl-3">
-                        &ldquo;{clip.content}&rdquo;
-                      </blockquote>
-
-                      {/* Attached paired note */}
-                      {clip.attachedNote && (
-                        <div className="mt-2 p-2.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] flex items-start gap-2">
-                          <Feather className="w-3.5 h-3.5 text-[var(--accent-gold)] shrink-0 mt-0.5" />
-                          <div className="font-sans-ui text-xs text-[var(--text-ink)]">
-                            <span className="font-semibold text-[var(--accent-gold)] mr-1">
-                              Your Note:
-                            </span>
-                            {clip.attachedNote}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* Colophon Grid (Scholarly Bibliographic Metadata) */}
-            <section aria-labelledby="colophon-heading">
-              <h3
-                id="colophon-heading"
-                className="text-xs font-mono-tabular uppercase tracking-wider text-[var(--text-muted)] font-bold mb-3 flex items-center gap-1.5"
-              >
-                <Hash className="w-3.5 h-3.5" />
-                <span>Colophon &amp; Bibliographic Details</span>
-              </h3>
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] text-xs font-mono-tabular">
-                <div>
-                  <span className="text-[var(--text-muted)] block text-[10px] uppercase">
-                    Book ID
-                  </span>
-                  <span className="font-medium text-[var(--text-ink)]">{book.id}</span>
-                </div>
-
-                <div>
-                  <span className="text-[var(--text-muted)] block text-[10px] uppercase">
-                    ISBN13
-                  </span>
-                  <span className="font-medium text-[var(--text-ink)]">{book.isbn13 || '—'}</span>
-                </div>
-
-                <div>
-                  <span className="text-[var(--text-muted)] block text-[10px] uppercase">
-                    ISBN
-                  </span>
-                  <span className="font-medium text-[var(--text-ink)]">{book.isbn || '—'}</span>
-                </div>
-
-                <div>
-                  <span className="text-[var(--text-muted)] block text-[10px] uppercase">
-                    Publisher
-                  </span>
-                  <span className="font-medium text-[var(--text-ink)] truncate block">
-                    {book.publisher || '—'}
-                  </span>
-                </div>
-
-                <div>
-                  <span className="text-[var(--text-muted)] block text-[10px] uppercase">
-                    Binding
-                  </span>
-                  <span className="font-medium text-[var(--text-ink)]">{book.binding || '—'}</span>
-                </div>
-
-                <div>
-                  <span className="text-[var(--text-muted)] block text-[10px] uppercase">
-                    Page Count
-                  </span>
-                  <span className="font-medium text-[var(--text-ink)]">
-                    {book.pageCount ? `${book.pageCount} pp.` : '—'}
-                  </span>
-                </div>
-
-                <div>
-                  <span className="text-[var(--text-muted)] block text-[10px] uppercase">
-                    Orig. Pub Year
-                  </span>
-                  <span className="font-medium text-[var(--text-ink)]">{originalYear || '—'}</span>
-                </div>
-
-                <div>
-                  <span className="text-[var(--text-muted)] block text-[10px] uppercase">
-                    Edition Year
-                  </span>
-                  <span className="font-medium text-[var(--text-ink)]">{editionYear || '—'}</span>
-                </div>
-
-                <div>
-                  <span className="text-[var(--text-muted)] block text-[10px] uppercase">
-                    Date Added
-                  </span>
-                  <span className="font-medium text-[var(--text-ink)]">
-                    {book.dateAdded ? book.dateAdded.slice(0, 10) : '—'}
-                  </span>
-                </div>
-
-                <div>
-                  <span className="text-[var(--text-muted)] block text-[10px] uppercase">
-                    Date Read
-                  </span>
-                  <span className="font-medium text-[var(--text-ink)]">
-                    {book.dateRead ? book.dateRead.slice(0, 10) : '—'}
-                  </span>
-                </div>
-
-                <div>
-                  <span className="text-[var(--text-muted)] block text-[10px] uppercase">
-                    Read Count
-                  </span>
-                  <span className="font-medium text-[var(--text-ink)]">{book.readCount || 1}</span>
-                </div>
-
-                <div>
-                  <span className="text-[var(--text-muted)] block text-[10px] uppercase">
-                    Owned Copies
-                  </span>
-                  <span className="font-medium text-[var(--text-ink)]">
-                    {book.ownedCopies || 0}
-                  </span>
-                </div>
-              </div>
-            </section>
-
-            {/* Reading Sessions Timeline */}
-            {book.readingSessions && book.readingSessions.length > 0 && (
-              <section aria-labelledby="sessions-heading">
-                <h3
-                  id="sessions-heading"
-                  className="text-xs font-mono-tabular uppercase tracking-wider text-[var(--text-muted)] font-bold mb-3 flex items-center gap-1.5"
-                >
-                  <Clock className="w-3.5 h-3.5 text-[var(--accent-secondary)]" />
-                  <span>Reading Sessions Timeline</span>
-                </h3>
-
-                <div className="space-y-2 p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] font-mono-tabular text-xs">
-                  {book.readingSessions.map((session, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between pb-2 border-b border-[var(--border-ledger)]/60 last:border-0 last:pb-0"
-                    >
-                      <div>
-                        <span className="font-semibold text-[var(--text-ink)]">
-                          Session 0{idx + 1}
-                        </span>
-                        <div className="text-[11px] text-[var(--text-muted)] mt-0.5">
-                          {session.startedAt
-                            ? `Started: ${session.startedAt.slice(0, 10)}`
-                            : 'In progress'}
-                          {session.endedAt ? ` · Completed: ${session.endedAt.slice(0, 10)}` : ''}
-                        </div>
-                      </div>
-
-                      <div className="text-right">
-                        <span className="px-2 py-0.5 rounded bg-[var(--bg-surface)] text-[10px] font-semibold text-[var(--text-ink)]">
-                          {session.state}
-                        </span>
-                        {session.durationDays && (
-                          <div className="text-[11px] text-[var(--accent-secondary)] font-semibold mt-0.5">
-                            {session.durationDays} days duration
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* Obsidian Vault Literature Essay / Review */}
-            {vaultReview && (
-              <section aria-labelledby="vault-review-heading" className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <h3
-                    id="vault-review-heading"
-                    className="text-xs font-mono-tabular uppercase tracking-wider text-[#7C5CFF] font-bold flex items-center gap-1.5"
-                  >
-                    <FolderArchive className="w-3.5 h-3.5 text-[#7C5CFF]" />
-                    <span>Obsidian Vault Literature Essay</span>
-                  </h3>
-                  <a
-                    href={vaultReview.obsidianUri}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-mono-tabular font-semibold text-[#7C5CFF] bg-[#7C5CFF]/10 hover:bg-[#7C5CFF]/20 border border-[#7C5CFF]/30 transition-colors shadow-2xs"
-                    title="Open directly in your Obsidian vault"
-                  >
-                    <span>Open in Obsidian</span>
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
-                </div>
-
-                <div className="p-5 rounded-xl bg-[var(--bg-card)] border border-[#7C5CFF]/35 shadow-2xs space-y-3">
-                  <div className="flex items-center justify-between text-[11px] font-mono-tabular text-[var(--text-muted)] border-b border-[var(--border-ledger)]/60 pb-2">
-                    <span className="truncate max-w-[240px] font-medium text-[var(--text-ink)]">
-                      {vaultReview.vaultFilePath}
-                    </span>
-                    <span>{vaultReview.wordsCount.toLocaleString()} words</span>
-                  </div>
-                  <div className="font-serif-editorial text-sm sm:text-base leading-relaxed text-[var(--text-ink)] whitespace-pre-line space-y-2">
-                    {vaultReview.content}
-                  </div>
-                </div>
-              </section>
-            )}
-
-            {/* Letterboxd Screen Adaptation Card */}
-            {filmAdaptation && (
-              <section aria-labelledby="film-adaptation-heading" className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <h3
-                    id="film-adaptation-heading"
-                    className="text-xs font-mono-tabular uppercase tracking-wider text-purple-600 dark:text-purple-400 font-bold flex items-center gap-1.5"
-                  >
-                    <Film className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-                    <span>Screen Adaptation · Letterboxd</span>
-                  </h3>
-                  {filmAdaptation.uri && (
-                    <a
-                      href={filmAdaptation.uri}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-mono-tabular font-semibold text-purple-600 dark:text-purple-400 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 transition-colors shadow-2xs"
-                      title="Open on Letterboxd"
-                    >
-                      <span>View on Letterboxd</span>
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
-                  )}
-                </div>
-
-                <div className="p-4 sm:p-5 rounded-xl bg-[var(--bg-card)] border border-purple-500/35 shadow-2xs space-y-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h4 className="font-serif-editorial text-base sm:text-lg font-bold text-[var(--text-ink)] flex items-center gap-2">
-                        <span>{filmAdaptation.name}</span>
-                        {filmAdaptation.year ? (
-                          <span className="font-mono-tabular text-xs font-normal text-[var(--text-muted)]">
-                            ({filmAdaptation.year})
-                          </span>
-                        ) : null}
-                      </h4>
-                      {filmAdaptation.rating !== null && (
-                        <div className="flex items-center gap-2 mt-1 font-mono-tabular text-xs">
-                          <span className="text-amber-500 font-bold tracking-wider">
-                            {formatStarRating(filmAdaptation.rating)}
-                          </span>
-                          <span className="text-[var(--text-muted)] text-[11px]">
-                            ({filmAdaptation.rating.toFixed(1)} / 5)
-                          </span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      {filmAdaptation.rewatch && (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-mono-tabular bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 font-semibold">
-                          Rewatch
-                        </span>
-                      )}
-                      {filmAdaptation.date && (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-mono-tabular bg-[var(--bg-surface)] border border-[var(--border-ledger)] text-[var(--text-muted)]">
-                          {filmAdaptation.date}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {filmAdaptation.review && (
-                    <div className="pt-2 border-t border-[var(--border-ledger)]/60">
-                      <div className="text-[10px] uppercase font-mono-tabular tracking-wider text-[var(--text-muted)] mb-1">
-                        Your Letterboxd Diary Note:
-                      </div>
-                      <blockquote className="relative pl-3 border-l-2 border-purple-400 text-xs sm:text-sm text-[var(--text-ink)] font-serif-editorial italic leading-relaxed bg-[var(--bg-surface)]/60 p-2.5 rounded-r">
-                        &ldquo;{filmAdaptation.review}&rdquo;
-                      </blockquote>
-                    </div>
-                  )}
-                </div>
-              </section>
-            )}
 
             {/* Personal Review (With Spoiler Shield) */}
             {book.myReview && (
@@ -1242,7 +783,42 @@ export const BookDossierDrawer: React.FC<BookDossierDrawerProps> = ({
               </section>
             )}
 
-            {/* Private Notes */}
+            {/* Obsidian Vault Literature Essay */}
+            {vaultReview && (
+              <section aria-labelledby="vault-review-heading" className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h3
+                    id="vault-review-heading"
+                    className="text-xs font-mono-tabular uppercase tracking-wider text-[#7C5CFF] font-bold flex items-center gap-1.5"
+                  >
+                    <FolderArchive className="w-3.5 h-3.5 text-[#7C5CFF]" />
+                    <span>Obsidian Vault Literature Essay</span>
+                  </h3>
+                  <a
+                    href={vaultReview.obsidianUri}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-mono-tabular font-semibold text-[#7C5CFF] bg-[#7C5CFF]/10 hover:bg-[#7C5CFF]/20 border border-[#7C5CFF]/30 transition-colors shadow-2xs"
+                    title="Open directly in your Obsidian vault"
+                  >
+                    <span>Open in Obsidian</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+
+                <div className="p-5 rounded-xl bg-[var(--bg-card)] border border-[#7C5CFF]/35 shadow-2xs space-y-3">
+                  <div className="flex items-center justify-between text-[11px] font-mono-tabular text-[var(--text-muted)] border-b border-[var(--border-ledger)]/60 pb-2">
+                    <span className="truncate max-w-[240px] font-medium text-[var(--text-ink)]">
+                      {vaultReview.vaultFilePath}
+                    </span>
+                    <span>{vaultReview.wordsCount.toLocaleString()} words</span>
+                  </div>
+                  <div className="font-serif-editorial text-sm sm:text-base leading-relaxed text-[var(--text-ink)] whitespace-pre-line space-y-2">
+                    {vaultReview.content}
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {/* Archival Private Notes */}
             {book.privateNotes && (
               <section aria-labelledby="notes-heading">
                 <h3
@@ -1257,23 +833,89 @@ export const BookDossierDrawer: React.FC<BookDossierDrawerProps> = ({
               </section>
             )}
 
-            {/* DSAR Kindle Marginalia Highlights */}
-            {combinedKindleNotes.length > 0 && (
-              <section aria-labelledby="marginalia-heading">
-                <h3
-                  id="marginalia-heading"
-                  className="text-xs font-mono-tabular uppercase tracking-wider text-[var(--accent-gold)] font-bold mb-3 flex items-center gap-1.5"
-                >
-                  <Quote className="w-3.5 h-3.5" />
-                  <span>Kindle Reading Activity Notes ({combinedKindleNotes.length})</span>
-                </h3>
+            {/* Consolidated Marginalia & Kindle Passages */}
+            {(matchingClippings.length > 0 || combinedKindleNotes.length > 0) && (
+              <section aria-labelledby="marginalia-heading" className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3
+                    id="marginalia-heading"
+                    className="text-xs font-mono-tabular uppercase tracking-wider text-[var(--accent-secondary)] font-bold flex items-center gap-1.5"
+                  >
+                    <BookmarkCheck className="w-4 h-4" />
+                    <span>
+                      Marginalia &amp; Kindle Passages (
+                      {matchingClippings.length + combinedKindleNotes.length})
+                    </span>
+                  </h3>
+                </div>
 
                 <div className="space-y-3">
+                  {matchingClippings.map((clip) => (
+                    <div
+                      key={clip.id}
+                      className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] text-xs shadow-2xs space-y-2"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono-tabular text-[var(--text-muted)]">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          {clip.highlightColor && (
+                            <span
+                              className="inline-block w-2.5 h-2.5 rounded-full shrink-0 border border-black/15"
+                              style={{
+                                backgroundColor:
+                                  clip.highlightColor === 'pink'
+                                    ? '#e879a0'
+                                    : clip.highlightColor === 'blue'
+                                    ? '#60a5fa'
+                                    : clip.highlightColor === 'orange'
+                                    ? '#fb923c'
+                                    : '#facc15',
+                              }}
+                              title={`${clip.highlightColor} highlight`}
+                            />
+                          )}
+                          {clip.chapter && (
+                            <span className="font-medium text-[var(--text-ink)] truncate max-w-[200px]">
+                              {clip.chapter} ·
+                            </span>
+                          )}
+                          <span className="font-semibold text-[var(--accent-secondary)] shrink-0">
+                            {clip.page
+                              ? `Page ${clip.page}`
+                              : clip.locationStart
+                              ? `Location ${clip.locationStart}${clip.locationEnd ? `–${clip.locationEnd}` : ''}`
+                              : 'Highlight'}
+                          </span>
+                        </div>
+                        {clip.addedAt && <span>{clip.addedAt.slice(0, 10)}</span>}
+                      </div>
+
+                      <blockquote className="font-serif-editorial text-sm italic text-[var(--text-ink)] leading-relaxed border-l-2 border-[var(--accent-secondary)]/50 pl-3">
+                        &ldquo;{clip.content}&rdquo;
+                      </blockquote>
+
+                      {clip.attachedNote && (
+                        <div className="mt-2 p-2.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] flex items-start gap-2">
+                          <Feather className="w-3.5 h-3.5 text-[var(--accent-gold)] shrink-0 mt-0.5" />
+                          <div className="font-sans-ui text-xs text-[var(--text-ink)]">
+                            <span className="font-semibold text-[var(--accent-gold)] mr-1">
+                              Your Note:
+                            </span>
+                            {clip.attachedNote}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+
                   {combinedKindleNotes.map((note, nIdx) => (
                     <div
-                      key={nIdx}
+                      key={`dsar-note-${nIdx}`}
                       className="p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] text-xs shadow-2xs"
                     >
+                      <div className="flex items-center gap-1.5 text-[10px] font-mono-tabular uppercase tracking-wider text-[var(--accent-gold)] font-semibold mb-1.5">
+                        <Quote className="w-3 h-3" />
+                        <span>Kindle Reading Note</span>
+                      </div>
                       <blockquote className="font-serif-editorial text-sm italic text-[var(--text-ink)] leading-relaxed">
                         &ldquo;{note.noteText}&rdquo;
                       </blockquote>
@@ -1288,36 +930,64 @@ export const BookDossierDrawer: React.FC<BookDossierDrawerProps> = ({
               </section>
             )}
 
-            {/* Related Recommendations */}
-            {book.recommendations && book.recommendations.length > 0 && (
-              <section aria-labelledby="related-heading">
-                <h3
-                  id="related-heading"
-                  className="text-xs font-mono-tabular uppercase tracking-wider text-[var(--text-muted)] font-bold mb-3 flex items-center gap-1.5"
-                >
-                  <Compass className="w-3.5 h-3.5 text-[var(--accent-secondary)]" />
-                  <span>Goodreads Graph: Recommended Next Reads</span>
-                </h3>
+            {/* Compact 6-Cell Bibliographic Strip */}
+            <section aria-labelledby="colophon-heading">
+              <h3
+                id="colophon-heading"
+                className="text-xs font-mono-tabular uppercase tracking-wider text-[var(--text-muted)] font-bold mb-3 flex items-center gap-1.5"
+              >
+                <Hash className="w-3.5 h-3.5" />
+                <span>Bibliographic Details</span>
+              </h3>
 
-                <div className="space-y-2">
-                  {book.recommendations.map((rec, rIdx) => (
-                    <div
-                      key={rIdx}
-                      className="p-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] flex items-center justify-between text-xs"
-                    >
-                      <span className="font-serif-editorial font-bold text-[var(--text-ink)]">
-                        {rec.recommendedTitle}
-                      </span>
-                      {rec.shelf && (
-                        <span className="font-mono-tabular text-[10px] text-[var(--text-muted)]">
-                          Shelf: {rec.shelf}
-                        </span>
-                      )}
-                    </div>
-                  ))}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-ledger)] text-xs font-mono-tabular">
+                <div>
+                  <span className="text-[var(--text-muted)] block text-[10px] uppercase">
+                    Publisher
+                  </span>
+                  <span className="font-medium text-[var(--text-ink)] truncate block">
+                    {book.publisher || '—'}
+                  </span>
                 </div>
-              </section>
-            )}
+
+                <div>
+                  <span className="text-[var(--text-muted)] block text-[10px] uppercase">
+                    Binding
+                  </span>
+                  <span className="font-medium text-[var(--text-ink)]">{book.binding || '—'}</span>
+                </div>
+
+                <div>
+                  <span className="text-[var(--text-muted)] block text-[10px] uppercase">
+                    Page Count
+                  </span>
+                  <span className="font-medium text-[var(--text-ink)]">
+                    {book.pageCount ? `${book.pageCount} pp.` : '—'}
+                  </span>
+                </div>
+
+                <div>
+                  <span className="text-[var(--text-muted)] block text-[10px] uppercase">
+                    Orig. Pub Year
+                  </span>
+                  <span className="font-medium text-[var(--text-ink)]">{originalYear || '—'}</span>
+                </div>
+
+                <div>
+                  <span className="text-[var(--text-muted)] block text-[10px] uppercase">
+                    Edition Year
+                  </span>
+                  <span className="font-medium text-[var(--text-ink)]">{editionYear || '—'}</span>
+                </div>
+
+                <div>
+                  <span className="text-[var(--text-muted)] block text-[10px] uppercase">
+                    ISBN-13
+                  </span>
+                  <span className="font-medium text-[var(--text-ink)]">{book.isbn13 || '—'}</span>
+                </div>
+              </div>
+            </section>
           </div>
 
           {/* 3. Footer Bar */}
