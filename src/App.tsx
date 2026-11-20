@@ -24,7 +24,9 @@ import {
 import { enrichSingleBook } from './lib/enrichment/metadataEnricher';
 import { fetchGoodreadsPublicLibrary } from './lib/parsers/goodreadsRss';
 import { downloadStandaloneLibraryHtml } from './lib/exporters/standaloneHtmlExporter';
+import { createEmptyLibraryBundle, loadDemoArchive } from './lib/demo/demoArchive';
 import { Header, TabId } from './components/Header';
+import { LandingView } from './components/LandingView';
 import { StudyView } from './components/StudyView';
 import { LibraryView } from './components/LibraryView';
 import { OracleView } from './components/OracleView';
@@ -81,6 +83,7 @@ export const App: React.FC = () => {
     userId: string;
     profileName: string | null;
   } | null>(null);
+  const [isDemoArchiveActive, setIsDemoArchiveActive] = useState(false);
 
   // User Local State (overrides, clippings, cover settings)
   const [userState, setUserState] = useState<UserLocalState>(DEFAULT_USER_STATE);
@@ -162,37 +165,6 @@ export const App: React.FC = () => {
       const inlineBundle = (
         window as unknown as { __EXLIBRIS_INLINE_BUNDLE__?: LibraryBundle }
       ).__EXLIBRIS_INLINE_BUNDLE__;
-
-function createEmptyLibraryBundle(): LibraryBundle {
-  return {
-    schemaVersion: '0.2.0',
-    generatedAt: new Date().toISOString(),
-    summaryStats: {
-      totalBooks: 0,
-      distinctAuthors: 0,
-      booksWithSeries: 0,
-      shelves: { read: 0, toRead: 0, currentlyReading: 0, didNotFinish: 0 },
-      ratings: { ratedCount: 0, unratedCount: 0, averageRating: null, distribution: {} },
-      pages: {
-        totalPagesRead: 0,
-        totalLibraryPages: 0,
-        booksWithPagesCount: 0,
-        booksWithoutPagesCount: 0,
-      },
-    },
-    books: [],
-    quotes: [],
-    kindleNotes: [],
-    recommendations: [],
-    readingGoals: [],
-    achievements: [],
-    followedAuthors: [],
-    favoriteGenres: null,
-    reviewDrafts: [],
-    activityByHour: null,
-    suggestedLists: [],
-  };
-}
 
       const loadBundle = async (): Promise<LibraryBundle> => {
         if (inlineBundle) {
@@ -454,6 +426,26 @@ function createEmptyLibraryBundle(): LibraryBundle {
     setIsDossierOpen(true);
   }, []);
 
+  const handleLoadDemoArchive = useCallback(async () => {
+    const demo = await loadDemoArchive();
+    setBundle(demo.bundle);
+    setUserState((prev) => ({
+      ...prev,
+      bookOverrides: demo.bookOverrides,
+      kindleClippings: demo.clippings,
+      writingTelemetry: demo.writingTelemetry,
+    }));
+    setIsDemoArchiveActive(true);
+    setActiveTab('study');
+  }, []);
+
+  const handleClearDemoArchive = useCallback(() => {
+    setBundle(createEmptyLibraryBundle());
+    setUserState(DEFAULT_USER_STATE);
+    setIsDemoArchiveActive(false);
+    setActiveTab('study');
+  }, []);
+
   // Open dossier by ID or title lookup
   const handleSelectBookById = useCallback(
     (bookId: string | null, fallbackTitle?: string) => {
@@ -665,9 +657,52 @@ function createEmptyLibraryBundle(): LibraryBundle {
         </aside>
       )}
 
+      {/* Active Demo Archive Banner */}
+      {isDemoArchiveActive && (
+        <aside
+          aria-label="Demo Archive Active"
+          className="bg-[var(--accent-gold)]/15 border-b border-[var(--accent-gold)]/30 px-4 py-2 text-xs font-mono-tabular transition-colors"
+        >
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[var(--accent-gold)] animate-pulse" />
+              <span className="text-[var(--text-ink)] font-semibold">
+                Demo Archive Active
+              </span>
+              <span className="text-[var(--text-muted)] text-[11px]">
+                ({bundle.books.length} fictional sample volumes · {userState.kindleClippings.length} Kindle highlights)
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setIsImportOpen(true)}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-[var(--accent-primary)] text-white text-xs font-semibold cursor-pointer shadow-2xs hover:opacity-90 transition-opacity"
+              >
+                <span>Import Your Own</span>
+              </button>
+              <button
+                onClick={handleClearDemoArchive}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-[var(--bg-card)] border border-[var(--border-ledger)] hover:border-[var(--accent-primary)] text-[var(--text-ink)] text-xs font-semibold cursor-pointer shadow-2xs hover:bg-[var(--bg-surface)] transition-colors"
+              >
+                <RotateCcw className="w-3 h-3 text-[var(--accent-primary)]" />
+                <span>Clear Demo</span>
+              </button>
+            </div>
+          </div>
+        </aside>
+      )}
+
       {/* 2. Main Content Views Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {activeTab === 'study' && (
+        {activeTab === 'study' && bundle.books.length === 0 && (
+          <LandingView
+            onOpenImport={() => setIsImportOpen(true)}
+            onLoadDemoArchive={handleLoadDemoArchive}
+          />
+        )}
+
+        {activeTab === 'study' && bundle.books.length > 0 && (
           <StudyView
             bundle={bundle}
             userState={userState}
