@@ -63,6 +63,15 @@ describe('Yearly Targets & Entire TBR Reading Time', () => {
         exclusiveShelf: 'to-read',
         dateRead: null,
       },
+      {
+        id: 'dnf1',
+        title: 'Abandoned Tome',
+        cleanTitle: 'Abandoned Tome',
+        author: 'Author D',
+        pageCount: 500,
+        exclusiveShelf: 'did-not-finish',
+        dateRead: '2026/03/12',
+      },
     ] as unknown as Book[],
   } as unknown) as LibraryBundle;
 
@@ -91,6 +100,7 @@ describe('Yearly Targets & Entire TBR Reading Time', () => {
 
     expect(res.targetYear).toBe(2026);
     expect(res.titlesCompleted).toBe(2);
+    expect(res.dnfCount).toBe(1);
     expect(res.titlesGoal).toBe(50);
     expect(res.pagesCompleted).toBe(820); // 600 + 220
     expect(res.pagesGoal).toBe(10000);

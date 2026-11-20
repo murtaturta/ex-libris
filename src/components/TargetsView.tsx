@@ -189,11 +189,21 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
               <span className="font-bold text-[var(--accent-primary)]">{analytics.titlesPct}%</span>
             </div>
 
-            <div className="flex items-baseline gap-1.5 font-mono-tabular">
-              <span className="text-3xl font-bold text-[var(--text-ink)]">
-                {analytics.titlesCompleted}
-              </span>
-              <span className="text-sm text-[var(--text-muted)]">/ {analytics.titlesGoal} books</span>
+            <div className="flex items-baseline justify-between gap-2 font-mono-tabular">
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-3xl font-bold text-[var(--text-ink)]">
+                  {analytics.titlesCompleted}
+                </span>
+                <span className="text-sm text-[var(--text-muted)]">/ {analytics.titlesGoal} books</span>
+              </div>
+              {analytics.dnfCount > 0 && (
+                <span
+                  className="text-xs px-2 py-0.5 rounded-full bg-[var(--bg-card)] border border-[var(--border-ledger)] text-[var(--text-muted)]"
+                  title={`${analytics.dnfCount} unfinished (DNF) ${analytics.dnfCount === 1 ? 'book' : 'books'} logged in ${analytics.targetYear} (excluded from goal)`}
+                >
+                  +{analytics.dnfCount} DNF
+                </span>
+              )}
             </div>
 
             <div className="relative w-full h-2 rounded-full bg-[var(--bg-card)] overflow-hidden border border-[var(--border-ledger)]">

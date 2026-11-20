@@ -61,6 +61,7 @@ export interface YearlyTargetAnalytics {
   effectiveWpm: number;
   isKindleWpmCalibrated: boolean;
   titlesCompleted: number;
+  dnfCount: number;
   titlesGoal: number;
   titlesPct: number;
   pagesCompleted: number;
@@ -134,9 +135,18 @@ export function computeYearlyTargetAnalytics(
   const readByYear = new Map<number, { titles: number; pages: number }>();
   const monthlyBooks = Array(12).fill(0) as number[];
   const monthlyPages = Array(12).fill(0) as number[];
+  let dnfCount = 0;
 
   for (const book of books) {
-    if (getEffectiveShelf(book) !== 'read') continue;
+    const shelf = getEffectiveShelf(book);
+    if (shelf === 'did-not-finish') {
+      const ym = getReadYearAndMonth(book);
+      if (ym && ym.year === targetYear) {
+        dnfCount += 1;
+      }
+      continue;
+    }
+    if (shelf !== 'read') continue;
     const ym = getReadYearAndMonth(book);
     if (!ym) continue;
     const pages = book.pageCount || 0;
@@ -342,6 +352,7 @@ export function computeYearlyTargetAnalytics(
     effectiveWpm,
     isKindleWpmCalibrated,
     titlesCompleted,
+    dnfCount,
     titlesGoal,
     titlesPct,
     pagesCompleted,
