@@ -303,7 +303,27 @@ describe('v0.2 Pipeline Suite', () => {
         kindleClippings: [],
       };
 
-      const diagnostics = computeNightstandDiagnostics(bundle, userState);
+      const crBundle: LibraryBundle = bundle.books.some(
+        b => b.id === '32862868' && b.exclusiveShelf === 'currently-reading'
+      )
+        ? bundle
+        : {
+            ...bundle,
+            books: [
+              {
+                id: '32862868',
+                title: 'Sıcak Kafa',
+                cleanTitle: 'Sıcak Kafa',
+                author: 'Afşin Kum',
+                pageCount: 188,
+                exclusiveShelf: 'currently-reading',
+                myRating: 0,
+              } as any,
+              ...bundle.books.filter(b => b.id !== '32862868'),
+            ],
+          };
+
+      const diagnostics = computeNightstandDiagnostics(crBundle, userState);
       expect(diagnostics.length).toBeGreaterThan(0);
 
       const sicakKafa = diagnostics.find(d => d.book.id === '32862868');

@@ -2,7 +2,12 @@ import { describe, it, expect } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
 
-describe('Scriptor Obsidian Plugin Verification Suite', () => {
+const hasLocalScriptorPlugin =
+  fs.existsSync('C:/Users/Murat/Desktop/scriptor-plugin') ||
+  fs.existsSync('C:/Users/Murat/Desktop/Obsidian Notes/.obsidian/plugins/scriptor') ||
+  fs.existsSync("G:/Drive'ım/obsidian2025/.obsidian/plugins/scriptor");
+
+describe.skipIf(!hasLocalScriptorPlugin)('Scriptor Obsidian Plugin Verification Suite', () => {
   const vaultPluginDir = fs.existsSync('C:/Users/Murat/Desktop/Obsidian Notes/.obsidian/plugins/scriptor')
     ? 'C:/Users/Murat/Desktop/Obsidian Notes/.obsidian/plugins/scriptor'
     : "G:/Drive'ım/obsidian2025/.obsidian/plugins/scriptor";

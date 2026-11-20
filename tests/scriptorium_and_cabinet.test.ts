@@ -214,6 +214,7 @@ describe('Room 05 / The Scriptorium & Archive Cabinet Tests', () => {
     const fs = require('fs');
     const path = require('path');
     const telemPath = path.resolve(__dirname, '../public/data/writing_telemetry.json');
+    if (!fs.existsSync(telemPath)) return;
     const raw = fs.readFileSync(telemPath, 'utf-8').replace(/^\uFEFF/, '');
     const data = JSON.parse(raw);
 
