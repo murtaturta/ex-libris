@@ -163,6 +163,37 @@ export const App: React.FC = () => {
         window as unknown as { __EXLIBRIS_INLINE_BUNDLE__?: LibraryBundle }
       ).__EXLIBRIS_INLINE_BUNDLE__;
 
+function createEmptyLibraryBundle(): LibraryBundle {
+  return {
+    schemaVersion: '0.2.0',
+    generatedAt: new Date().toISOString(),
+    summaryStats: {
+      totalBooks: 0,
+      distinctAuthors: 0,
+      booksWithSeries: 0,
+      shelves: { read: 0, toRead: 0, currentlyReading: 0, didNotFinish: 0 },
+      ratings: { ratedCount: 0, unratedCount: 0, averageRating: null, distribution: {} },
+      pages: {
+        totalPagesRead: 0,
+        totalLibraryPages: 0,
+        booksWithPagesCount: 0,
+        booksWithoutPagesCount: 0,
+      },
+    },
+    books: [],
+    quotes: [],
+    kindleNotes: [],
+    recommendations: [],
+    readingGoals: [],
+    achievements: [],
+    followedAuthors: [],
+    favoriteGenres: null,
+    reviewDrafts: [],
+    activityByHour: null,
+    suggestedLists: [],
+  };
+}
+
       const loadBundle = async (): Promise<LibraryBundle> => {
         if (inlineBundle) {
           try {
@@ -176,12 +207,25 @@ export const App: React.FC = () => {
           return inlineBundle;
         }
         const bundleRes = await fetch('./data/library_bundle.json');
-        if (!bundleRes.ok) {
-          throw new Error(
-            `Failed to load archive dataset: HTTP ${bundleRes.status} ${bundleRes.statusText}`
-          );
+        if (bundleRes.ok) {
+          return (await bundleRes.json()) as LibraryBundle;
         }
-        return (await bundleRes.json()) as LibraryBundle;
+        if (bundleRes.status === 404) {
+          // Static hosting (e.g. GitHub Pages) without a pre-bundled personal dataset:
+          // restore any locally imported archive from localStorage, or start with an empty library.
+          try {
+            const cachedRaw = window.localStorage?.getItem('exlibris_library_bundle_v02');
+            if (cachedRaw) {
+              return JSON.parse(cachedRaw) as LibraryBundle;
+            }
+          } catch {
+            // Ignore localStorage parse/access issues
+          }
+          return createEmptyLibraryBundle();
+        }
+        throw new Error(
+          `Failed to load archive dataset: HTTP ${bundleRes.status} ${bundleRes.statusText}`
+        );
       };
 
       const [bundleData, loadedUserState, loadedEnrichmentCache, loadedFilmCache] = await Promise.all([
