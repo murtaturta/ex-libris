@@ -68,7 +68,7 @@ export interface KindleClipping {
   attachedNote?: string | null;
   chapter?: string | null;
   highlightColor?: 'yellow' | 'pink' | 'blue' | 'orange' | string | null;
-  sourceFormat?: 'clippings-txt' | 'notebook-html';
+  sourceFormat?: 'clippings-txt' | 'notebook-html' | 'ksdk-sync';
 }
 
 export type ExternalDiscoveryEngine =
@@ -170,6 +170,8 @@ export interface LetterboxdFilmWatch {
   date: string; // YYYY-MM-DD (Watched Date or Date)
   review?: string | null;
   tags?: string[];
+  liked?: boolean;
+  lists?: string[];
   source: 'diary' | 'review' | 'watched';
 }
 
@@ -178,6 +180,17 @@ export interface LetterboxdWatchlistItem {
   year: number;
   uri: string;
   dateAdded: string; // YYYY-MM-DD
+}
+
+export interface LetterboxdFilmList {
+  name: string;
+  uri: string;
+  description?: string | null;
+  films: Array<{
+    name: string;
+    year: number;
+    uri: string;
+  }>;
 }
 
 export interface LetterboxdArchiveData {
@@ -191,6 +204,8 @@ export interface LetterboxdArchiveData {
   ratingsMap: Record<string, number>;
   reviewsMap: Record<string, string>;
   watchlist: LetterboxdWatchlistItem[];
+  likedFilms?: string[];
+  lists?: LetterboxdFilmList[];
 }
 
 export interface AdaptationLink {
@@ -263,12 +278,34 @@ export interface AdaptationForensicsMetrics {
   totalDietFilms: number;
 }
 
+export interface KindleBookTelemetry {
+  bookId: string;
+  title: string;
+  wpm: number | null;
+  wordsRead: number;
+  hoursRead: number;
+  progressPct: number | null;
+  syncedAt: string;
+}
+
+export interface KindleTelemetrySummary {
+  updatedAt: string;
+  medianWpm: number | null;
+  totalHoursRead: number;
+  totalWordsRead: number;
+  trackedBooksCount: number;
+  books: Record<string, KindleBookTelemetry>;
+}
+
 export interface UserLocalState {
   version: string;
   updatedAt: string;
   showCovers: boolean;
   bookOverrides: Record<string, BookUserOverride>;
   kindleClippings: KindleClipping[];
+  kindleTelemetry?: KindleTelemetrySummary;
+  yearlyPageGoal?: number;
+  yearlyTitleGoal?: number;
   externalWantList?: ExternalWantListItem[];
   bookplateConfig?: BookplateConfig;
   writingTelemetry?: WritingTelemetryData;
@@ -288,6 +325,19 @@ export interface EnrichedBookMetadata {
 }
 
 export type EnrichmentCacheMap = Record<string, EnrichedBookMetadata>;
+
+export interface FilmEnrichedMetadata {
+  key: string; // `${name.trim().toLowerCase()} (${year || 0})`
+  title: string;
+  year: number;
+  directors: string[];
+  imdbId?: string | null;
+  wikidataId?: string | null;
+  fetchedAt: string;
+  source: 'wikidata' | 'wikipedia' | 'manual' | 'none';
+}
+
+export type FilmEnrichmentCacheMap = Record<string, FilmEnrichedMetadata>;
 
 export interface ReadingSession {
   startedAt: string | null;

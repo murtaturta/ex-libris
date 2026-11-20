@@ -1,6 +1,8 @@
 import JSZip from 'jszip';
+import Papa from 'papaparse';
 import type {
   LetterboxdArchiveData,
+  LetterboxdFilmList,
   LetterboxdFilmWatch,
   LetterboxdWatchlistItem,
 } from '../../types/library';
@@ -11,71 +13,100 @@ export interface LetterboxdRawCsvFiles {
   reviewsCsv?: string;
   watchedCsv?: string;
   watchlistCsv?: string;
+  likesFilmsCsv?: string;
+  listCsvs?: string[];
 }
 
+export const filmLookupKey = (name: string, year: number): string =>
+  `${name.trim().toLowerCase()} (${year || 0})`;
+
 /**
- * Robust CSV parser that handles quotes, escaped commas, newlines, and strips UTF-8 BOM.
+ * Robust RFC-4180 CSV parser powered by PapaParse.
+ * Handles multi-line quoted reviews, escaped quotes, trailing delimiters, and strips UTF-8 BOM.
  */
 export function parseLetterboxdCsv(csvString: string): Record<string, string>[] {
   if (!csvString || typeof csvString !== 'string') return [];
   const clean = csvString.replace(/^\uFEFF/, '').trim();
   if (!clean) return [];
 
-  const lines = clean.split(/\r?\n/).filter((l) => l.trim().length > 0);
-  if (lines.length < 2) return [];
+  const parsed = Papa.parse<Record<string, string>>(clean, {
+    header: true,
+    skipEmptyLines: 'greedy',
+  });
 
-  // Parse header
-  const headerLine = lines[0];
-  const headers: string[] = [];
-  let inQuotes = false;
-  let currentToken = '';
-
-  for (let i = 0; i < headerLine.length; i++) {
-    const ch = headerLine[i];
-    if (ch === '"') {
-      inQuotes = !inQuotes;
-    } else if (ch === ',' && !inQuotes) {
-      headers.push(currentToken.trim());
-      currentToken = '';
-    } else {
-      currentToken += ch;
-    }
-  }
-  headers.push(currentToken.trim());
+  if (!parsed.data || parsed.data.length === 0) return [];
 
   const rows: Record<string, string>[] = [];
-
-  for (let r = 1; r < lines.length; r++) {
-    const line = lines[r];
-    const cells: string[] = [];
-    inQuotes = false;
-    currentToken = '';
-
-    for (let i = 0; i < line.length; i++) {
-      const ch = line[i];
-      if (ch === '"') {
-        inQuotes = !inQuotes;
-      } else if (ch === ',' && !inQuotes) {
-        cells.push(currentToken.trim());
-        currentToken = '';
-      } else {
-        currentToken += ch;
-      }
+  for (const rawRow of parsed.data) {
+    if (!rawRow || typeof rawRow !== 'object') continue;
+    const cleanedRow: Record<string, string> = {};
+    let hasAnyValue = false;
+    for (const [rawKey, rawVal] of Object.entries(rawRow)) {
+      const k = rawKey.trim();
+      if (!k) continue;
+      const v = typeof rawVal === 'string' ? rawVal.trim() : String(rawVal ?? '').trim();
+      if (v) hasAnyValue = true;
+      cleanedRow[k] = v;
     }
-    cells.push(currentToken.trim());
+    if (hasAnyValue) {
+      rows.push(cleanedRow);
+    }
+  }
+  return rows;
+}
 
-    const rowObj: Record<string, string> = {};
-    headers.forEach((h, idx) => {
-      let val = cells[idx] !== undefined ? cells[idx].trim() : '';
-      if (val.startsWith('"') && val.endsWith('"')) {
-        val = val.slice(1, -1).replace(/""/g, '"').trim();
-      }
-      rowObj[h] = val;
-    });
-    rows.push(rowObj);
+/**
+ * Parses a Letterboxd `lists/*.csv` file (Letterboxd list export v7 format).
+ * First section contains list metadata (`Date,Name,Tags,URL,Description`);
+ * second section contains items (`Position,Name,Year,URL,Description`).
+ */
+export function parseLetterboxdListCsv(csvString: string): LetterboxdFilmList | null {
+  if (!csvString || typeof csvString !== 'string') return null;
+  const clean = csvString.replace(/^\uFEFF/, '').trim();
+  if (!clean) return null;
+
+  const parsed = Papa.parse<string[]>(clean, {
+    header: false,
+    skipEmptyLines: 'greedy',
+  });
+  const matrix = parsed.data || [];
+  let listName = '';
+  let listUri = '';
+  let listDescription: string | null = null;
+  let itemStartIdx = -1;
+
+  for (let i = 0; i < matrix.length; i++) {
+    const row = matrix[i].map((c) => String(c ?? '').trim());
+    if (row[0] === 'Date' && row[1] === 'Name' && i + 1 < matrix.length) {
+      const metaRow = matrix[i + 1].map((c) => String(c ?? '').trim());
+      listName = metaRow[1] || '';
+      listUri = metaRow[3] || '';
+      listDescription = metaRow[4] || null;
+    }
+    if (row[0] === 'Position' && row[1] === 'Name') {
+      itemStartIdx = i + 1;
+      break;
+    }
   }
 
-  return rows;
+  if (!listName || itemStartIdx < 0) return null;
+
+  const films: LetterboxdFilmList['films'] = [];
+  for (let i = itemStartIdx; i < matrix.length; i++) {
+    const row = matrix[i].map((c) => String(c ?? '').trim());
+    const name = row[1];
+    if (!name) continue;
+    const year = parseInt(row[2] || '0', 10) || 0;
+    const uri = row[3] || '';
+    films.push({ name, year, uri });
+  }
+
+  return {
+    name: listName,
+    uri: listUri,
+    description: listDescription,
+    films,
+  };
 }
 
 /**
@@ -89,7 +120,7 @@ export function formatStarRating(rating: number | null): string {
 }
 
 /**
- * Combines diary, ratings, reviews, watched, and watchlist into an archival Letterboxd dataset.
+ * Combines diary, ratings, reviews, watched, watchlist, likes, and lists into an archival Letterboxd dataset.
  */
 export function parseLetterboxdExport(files: LetterboxdRawCsvFiles): LetterboxdArchiveData {
   const diaryRows = parseLetterboxdCsv(files.diaryCsv || '');
@@ -97,28 +128,70 @@ export function parseLetterboxdExport(files: LetterboxdRawCsvFiles): LetterboxdA
   const reviewsRows = parseLetterboxdCsv(files.reviewsCsv || '');
   const watchedRows = parseLetterboxdCsv(files.watchedCsv || '');
   const watchlistRows = parseLetterboxdCsv(files.watchlistCsv || '');
+  const likesRows = parseLetterboxdCsv(files.likesFilmsCsv || '');
 
-  // 1. Build Ratings Map: "Name (Year)" -> rating
+  // 1. Build Ratings Map: "name (year)" -> rating
   const ratingsMap: Record<string, number> = {};
   for (const r of ratingsRows) {
     const name = r['Name'];
     const yr = parseInt(r['Year'], 10);
     const ratingVal = parseFloat(r['Rating']);
     if (name && !Number.isNaN(ratingVal)) {
-      const key = `${name.toLowerCase()} (${yr || 0})`;
+      const key = filmLookupKey(name, yr || 0);
       ratingsMap[key] = ratingVal;
     }
   }
 
-  // 2. Build Reviews Map: "Name (Year) [Watched Date]" -> review text
+  // 2. Build Reviews & Review Metadata Maps: "name (year)" + date-specific attribution
   const reviewsMap: Record<string, string> = {};
+  const reviewsByDateMap = new Map<string, string>();
+  const datedReviewFilmKeys = new Set<string>();
+  const reviewMetaMap = new Map<string, { tags: string[]; uri?: string }>();
   for (const rev of reviewsRows) {
     const name = rev['Name'];
     const yr = parseInt(rev['Year'], 10);
     const text = rev['Review'];
-    if (name && text) {
-      const key = `${name.toLowerCase()} (${yr || 0})`;
-      reviewsMap[key] = text;
+    if (name) {
+      const key = filmLookupKey(name, yr || 0);
+      const revDate = (rev['Watched Date'] || rev['Date'] || '').slice(0, 10);
+      if (text) {
+        reviewsMap[key] = text;
+        if (revDate) {
+          reviewsByDateMap.set(`${key}-${revDate}`, text);
+          datedReviewFilmKeys.add(key);
+        }
+      }
+      const revTags = rev['Tags'] ? rev['Tags'].split(',').map((t) => t.trim()).filter(Boolean) : [];
+      if (revTags.length > 0 || rev['Letterboxd URI']) {
+        reviewMetaMap.set(key, { tags: revTags, uri: rev['Letterboxd URI'] || undefined });
+      }
+    }
+  }
+
+  // 2B. Build Likes Set & Lists Map
+  const likedKeys = new Set<string>();
+  for (const lk of likesRows) {
+    const name = lk['Name'];
+    if (!name) continue;
+    const yr = parseInt(lk['Year'], 10) || 0;
+    likedKeys.add(filmLookupKey(name, yr));
+  }
+
+  const parsedLists: LetterboxdFilmList[] = [];
+  const seenListKeys = new Set<string>();
+  const listsByFilm = new Map<string, string[]>();
+  for (const listCsv of files.listCsvs || []) {
+    const parsedList = parseLetterboxdListCsv(listCsv);
+    if (!parsedList) continue;
+    const dedupeId = (parsedList.uri || parsedList.name).toLowerCase();
+    if (seenListKeys.has(dedupeId)) continue;
+    seenListKeys.add(dedupeId);
+    parsedLists.push(parsedList);
+    for (const item of parsedList.films) {
+      const k = filmLookupKey(item.name, item.year);
+      const arr = listsByFilm.get(k) || [];
+      if (!arr.includes(parsedList.name)) arr.push(parsedList.name);
+      listsByFilm.set(k, arr);
     }
   }
 
@@ -135,12 +208,19 @@ export function parseLetterboxdExport(files: LetterboxdRawCsvFiles): LetterboxdA
     if (!date) continue;
 
     const ratingRaw = parseFloat(d['Rating']);
-    const lookupKey = `${name.toLowerCase()} (${year})`;
+    const lookupKey = filmLookupKey(name, year);
     const rating = !Number.isNaN(ratingRaw) ? ratingRaw : ratingsMap[lookupKey] ?? null;
 
     const rewatch = (d['Rewatch'] || '').toLowerCase() === 'yes';
-    const review = reviewsMap[lookupKey] || (d['Review'] || null);
-    const tags = d['Tags'] ? d['Tags'].split(',').map((t) => t.trim()).filter(Boolean) : [];
+    const review =
+      reviewsByDateMap.get(`${lookupKey}-${date}`) ||
+      (!datedReviewFilmKeys.has(lookupKey) ? reviewsMap[lookupKey] : undefined) ||
+      d['Review'] ||
+      null;
+    const diaryTags = d['Tags'] ? d['Tags'].split(',').map((t) => t.trim()).filter(Boolean) : [];
+    const revTags = reviewMetaMap.get(lookupKey)?.tags || [];
+    const tags = Array.from(new Set([...diaryTags, ...revTags]));
+    const lists = listsByFilm.get(lookupKey);
 
     const watchId = `diary-${name}-${year}-${date}-${watches.length}`;
     processedKeys.add(`${lookupKey}-${date}`);
@@ -155,6 +235,8 @@ export function parseLetterboxdExport(files: LetterboxdRawCsvFiles): LetterboxdA
       date,
       review,
       tags,
+      liked: likedKeys.has(lookupKey),
+      lists: lists && lists.length > 0 ? [...lists] : undefined,
       source: 'diary',
     });
   }
@@ -165,16 +247,22 @@ export function parseLetterboxdExport(files: LetterboxdRawCsvFiles): LetterboxdA
     if (!name) continue;
     const year = parseInt(r['Year'], 10) || 0;
     const uri = r['Letterboxd URI'] || '';
-    const date = (r['Watched Date'] || r['Date'] || '').slice(0, 10);
+    const watchedDate = (r['Watched Date'] || '').slice(0, 10);
+    const loggedDate = (r['Date'] || '').slice(0, 10);
+    const date = watchedDate || loggedDate;
     if (!date) continue;
 
-    const lookupKey = `${name.toLowerCase()} (${year})`;
+    const lookupKey = filmLookupKey(name, year);
     if (processedKeys.has(`${lookupKey}-${date}`)) continue;
+    // If review omitted Watched Date and already enriched a diary entry for the same film, avoid creating a bogus watch
+    if (!watchedDate && watches.some((wt) => filmLookupKey(wt.name, wt.year) === lookupKey)) continue;
 
     const ratingRaw = parseFloat(r['Rating']);
     const rating = !Number.isNaN(ratingRaw) ? ratingRaw : ratingsMap[lookupKey] ?? null;
     const rewatch = (r['Rewatch'] || '').toLowerCase() === 'yes';
     const review = r['Review'] || null;
+    const tags = r['Tags'] ? r['Tags'].split(',').map((t) => t.trim()).filter(Boolean) : [];
+    const lists = listsByFilm.get(lookupKey);
 
     watches.push({
       id: `review-${name}-${year}-${date}-${watches.length}`,
@@ -185,6 +273,9 @@ export function parseLetterboxdExport(files: LetterboxdRawCsvFiles): LetterboxdA
       rewatch,
       date,
       review,
+      tags,
+      liked: likedKeys.has(lookupKey),
+      lists: lists && lists.length > 0 ? [...lists] : undefined,
       source: 'review',
     });
     processedKeys.add(`${lookupKey}-${date}`);
@@ -198,12 +289,12 @@ export function parseLetterboxdExport(files: LetterboxdRawCsvFiles): LetterboxdA
     const uri = w['Letterboxd URI'] || '';
     const date = (w['Date'] || '').slice(0, 10);
 
-    const lookupKey = `${name.toLowerCase()} (${year})`;
-    // If we already have a watch record for this movie, skip duplicate generic logged watch
-    const alreadyLogged = watches.some((wt) => wt.name.toLowerCase() === name.toLowerCase() && wt.year === year);
+    const lookupKey = filmLookupKey(name, year);
+    const alreadyLogged = watches.some((wt) => filmLookupKey(wt.name, wt.year) === lookupKey);
     if (alreadyLogged) continue;
 
     const rating = ratingsMap[lookupKey] ?? null;
+    const lists = listsByFilm.get(lookupKey);
 
     watches.push({
       id: `watched-${name}-${year}-${date}-${watches.length}`,
@@ -214,6 +305,8 @@ export function parseLetterboxdExport(files: LetterboxdRawCsvFiles): LetterboxdA
       rewatch: false,
       date: date || '2025-01-01',
       review: reviewsMap[lookupKey] || null,
+      liked: likedKeys.has(lookupKey),
+      lists: lists && lists.length > 0 ? [...lists] : undefined,
       source: 'watched',
     });
   }
@@ -226,12 +319,13 @@ export function parseLetterboxdExport(files: LetterboxdRawCsvFiles): LetterboxdA
     const uri = rt['Letterboxd URI'] || '';
     const date = (rt['Date'] || '').slice(0, 10);
 
-    const lookupKey = `${name.toLowerCase()} (${year})`;
-    const alreadyLogged = watches.some((wt) => wt.name.toLowerCase() === name.toLowerCase() && wt.year === year);
+    const lookupKey = filmLookupKey(name, year);
+    const alreadyLogged = watches.some((wt) => filmLookupKey(wt.name, wt.year) === lookupKey);
     if (alreadyLogged) continue;
 
     const ratingRaw = parseFloat(rt['Rating']);
     const rating = !Number.isNaN(ratingRaw) ? ratingRaw : null;
+    const lists = listsByFilm.get(lookupKey);
 
     watches.push({
       id: `rating-${name}-${year}-${date}-${watches.length}`,
@@ -242,6 +336,8 @@ export function parseLetterboxdExport(files: LetterboxdRawCsvFiles): LetterboxdA
       rewatch: false,
       date: date || '2025-01-01',
       review: reviewsMap[lookupKey] || null,
+      liked: likedKeys.has(lookupKey),
+      lists: lists && lists.length > 0 ? [...lists] : undefined,
       source: 'watched',
     });
   }
@@ -276,6 +372,8 @@ export function parseLetterboxdExport(files: LetterboxdRawCsvFiles): LetterboxdA
     ratingsMap,
     reviewsMap,
     watchlist,
+    likedFilms: Array.from(likedKeys).sort(),
+    lists: parsedLists,
   };
 }
 
@@ -290,12 +388,17 @@ export function isLetterboxdCsv(fileName: string, text: string): boolean {
     lowerName === 'reviews.csv' ||
     lowerName === 'watched.csv' ||
     lowerName === 'watchlist.csv' ||
+    lowerName === 'films.csv' ||
     lowerName.includes('letterboxd')
   ) {
     return true;
   }
-  const firstLine = text.slice(0, 300).toLowerCase();
-  return firstLine.includes('letterboxd uri') || firstLine.includes('watched date');
+  const firstLine = text.slice(0, 400).toLowerCase();
+  return (
+    firstLine.includes('letterboxd uri') ||
+    firstLine.includes('watched date') ||
+    (firstLine.includes('position,name,year') && firstLine.includes('url'))
+  );
 }
 
 /**
@@ -316,20 +419,27 @@ export async function isLetterboxdZip(file: File): Promise<boolean> {
  */
 export async function importLetterboxdZip(file: File): Promise<LetterboxdArchiveData> {
   const zip = await JSZip.loadAsync(file);
-  const rawFiles: LetterboxdRawCsvFiles = {};
+  const rawFiles: LetterboxdRawCsvFiles = { listCsvs: [] };
 
   for (const [relativePath, zipEntry] of Object.entries(zip.files)) {
     if (zipEntry.dir) continue;
-    const lower = relativePath.toLowerCase();
-    if (lower.endsWith('diary.csv')) {
+    const normalized = relativePath.replace(/\\/g, '/').toLowerCase();
+    // Skip deleted/ and orphaned/ archival folders inside Letterboxd exports
+    if (/(^|\/)(deleted|orphaned)\//.test(normalized)) continue;
+
+    if (/(^|\/)likes\/films\.csv$/.test(normalized)) {
+      rawFiles.likesFilmsCsv = await zipEntry.async('string');
+    } else if (/(^|\/)lists\/[^/]+\.csv$/.test(normalized)) {
+      rawFiles.listCsvs!.push(await zipEntry.async('string'));
+    } else if (/(^|\/)diary\.csv$/.test(normalized)) {
       rawFiles.diaryCsv = await zipEntry.async('string');
-    } else if (lower.endsWith('ratings.csv')) {
+    } else if (/(^|\/)ratings\.csv$/.test(normalized)) {
       rawFiles.ratingsCsv = await zipEntry.async('string');
-    } else if (lower.endsWith('reviews.csv')) {
+    } else if (/(^|\/)reviews\.csv$/.test(normalized)) {
       rawFiles.reviewsCsv = await zipEntry.async('string');
-    } else if (lower.endsWith('watched.csv')) {
+    } else if (/(^|\/)watched\.csv$/.test(normalized)) {
       rawFiles.watchedCsv = await zipEntry.async('string');
-    } else if (lower.endsWith('watchlist.csv')) {
+    } else if (/(^|\/)watchlist\.csv$/.test(normalized)) {
       rawFiles.watchlistCsv = await zipEntry.async('string');
     }
   }
@@ -338,8 +448,8 @@ export async function importLetterboxdZip(file: File): Promise<LetterboxdArchive
 }
 
 /**
- * Ingests a single Letterboxd CSV file (e.g. diary.csv, watched.csv, ratings.csv, reviews.csv, or watchlist.csv)
- * and merges it with an existing Letterboxd archive state.
+ * Ingests a single Letterboxd CSV file (e.g. diary.csv, watched.csv, ratings.csv, reviews.csv, watchlist.csv,
+ * likes/films.csv, or lists/*.csv) and merges it with an existing Letterboxd archive state.
  */
 export function mergeSingleLetterboxdCsv(
   fileName: string,
@@ -347,15 +457,42 @@ export function mergeSingleLetterboxdCsv(
   existingData?: LetterboxdArchiveData | null
 ): LetterboxdArchiveData {
   const lowerName = fileName.toLowerCase();
+  const sample = csvText.slice(0, 400).toLowerCase();
   const raw: LetterboxdRawCsvFiles = {};
   if (lowerName.includes('diary')) raw.diaryCsv = csvText;
   else if (lowerName.includes('rating')) raw.ratingsCsv = csvText;
   else if (lowerName.includes('review')) raw.reviewsCsv = csvText;
   else if (lowerName.includes('watchlist')) raw.watchlistCsv = csvText;
-  else raw.watchedCsv = csvText;
+  else if (lowerName.includes('like') || lowerName === 'films.csv') raw.likesFilmsCsv = csvText;
+  else if (lowerName.includes('list') || (sample.includes('position,name,year') && sample.includes('url'))) {
+    raw.listCsvs = [csvText];
+  } else raw.watchedCsv = csvText;
 
   const newlyParsed = parseLetterboxdExport(raw);
   if (!existingData) return newlyParsed;
+
+  const mergedLikedSet = new Set<string>([
+    ...(existingData.likedFilms || []),
+    ...(newlyParsed.likedFilms || []),
+  ]);
+
+  const listMap = new Map<string, LetterboxdFilmList>();
+  for (const lst of existingData.lists || []) {
+    listMap.set((lst.uri || lst.name).toLowerCase(), lst);
+  }
+  for (const lst of newlyParsed.lists || []) {
+    listMap.set((lst.uri || lst.name).toLowerCase(), lst);
+  }
+  const mergedLists = Array.from(listMap.values());
+  const listsByFilm = new Map<string, string[]>();
+  for (const lst of mergedLists) {
+    for (const item of lst.films) {
+      const k = filmLookupKey(item.name, item.year);
+      const arr = listsByFilm.get(k) || [];
+      if (!arr.includes(lst.name)) arr.push(lst.name);
+      listsByFilm.set(k, arr);
+    }
+  }
 
   // Merge watches
   const watchMap = new Map<string, LetterboxdFilmWatch>();
@@ -367,13 +504,30 @@ export function mergeSingleLetterboxdCsv(
     const key = `${w.name.toLowerCase()}_${w.year}_${w.date}`;
     const prev = watchMap.get(key);
     if (prev) {
-      watchMap.set(key, { ...prev, ...w, rating: w.rating ?? prev.rating, review: w.review ?? prev.review });
+      watchMap.set(key, {
+        ...prev,
+        ...w,
+        rating: w.rating ?? prev.rating,
+        review: w.review ?? prev.review,
+        liked: w.liked || prev.liked,
+        tags: Array.from(new Set([...(prev.tags || []), ...(w.tags || [])])),
+      });
     } else {
       watchMap.set(key, w);
     }
   }
 
-  const mergedWatches = Array.from(watchMap.values()).sort((a, b) => b.date.localeCompare(a.date));
+  const mergedWatches = Array.from(watchMap.values())
+    .map((w) => {
+      const lk = filmLookupKey(w.name, w.year);
+      const filmLists = listsByFilm.get(lk);
+      return {
+        ...w,
+        liked: Boolean(w.liked || mergedLikedSet.has(lk)),
+        lists: filmLists && filmLists.length > 0 ? filmLists : w.lists,
+      };
+    })
+    .sort((a, b) => b.date.localeCompare(a.date));
 
   return {
     version: '1.0',
@@ -386,5 +540,7 @@ export function mergeSingleLetterboxdCsv(
     ratingsMap: { ...(existingData.ratingsMap || {}), ...(newlyParsed.ratingsMap || {}) },
     reviewsMap: { ...(existingData.reviewsMap || {}), ...(newlyParsed.reviewsMap || {}) },
     watchlist: newlyParsed.watchlist.length > 0 ? newlyParsed.watchlist : (existingData.watchlist || []),
+    likedFilms: Array.from(mergedLikedSet).sort(),
+    lists: mergedLists,
   };
 }

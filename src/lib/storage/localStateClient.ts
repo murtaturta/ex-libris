@@ -1,6 +1,7 @@
 import type {
   UserLocalState,
   EnrichmentCacheMap,
+  FilmEnrichmentCacheMap,
   LibraryBundle,
 } from '../../types/library';
 
@@ -9,6 +10,7 @@ import type {
  */
 const STORAGE_KEY_USER_STATE = 'exlibris_user_state_v02';
 const STORAGE_KEY_ENRICHMENT_CACHE = 'exlibris_enrichment_cache_v02';
+const STORAGE_KEY_FILM_ENRICHMENT_CACHE = 'exlibris_film_enrichment_cache_v01';
 const STORAGE_KEY_LIBRARY_BUNDLE = 'exlibris_library_bundle_v02';
 
 /**
@@ -136,6 +138,14 @@ export async function loadUserState(): Promise<UserLocalState> {
           bookOverrides:
             data.bookOverrides && typeof data.bookOverrides === 'object' ? data.bookOverrides : {},
           kindleClippings: Array.isArray(data.kindleClippings) ? data.kindleClippings : [],
+          kindleTelemetry:
+            data.kindleTelemetry && typeof data.kindleTelemetry === 'object'
+              ? data.kindleTelemetry
+              : undefined,
+          yearlyPageGoal:
+            typeof data.yearlyPageGoal === 'number' ? data.yearlyPageGoal : undefined,
+          yearlyTitleGoal:
+            typeof data.yearlyTitleGoal === 'number' ? data.yearlyTitleGoal : undefined,
           externalWantList: Array.isArray(data.externalWantList) ? data.externalWantList : [],
           bookplateConfig:
             data.bookplateConfig && typeof data.bookplateConfig === 'object'
@@ -201,6 +211,14 @@ export async function loadUserState(): Promise<UserLocalState> {
         bookOverrides:
           parsed.bookOverrides && typeof parsed.bookOverrides === 'object' ? parsed.bookOverrides : {},
         kindleClippings: Array.isArray(parsed.kindleClippings) ? parsed.kindleClippings : [],
+        kindleTelemetry:
+          parsed.kindleTelemetry && typeof parsed.kindleTelemetry === 'object'
+            ? parsed.kindleTelemetry
+            : undefined,
+        yearlyPageGoal:
+          typeof parsed.yearlyPageGoal === 'number' ? parsed.yearlyPageGoal : undefined,
+        yearlyTitleGoal:
+          typeof parsed.yearlyTitleGoal === 'number' ? parsed.yearlyTitleGoal : undefined,
         externalWantList: Array.isArray(parsed.externalWantList) ? parsed.externalWantList : [],
         bookplateConfig:
           parsed.bookplateConfig && typeof parsed.bookplateConfig === 'object'
@@ -305,32 +323,30 @@ export async function saveUserState(state: UserLocalState): Promise<void> {
   }
 }
 
-/**
- * Loads the enrichment cache map from disk (`/api/enrichment-cache`),
- * merged with any entries saved in `localStorage`.
- */
-export async function loadEnrichmentCache(): Promise<EnrichmentCacheMap> {
-  let diskCache: EnrichmentCacheMap = {};
-  let localCache: EnrichmentCacheMap = {};
+async function loadMergedJsonCache<T extends Record<string, any>>(
+  storageKey: string,
+  apiPath: string,
+  staticPath: string
+): Promise<T> {
+  let diskCache = {} as T;
+  let localCache = {} as T;
 
-  // Read localStorage cache
-  const localRaw = getStorageItem(STORAGE_KEY_ENRICHMENT_CACHE);
+  const localRaw = getStorageItem(storageKey);
   if (localRaw) {
     try {
-      localCache = JSON.parse(localRaw) as EnrichmentCacheMap;
+      localCache = JSON.parse(localRaw) as T;
     } catch {
       // Ignore parse failure
     }
   }
 
-  // Read server disk cache
   let fetchedDisk = false;
   try {
-    const res = await fetch('/api/enrichment-cache');
+    const res = await fetch(apiPath);
     if (res.ok) {
       const data = await res.json();
       if (data && typeof data === 'object') {
-        diskCache = data as EnrichmentCacheMap;
+        diskCache = data as T;
         fetchedDisk = true;
       }
     }
@@ -338,14 +354,13 @@ export async function loadEnrichmentCache(): Promise<EnrichmentCacheMap> {
     // Dev server unavailable
   }
 
-  // Static fallback for GitHub Pages or offline static deployments: `./data/enrichment_cache.json`
   if (!fetchedDisk || Object.keys(diskCache).length === 0) {
     try {
-      const staticRes = await fetch('./data/enrichment_cache.json');
+      const staticRes = await fetch(staticPath);
       if (staticRes.ok) {
         const staticData = await staticRes.json();
         if (staticData && typeof staticData === 'object') {
-          diskCache = { ...(staticData as EnrichmentCacheMap), ...diskCache };
+          diskCache = { ...(staticData as T), ...diskCache };
         }
       }
     } catch {
@@ -353,40 +368,39 @@ export async function loadEnrichmentCache(): Promise<EnrichmentCacheMap> {
     }
   }
 
-  // Merge both: disk cache + local cache
-  const merged: EnrichmentCacheMap = {
+  const merged = {
     ...localCache,
     ...diskCache,
-  };
+  } as T;
 
-  // Keep localStorage updated if entries exist
   if (Object.keys(merged).length > 0) {
-    setStorageItem(STORAGE_KEY_ENRICHMENT_CACHE, JSON.stringify(merged));
+    setStorageItem(storageKey, JSON.stringify(merged));
   }
 
   return merged;
 }
 
-/**
- * Saves a batch of enriched book metadata into `localStorage` and the
- * Vite server endpoint `/api/enrichment-cache` (which appends to `data/enrichment_cache.json`).
- */
-export async function saveEnrichmentBatch(batch: EnrichmentCacheMap): Promise<void> {
+async function saveJsonCacheBatch<T extends Record<string, any>>(
+  storageKey: string,
+  apiPath: string,
+  batch: T,
+  localOnly = false
+): Promise<void> {
   if (!batch || Object.keys(batch).length === 0) return;
 
-  // 1. Update localStorage
   try {
-    const localRaw = getStorageItem(STORAGE_KEY_ENRICHMENT_CACHE);
-    const existing: EnrichmentCacheMap = localRaw ? JSON.parse(localRaw) : {};
+    const localRaw = getStorageItem(storageKey);
+    const existing: T = localRaw ? JSON.parse(localRaw) : ({} as T);
     const merged = { ...existing, ...batch };
-    setStorageItem(STORAGE_KEY_ENRICHMENT_CACHE, JSON.stringify(merged));
+    setStorageItem(storageKey, JSON.stringify(merged));
   } catch {
     // Quota reached or storage disabled
   }
 
-  // 2. Post to Vite local disk endpoint
+  if (localOnly) return;
+
   try {
-    await fetch('/api/enrichment-cache', {
+    await fetch(apiPath, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(batch),
@@ -394,6 +408,57 @@ export async function saveEnrichmentBatch(batch: EnrichmentCacheMap): Promise<vo
   } catch {
     // Static mode or offline
   }
+}
+
+/**
+ * Loads the enrichment cache map from disk (`/api/enrichment-cache`),
+ * merged with any entries saved in `localStorage`.
+ */
+export function loadEnrichmentCache(): Promise<EnrichmentCacheMap> {
+  return loadMergedJsonCache<EnrichmentCacheMap>(
+    STORAGE_KEY_ENRICHMENT_CACHE,
+    '/api/enrichment-cache',
+    './data/enrichment_cache.json'
+  );
+}
+
+/**
+ * Saves a batch of enriched book metadata into `localStorage` and the
+ * Vite server endpoint `/api/enrichment-cache` (which appends to `data/enrichment_cache.json`).
+ */
+export function saveEnrichmentBatch(batch: EnrichmentCacheMap): Promise<void> {
+  return saveJsonCacheBatch<EnrichmentCacheMap>(
+    STORAGE_KEY_ENRICHMENT_CACHE,
+    '/api/enrichment-cache',
+    batch
+  );
+}
+
+/**
+ * Loads the persisted Letterboxd film director cache from `/api/film-enrichment-cache`,
+ * merged with any entries saved in `localStorage`.
+ */
+export function loadFilmEnrichmentCache(): Promise<FilmEnrichmentCacheMap> {
+  return loadMergedJsonCache<FilmEnrichmentCacheMap>(
+    STORAGE_KEY_FILM_ENRICHMENT_CACHE,
+    '/api/film-enrichment-cache',
+    './data/film_enrichment_cache.json'
+  );
+}
+
+/**
+ * Saves a batch of enriched film director metadata into `localStorage` and optionally `/api/film-enrichment-cache`.
+ */
+export function saveFilmEnrichmentBatch(
+  batch: FilmEnrichmentCacheMap,
+  options?: { localOnly?: boolean }
+): Promise<void> {
+  return saveJsonCacheBatch<FilmEnrichmentCacheMap>(
+    STORAGE_KEY_FILM_ENRICHMENT_CACHE,
+    '/api/film-enrichment-cache',
+    batch,
+    Boolean(options?.localOnly)
+  );
 }
 
 /**

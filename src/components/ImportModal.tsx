@@ -33,6 +33,10 @@ import {
   isScriptorJson,
   parseScriptorJson,
 } from '../lib/parsers/writingTelemetryParser';
+import {
+  isKindleSyncJson,
+  parseKindleSyncJson,
+} from '../lib/parsers/kindleSyncJson';
 import type { LetterboxdArchiveData, WritingTelemetryData } from '../types/library';
 import {
   UploadCloud,
@@ -50,6 +54,7 @@ import {
   FileDown,
   FolderArchive,
   ArrowRight,
+  Usb,
 } from 'lucide-react';
 
 export interface ImportModalProps {
@@ -105,7 +110,25 @@ export const ImportModal: React.FC<ImportModalProps> = ({
     null
   );
 
+  // One-step USB Kindle MTP + KFX sync
+  const [isSyncingKindle, setIsSyncingKindle] = useState(false);
+
   if (!isOpen) return null;
+
+  const applyKindleSyncJsonText = (rawJsonText: string, sourceLabel: string, statusPrefix = '') => {
+    const clippings = parseKindleSyncJson(rawJsonText, currentBundle.books);
+    if (clippings.length === 0) {
+      throw new Error(`No Kindle highlights or notes found in ${sourceLabel}.`);
+    }
+    const diff = computeClippingsImportDiff(userState?.kindleClippings || [], clippings);
+    setClippingsDiffReport(diff);
+    setImportedKindleCount(clippings.length);
+    onClippingsImported?.(clippings);
+    setStatus('success');
+    setStatusMessage(
+      `${statusPrefix}Imported ${clippings.length} Kindle highlights & notes (${diff.newClippingsCount} new, ${diff.duplicateSkippedCount} duplicates safely skipped) from ${sourceLabel}.`
+    );
+  };
 
   const handleProcessFile = async (file: File) => {
     setStatus('processing');
@@ -215,10 +238,13 @@ export const ImportModal: React.FC<ImportModalProps> = ({
           );
         }
       }
-      // 4. JSON: Obsidian Scriptor telemetry (.json)
+      // 4. JSON: Ex Libris Kindle Sync (.json) or Obsidian Scriptor telemetry (.json)
       else if (fileName.endsWith('.json')) {
         const text = await file.text();
-        if (isScriptorJson(text)) {
+        if (isKindleSyncJson(text)) {
+          setStatusMessage(`Importing combined Kindle KFX + Clippings notes from ${file.name}...`);
+          applyKindleSyncJsonText(text, file.name);
+        } else if (isScriptorJson(text)) {
           setStatusMessage(`Parsing Obsidian Scriptor writing telemetry from ${file.name}...`);
           const writingData = parseScriptorJson(text, userState?.writingTelemetry);
           onWritingTelemetryImported?.(writingData);
@@ -228,12 +254,12 @@ export const ImportModal: React.FC<ImportModalProps> = ({
           );
         } else {
           throw new Error(
-            `${file.name} does not match Obsidian Scriptor format. Expected a Scriptor data.json or scriptor_telemetry_*.json export.`
+            `${file.name} does not match Kindle Sync (kindle_sync.json) or Obsidian Scriptor format (data.json / scriptor_telemetry_*.json).`
           );
         }
       } else {
         throw new Error(
-          'Unsupported format. Please select a Goodreads .csv, Scriptor .json (data.json or scriptor_telemetry_*.json), full export .zip, Kindle Notebook .html, or My Clippings.txt file.'
+          'Unsupported format. Please select a Goodreads .csv, kindle_sync.json, Scriptor .json, full export .zip, Kindle Notebook .html, or My Clippings.txt file.'
         );
       }
     } catch (err: any) {
@@ -274,6 +300,51 @@ export const ImportModal: React.FC<ImportModalProps> = ({
     } catch (err: any) {
       setStatus('error');
       setStatusMessage('Failed to load sample Kindle clippings.');
+    }
+  };
+
+  const handleSyncConnectedKindle = async () => {
+    if (isSyncingKindle) return;
+    setIsSyncingKindle(true);
+    setLibraryDiffReport(null);
+    setClippingsDiffReport(null);
+    setStatus('processing');
+    setStatusMessage('Reading My Clippings.txt & KFX annotations (ksdk_annotation_v1.db) from connected Kindle over USB...');
+
+    try {
+      const response = await fetch('/api/sync-kindle', { method: 'POST' });
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        throw new Error(
+          'USB Kindle sync requires the local Vite server (npm run dev on localhost:3100). If using a static/portable build, run "npm run sync:kindle" and drop data/kindle_sync.json below.'
+        );
+      }
+
+      const data = (await response.json()) as {
+        ok?: boolean;
+        connected?: boolean;
+        payload?: Record<string, unknown>;
+        error?: string;
+      };
+
+      if (!response.ok || !data.ok || !data.payload) {
+        throw new Error(data.error || `Kindle sync failed with status ${response.status}`);
+      }
+
+      const prefix = data.connected
+        ? 'Connected Kindle Paperwhite synced via USB! '
+        : 'No Kindle Paperwhite detected on USB — loaded latest cached snapshot. ';
+
+      applyKindleSyncJsonText(JSON.stringify(data.payload), 'data/kindle_sync.json', prefix);
+    } catch (err: any) {
+      console.error('Kindle USB sync error:', err);
+      setStatus('error');
+      setStatusMessage(
+        err?.message ||
+          'Failed to sync connected Kindle. Make sure your Kindle is plugged in over USB and unlocked.'
+      );
+    } finally {
+      setIsSyncingKindle(false);
     }
   };
 
@@ -492,6 +563,40 @@ export const ImportModal: React.FC<ImportModalProps> = ({
                 </p>
               </section>
 
+              {/* SECTION 1.5: One-Click USB Kindle MTP + KFX Sync */}
+              <section className="p-4 sm:p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--accent-gold)]/40 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Usb className="w-4 h-4 text-[var(--accent-gold)] shrink-0" />
+                    <h3 className="text-xs font-mono-tabular uppercase tracking-wider text-[var(--text-ink)] font-bold">
+                      Sync Connected Kindle (USB · Clippings + KFX)
+                    </h3>
+                  </div>
+                  <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+                    Reads both <strong className="text-[var(--text-ink)]">My Clippings.txt</strong> and newer <strong className="text-[var(--text-ink)]">KFX annotations</strong> directly from your plugged-in Kindle Paperwhite, updates <code className="font-mono-tabular text-[11px]">data/user_state.json</code>, and refreshes Ex Libris immediately.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleSyncConnectedKindle}
+                  disabled={isSyncingKindle}
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-[var(--accent-gold)] hover:opacity-90 disabled:opacity-50 text-black text-xs font-semibold transition-all shadow-xs cursor-pointer whitespace-nowrap min-h-[38px] shrink-0"
+                >
+                  {isSyncingKindle ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Syncing Kindle...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Usb className="w-3.5 h-3.5" />
+                      <span>Sync Kindle (USB)</span>
+                    </>
+                  )}
+                </button>
+              </section>
+
               {/* SECTION 2: Drag & Drop Zone for Files */}
               <section className="space-y-3">
                 <div className="flex items-center gap-2">
@@ -520,7 +625,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
                     Drag and drop your file here
                   </p>
                   <p className="text-xs text-[var(--text-muted)] mt-1 max-w-sm">
-                    Drop a <strong className="text-[var(--text-ink)]">goodreads_library_export.csv</strong>, account export <strong className="text-[var(--text-ink)]">.zip</strong>, Kindle <strong className="text-[var(--text-ink)]">Notebook.html / My Clippings.txt</strong>, or Scriptor <strong className="text-[var(--text-ink)]">.json</strong>.
+                    Drop a <strong className="text-[var(--text-ink)]">goodreads_library_export.csv</strong>, account export <strong className="text-[var(--text-ink)]">.zip</strong>, Kindle <strong className="text-[var(--text-ink)]">kindle_sync.json / Notebook.html / My Clippings.txt</strong>, or Scriptor <strong className="text-[var(--text-ink)]">.json</strong>.
                   </p>
 
                   <button
@@ -564,10 +669,10 @@ export const ImportModal: React.FC<ImportModalProps> = ({
                   <div className="p-2.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)]">
                     <div className="flex items-center gap-1.5 font-semibold text-xs text-[var(--text-ink)] mb-1">
                       <Feather className="w-3.5 h-3.5 text-[var(--accent-gold)]" />
-                      <span>Kindle .HTML / .TXT</span>
+                      <span>Kindle Sync / .HTML / .TXT</span>
                     </div>
                     <p className="text-[11px] text-[var(--text-muted)] leading-tight">
-                      Notebook.html or USB My Clippings.txt with passages &amp; notes.
+                      kindle_sync.json (KFX + Clippings via npm run sync:kindle), Notebook.html, or My Clippings.txt.
                     </p>
                   </div>
 

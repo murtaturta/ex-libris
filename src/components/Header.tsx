@@ -9,12 +9,13 @@ import {
   Sparkles,
   Coffee,
   Feather,
+  Target,
 } from 'lucide-react';
 import { ArchiveMenu } from './ArchiveMenu';
-import type { Book, EnrichmentCacheMap, UserLocalState } from '../types/library';
+import type { Book, EnrichmentCacheMap, FilmEnrichmentCacheMap, UserLocalState } from '../types/library';
 import { DEFAULT_USER_STATE } from '../lib/storage/localStateClient';
 
-export type TabId = 'study' | 'library' | 'oracle' | 'observatory' | 'scriptorium';
+export type TabId = 'study' | 'library' | 'oracle' | 'observatory' | 'scriptorium' | 'targets';
 
 export interface HeaderProps {
   activeTab: TabId;
@@ -34,6 +35,8 @@ export interface HeaderProps {
   books?: Book[];
   userState?: UserLocalState;
   enrichmentCache?: EnrichmentCacheMap;
+  filmEnrichmentCache?: FilmEnrichmentCacheMap;
+  onFilmEnrichmentUpdated?: (cache: FilmEnrichmentCacheMap) => void;
   /** Legacy slot for backwards compatibility */
   obsidianExportSlot?: React.ReactNode;
 }
@@ -56,6 +59,8 @@ export const Header: React.FC<HeaderProps> = ({
   books = [],
   userState = DEFAULT_USER_STATE,
   enrichmentCache = {},
+  filmEnrichmentCache = {},
+  onFilmEnrichmentUpdated,
 }) => {
   const tabs: Array<{ id: TabId; num: string; label: string; shortLabel: string; icon: React.ReactNode }> = [
     { id: 'study', num: '01', label: 'The Study', shortLabel: 'Study', icon: <Coffee className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> },
@@ -63,6 +68,7 @@ export const Header: React.FC<HeaderProps> = ({
     { id: 'oracle', num: '03', label: 'The Oracle', shortLabel: 'Oracle', icon: <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> },
     { id: 'observatory', num: '04', label: 'The Observatory', shortLabel: 'Observatory', icon: <Compass className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> },
     { id: 'scriptorium', num: '05', label: 'The Scriptorium', shortLabel: 'Scriptorium', icon: <Feather className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> },
+    { id: 'targets', num: '06', label: 'Yearly Targets', shortLabel: 'Targets', icon: <Target className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> },
   ];
 
   return (
@@ -125,6 +131,8 @@ export const Header: React.FC<HeaderProps> = ({
               books={books}
               userState={userState}
               enrichmentCache={enrichmentCache}
+              filmEnrichmentCache={filmEnrichmentCache}
+              onFilmEnrichmentUpdated={onFilmEnrichmentUpdated}
               onOpenImport={onOpenImport}
               onOpenEnrichModal={onOpenEnrichModal}
               enrichedCount={enrichedCount}

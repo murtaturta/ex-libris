@@ -6,6 +6,7 @@ import {
   parseScriptorJson,
 } from '../lib/parsers/writingTelemetryParser';
 import { KindleHeatmapSection } from './KindleHeatmapSection';
+import { DualTrackTimeline } from './DualTrackTimeline';
 import {
   Feather,
   BookOpen,
@@ -548,7 +549,16 @@ export const ScriptoriumView: React.FC<ScriptoriumViewProps> = ({
         )}
       </section>
 
-      {/* 4. Primary Heatmap & Cadence Matrix */}
+      {/* 4. Alternate Dual-Track Timeline View (Read Above · Spine · Written Below) */}
+      <DualTrackTimeline
+        books={books}
+        userState={userState}
+        readingGoals={bundle.readingGoals}
+        onSelectBook={onSelectBook}
+        onSelectBookById={onSelectBookById}
+      />
+
+      {/* 5. Primary Heatmap & Cadence Matrix */}
       {kindleHeatmap && (
         <section aria-label="Input vs Output Calendar Matrix">
           <KindleHeatmapSection

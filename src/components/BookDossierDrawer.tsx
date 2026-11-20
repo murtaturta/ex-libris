@@ -457,6 +457,16 @@ export const BookDossierDrawer: React.FC<BookDossierDrawerProps> = ({
                     ))}
                   </div>
                 )}
+
+                {userState?.kindleTelemetry?.books?.[book.id] && (
+                  <div className="pt-2 border-t border-[var(--border-ledger)]/60 flex items-center justify-between text-xs font-mono-tabular text-[var(--text-muted)]">
+                    <span>Kindle Timer Speed</span>
+                    <span className="text-[var(--text-ink)] font-semibold">
+                      {userState.kindleTelemetry.books[book.id].wpm ?? '—'} WPM ·{' '}
+                      {userState.kindleTelemetry.books[book.id].hoursRead}h tracked
+                    </span>
+                  </div>
+                )}
               </section>
             ) : (
               <section
@@ -515,6 +525,30 @@ export const BookDossierDrawer: React.FC<BookDossierDrawerProps> = ({
                       style={{ width: `${progressPct}%` }}
                     />
                   </div>
+
+                  {(() => {
+                    const kt = userState?.kindleTelemetry?.books?.[book.id];
+                    const wpm = kt?.wpm ?? userState?.kindleTelemetry?.medianWpm ?? null;
+                    const estHoursLeft =
+                      wpm && totalPages > currentPageNum
+                        ? Math.round((((totalPages - currentPageNum) * 275) / wpm / 60) * 10) / 10
+                        : null;
+                    if (!kt && estHoursLeft === null) return null;
+                    return (
+                      <div className="flex items-center justify-between text-[11px] font-mono-tabular text-[var(--text-muted)] pt-0.5">
+                        <span>
+                          {kt
+                            ? `Kindle: ${kt.wpm ?? '—'} WPM · ${kt.hoursRead}h`
+                            : `Est. @ ${wpm} WPM`}
+                        </span>
+                        {estHoursLeft !== null && (
+                          <span className="text-[var(--text-ink)] font-semibold">
+                            ~{estHoursLeft}h remaining
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 <div className="pt-1 text-xs font-mono-tabular">

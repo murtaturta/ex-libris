@@ -12,17 +12,20 @@ import {
   Quote,
   FileCode2,
 } from 'lucide-react';
-import type { Book, EnrichmentCacheMap, UserLocalState } from '../types/library';
+import type { Book, EnrichmentCacheMap, FilmEnrichmentCacheMap, UserLocalState } from '../types/library';
 import { bookHasAnnotations } from '../lib/exporters/markdownNoteExporter';
 import {
   downloadObsidianVault,
   type ObsidianExportScope,
 } from '../lib/exporters/obsidianVaultExporter';
+import { CinemaObsidianExportSection } from './CinemaObsidianExportSection';
 
 export interface ArchiveMenuProps {
   books: Book[];
   userState: UserLocalState;
   enrichmentCache: EnrichmentCacheMap;
+  filmEnrichmentCache?: FilmEnrichmentCacheMap;
+  onFilmEnrichmentUpdated?: (cache: FilmEnrichmentCacheMap) => void;
   onOpenImport: () => void;
   onOpenEnrichModal?: () => void;
   enrichedCount?: number;
@@ -42,6 +45,8 @@ export const ArchiveMenu: React.FC<ArchiveMenuProps> = ({
   books,
   userState,
   enrichmentCache,
+  filmEnrichmentCache = {},
+  onFilmEnrichmentUpdated,
   onOpenImport,
   onOpenEnrichModal,
   enrichedCount = 0,
@@ -141,7 +146,7 @@ export const ArchiveMenu: React.FC<ArchiveMenuProps> = ({
       {open && (
         <div
           role="menu"
-          className="absolute right-0 mt-2 w-72 sm:w-80 z-50 rounded-lg border border-[var(--border-ledger)] bg-[var(--bg-card)] shadow-xl p-1.5 space-y-1 backdrop-blur-md"
+          className="absolute right-0 mt-2 w-72 sm:w-80 max-h-[80vh] overflow-y-auto z-50 rounded-lg border border-[var(--border-ledger)] bg-[var(--bg-card)] shadow-xl p-1.5 space-y-1 backdrop-blur-md"
         >
           {/* Header Tagline */}
           <div className="px-2.5 py-1.5 border-b border-[var(--border-ledger)]/70">
@@ -234,7 +239,11 @@ export const ArchiveMenu: React.FC<ArchiveMenuProps> = ({
               </button>
 
               {obsidianSubmenuOpen && (
-                <div className="mt-1 ml-6 mr-1 p-1 rounded-md bg-[var(--bg-surface)] border border-[var(--border-ledger)] space-y-0.5">
+                <div className="mt-1 ml-6 mr-1 p-1.5 rounded-md bg-[var(--bg-surface)] border border-[var(--border-ledger)] space-y-0.5">
+                  <div className="px-2 pb-0.5 flex items-center justify-between text-[9px] font-mono-tabular uppercase tracking-wider text-[var(--text-muted)]">
+                    <span className="font-bold text-[var(--text-ink)]">Books (Ex Libris)</span>
+                    <span>{books.length} vols</span>
+                  </div>
                   {exportScopes.map((scope) => (
                     <button
                       key={scope.id}
@@ -258,6 +267,15 @@ export const ArchiveMenu: React.FC<ArchiveMenuProps> = ({
                       </span>
                     </button>
                   ))}
+
+                  <CinemaObsidianExportSection
+                    books={books}
+                    userState={userState}
+                    enrichmentCache={enrichmentCache}
+                    filmEnrichmentCache={filmEnrichmentCache}
+                    onFilmEnrichmentUpdated={onFilmEnrichmentUpdated}
+                    onCloseParentMenu={() => setOpen(false)}
+                  />
                 </div>
               )}
             </div>

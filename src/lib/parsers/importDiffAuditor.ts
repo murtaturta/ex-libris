@@ -39,7 +39,7 @@ export interface LibraryImportDiffReport {
 }
 
 export interface ClippingsImportDiffReport {
-  sourceFormat: 'clippings-txt' | 'notebook-html' | 'mixed';
+  sourceFormat: 'clippings-txt' | 'notebook-html' | 'ksdk-sync' | 'mixed';
   incomingTotal: number;
   existingTotal: number;
   newClippingsCount: number;
@@ -222,8 +222,14 @@ export function computeClippingsImportDiff(
     }
   }
 
+  const hasKsdk = incomingClippings.some((c) => c.sourceFormat === 'ksdk-sync');
+  const hasTxt = incomingClippings.some((c) => !c.sourceFormat || c.sourceFormat === 'clippings-txt');
+  const hasHtml = incomingClippings.some((c) => c.sourceFormat === 'notebook-html');
+  const detectedFormat: ClippingsImportDiffReport['sourceFormat'] =
+    hasKsdk && hasTxt ? 'mixed' : hasKsdk ? 'ksdk-sync' : hasHtml && !hasTxt ? 'notebook-html' : 'clippings-txt';
+
   return {
-    sourceFormat: 'clippings-txt',
+    sourceFormat: detectedFormat,
     incomingTotal: incomingClippings.length,
     existingTotal: existingClippings.length,
     newClippingsCount,

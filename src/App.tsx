@@ -4,6 +4,7 @@ import {
   LibraryBundle,
   UserLocalState,
   EnrichmentCacheMap,
+  FilmEnrichmentCacheMap,
   BookUserOverride,
   KindleClipping,
   ExternalDiscoveryPick,
@@ -18,6 +19,7 @@ import {
   saveUserState,
   loadEnrichmentCache,
   saveEnrichmentBatch,
+  loadFilmEnrichmentCache,
 } from './lib/storage/localStateClient';
 import { enrichSingleBook } from './lib/enrichment/metadataEnricher';
 import { fetchGoodreadsPublicLibrary } from './lib/parsers/goodreadsRss';
@@ -28,6 +30,7 @@ import { LibraryView } from './components/LibraryView';
 import { OracleView } from './components/OracleView';
 import { ObservatoryView } from './components/ObservatoryView';
 import { ScriptoriumView } from './components/ScriptoriumView';
+import { TargetsView } from './components/TargetsView';
 import { BookDossierDrawer } from './components/BookDossierDrawer';
 import { CommandPaletteModal } from './components/CommandPaletteModal';
 import { ImportModal } from './components/ImportModal';
@@ -84,6 +87,7 @@ export const App: React.FC = () => {
 
   // Enrichment Metadata Cache Map
   const [enrichmentCache, setEnrichmentCache] = useState<EnrichmentCacheMap>({});
+  const [filmEnrichmentCache, setFilmEnrichmentCache] = useState<FilmEnrichmentCacheMap>({});
 
   // Active navigation tab
   const [activeTab, setActiveTab] = useState<TabId>('study');
@@ -180,15 +184,17 @@ export const App: React.FC = () => {
         return (await bundleRes.json()) as LibraryBundle;
       };
 
-      const [bundleData, loadedUserState, loadedEnrichmentCache] = await Promise.all([
+      const [bundleData, loadedUserState, loadedEnrichmentCache, loadedFilmCache] = await Promise.all([
         loadBundle(),
         loadUserState(),
         loadEnrichmentCache(),
+        loadFilmEnrichmentCache(),
       ]);
 
       setBundle(bundleData);
       setUserState(loadedUserState);
       setEnrichmentCache(loadedEnrichmentCache);
+      setFilmEnrichmentCache(loadedFilmCache);
       setPublicProfileInfo(null);
     } catch (err: any) {
       console.error('Error loading library data:', err);
@@ -220,6 +226,7 @@ export const App: React.FC = () => {
         if (e.key === '3') setActiveTab('oracle');
         if (e.key === '4') setActiveTab('observatory');
         if (e.key === '5') setActiveTab('scriptorium');
+        if (e.key === '6') setActiveTab('targets');
       }
     };
 
@@ -364,6 +371,21 @@ export const App: React.FC = () => {
       return nextState;
     });
   }, []);
+
+  const handleUpdateGoals = useCallback(
+    (updates: { yearlyPageGoal?: number; yearlyTitleGoal?: number }) => {
+      setUserState((prev) => {
+        const nextState: UserLocalState = {
+          ...prev,
+          updatedAt: new Date().toISOString(),
+          ...updates,
+        };
+        saveUserState(nextState);
+        return nextState;
+      });
+    },
+    []
+  );
 
   // Handle batch of enriched books flushed from modal
   const handleEnrichmentBatch = useCallback(async (batch: EnrichmentCacheMap) => {
@@ -566,6 +588,8 @@ export const App: React.FC = () => {
         books={bundle.books}
         userState={userState}
         enrichmentCache={enrichmentCache}
+        filmEnrichmentCache={filmEnrichmentCache}
+        onFilmEnrichmentUpdated={setFilmEnrichmentCache}
       />
 
       {/* Active Public Profile Banner Pill (B-02) */}
@@ -658,6 +682,15 @@ export const App: React.FC = () => {
             enrichmentCache={enrichmentCache}
             onWritingTelemetryImported={handleWritingTelemetryImported}
             onOpenCommonplace={() => setIsCommonplaceOpen(true)}
+          />
+        )}
+
+        {activeTab === 'targets' && (
+          <TargetsView
+            bundle={bundle}
+            userState={userState}
+            onSelectBook={handleSelectBook}
+            onUpdateGoals={handleUpdateGoals}
           />
         )}
       </main>

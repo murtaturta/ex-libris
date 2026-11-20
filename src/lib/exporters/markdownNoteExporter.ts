@@ -43,7 +43,7 @@ export function sanitizeMarkdownFilename(title: string | null | undefined): stri
 /**
  * Escapes strings for valid YAML double-quoted scalars in frontmatter.
  */
-function yamlEscape(str: string): string {
+export function yamlEscape(str: string): string {
   return `"${str.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\r?\n/g, '\\n')}"`;
 }
 

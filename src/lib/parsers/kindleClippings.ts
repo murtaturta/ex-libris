@@ -2,7 +2,7 @@ import type { Book, KindleClipping } from '../../types/library';
 import { extractSeriesFromTitle } from '../formatters';
 
 // Helper to normalize strings for comparison (lowercase, strip non-alphanumeric, trim)
-function normalizeFuzzy(str: string): string {
+export function normalizeFuzzy(str: string): string {
   return str
     .toLowerCase()
     .normalize('NFD')
@@ -145,7 +145,7 @@ function parseMetadataLine(line: string): {
 /**
  * Matches a clipping to a book in the library bundle by title & author.
  */
-function findMatchingBook(
+export function findMatchingBook(
   cleanTitle: string,
   rawTitle: string,
   author: string | null,
@@ -246,11 +246,22 @@ export function parseKindleClippings(
       .map(l => l.trim())
       .filter(l => l.length > 0);
 
-    if (lines.length < 2) continue;
+    if (lines.length === 0) continue;
 
-    const line1 = lines[0];
-    const line2 = lines[1];
-    const contentLines = lines.slice(2);
+    let line1 = lines[0];
+    let line2 = lines[1] || '';
+    let contentLines = lines.slice(2);
+
+    // Handle Kindle bug where title and "- Your Note/Highlight..." are merged on line 0
+    if (line1.includes(' - Your ') && !line2.startsWith('- Your ')) {
+      const idxSplit = line1.indexOf(' - Your ');
+      line2 = line1.slice(idxSplit + 1).trim();
+      line1 = line1.slice(0, idxSplit).trim();
+      contentLines = lines.slice(1);
+    } else if (lines.length < 2) {
+      continue;
+    }
+
     const content = contentLines.join('\n').trim();
 
     const { rawTitle, cleanTitle, author } = parseTitleAndAuthorLine(line1);
@@ -313,7 +324,39 @@ export function parseKindleClippings(
     }
   }
 
-  for (const c of initialClippings) {
+  // Collapse consecutive Kindle keystroke typing bursts on notes at same location
+  const collapsedNotesInput: KindleClipping[] = [];
+  for (let i = 0; i < initialClippings.length; i++) {
+    const cur = initialClippings[i];
+    if (cur.type === 'note' && cur.locationStart !== null) {
+      let j = i;
+      while (j + 1 < initialClippings.length) {
+        const prevNote = initialClippings[j];
+        const nxt = initialClippings[j + 1];
+        const sameBook =
+          (cur.matchedBookId && cur.matchedBookId === nxt.matchedBookId) ||
+          normalizeFuzzy(cur.cleanTitle) === normalizeFuzzy(nxt.cleanTitle);
+        const sameSpot = nxt.type === 'note' && sameBook && nxt.locationStart === cur.locationStart;
+        const t1 = prevNote.addedAt ? Date.parse(prevNote.addedAt) : NaN;
+        const t2 = nxt.addedAt ? Date.parse(nxt.addedAt) : NaN;
+        const withinWindow = !Number.isNaN(t1) && !Number.isNaN(t2) ? Math.abs(t2 - t1) <= 180_000 : true;
+        if (sameSpot && withinWindow) {
+          j++;
+        } else {
+          break;
+        }
+      }
+      const finalNote = initialClippings[j];
+      if (finalNote.content.trim().length > 0) {
+        collapsedNotesInput.push(finalNote);
+      }
+      i = j;
+    } else {
+      collapsedNotesInput.push(cur);
+    }
+  }
+
+  for (const c of collapsedNotesInput) {
     if (!supersededIds.has(c.id)) {
       deduped.push({ ...c });
     }

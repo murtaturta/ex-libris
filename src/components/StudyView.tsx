@@ -422,6 +422,30 @@ export const StudyView: React.FC<StudyViewProps> = ({
                           </button>
                         </div>
                       </div>
+
+                      {(() => {
+                        const kt = userState?.kindleTelemetry?.books?.[book.id];
+                        const wpm = kt?.wpm ?? userState?.kindleTelemetry?.medianWpm ?? null;
+                        const estHoursLeft =
+                          wpm && totalPages && totalPages > currentPage
+                            ? Math.round((((totalPages - currentPage) * 275) / wpm / 60) * 10) / 10
+                            : null;
+                        if (!kt && estHoursLeft === null) return null;
+                        return (
+                          <div className="pt-1.5 border-t border-[var(--border-ledger)]/60 flex items-center justify-between text-[11px] font-mono-tabular text-[var(--text-muted)]">
+                            <span>
+                              {kt
+                                ? `Kindle: ${kt.wpm ?? '—'} WPM · ${kt.hoursRead}h`
+                                : `Est. @ ${wpm} WPM`}
+                            </span>
+                            {estHoursLeft !== null && (
+                              <span className="text-[var(--text-ink)] font-semibold">
+                                ~{estHoursLeft}h left
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
 

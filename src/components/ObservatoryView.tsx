@@ -1049,9 +1049,17 @@ export const ObservatoryView: React.FC<ObservatoryViewProps> = ({
                 Reading Velocity &amp; Pacing
               </h2>
             </div>
-            <span className="text-xs text-[var(--text-muted)] hidden sm:inline">
-              Comparative reading speeds across distinct formats
-            </span>
+            <div className="flex items-center gap-3">
+              {userState?.kindleTelemetry?.medianWpm && (
+                <span className="text-xs font-mono-tabular px-2.5 py-1 rounded-md bg-[var(--bg-card)] border border-[var(--border-ledger)] text-[var(--text-ink)]">
+                  Kindle: <strong>{userState.kindleTelemetry.medianWpm} WPM</strong> median ·{' '}
+                  {userState.kindleTelemetry.totalHoursRead}h ({userState.kindleTelemetry.trackedBooksCount} books)
+                </span>
+              )}
+              <span className="text-xs text-[var(--text-muted)] hidden sm:inline">
+                Comparative reading speeds across distinct formats
+              </span>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

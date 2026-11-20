@@ -3502,6 +3502,18 @@ export function titlesMatchAdaptation(bookTitle: string, filmTitle: string): boo
   return false;
 }
 
+export function findAdaptationAlias(bookTitle: string, filmTitle: string) {
+  const bLower = (bookTitle || '').toLowerCase();
+  const fLower = (filmTitle || '').toLowerCase();
+  return ADAPTATION_ALIASES.find((a) => bLower.includes(a.bookMatch) && fLower.includes(a.filmMatch));
+}
+
+export function doesBookMatchFilm(bookTitle: string, filmTitle: string): { matched: boolean; note?: string } {
+  const alias = findAdaptationAlias(bookTitle, filmTitle);
+  if (alias) return { matched: true, note: alias.note };
+  return { matched: titlesMatchAdaptation(bookTitle, filmTitle) };
+}
+
 /**
  * Computes cross-referencing adaptation links between the library codex and Letterboxd cinema intake.
  */
@@ -3526,9 +3538,7 @@ export function computeAdaptationBridge(
 
     // 1. Check Watchlist matches (Codex -> Screen)
     for (const wl of watchlist) {
-      const alias = ADAPTATION_ALIASES.find(
-        (a) => bTitle.toLowerCase().includes(a.bookMatch) && wl.name.toLowerCase().includes(a.filmMatch)
-      );
+      const alias = findAdaptationAlias(bTitle, wl.name);
       if (alias || titlesMatchAdaptation(bTitle, wl.name)) {
         const key = `${b.id}_${wl.name}_${wl.year}`;
         if (!seenWatchlistKeys.has(key)) {
@@ -3561,9 +3571,7 @@ export function computeAdaptationBridge(
 
     // 2. Check Watched matches (Screen -> Codex)
     for (const w of watches) {
-      const alias = ADAPTATION_ALIASES.find(
-        (a) => bTitle.toLowerCase().includes(a.bookMatch) && w.name.toLowerCase().includes(a.filmMatch)
-      );
+      const alias = findAdaptationAlias(bTitle, w.name);
       if (alias || titlesMatchAdaptation(bTitle, w.name)) {
         const key = `${b.id}_${w.name}_${w.year}`;
         if (!seenScreenKeys.has(key)) {
@@ -3641,10 +3649,7 @@ export function findFilmAdaptationForBook(
 
   const matches: LetterboxdFilmWatch[] = [];
   for (const w of watches) {
-    const alias = ADAPTATION_ALIASES.find(
-      (a) => bTitle.toLowerCase().includes(a.bookMatch) && w.name.toLowerCase().includes(a.filmMatch)
-    );
-    if (alias || titlesMatchAdaptation(bTitle, w.name)) {
+    if (doesBookMatchFilm(bTitle, w.name).matched) {
       matches.push(w);
     }
   }

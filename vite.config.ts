@@ -3,6 +3,60 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import fs from 'node:fs';
 import path from 'node:path';
+import { spawn } from 'node:child_process';
+import { lookupFilmsDirectors, type FilmLookupInput } from './src/lib/enrichment/filmDirectorLookup';
+
+function runKindleSyncScript(rootDir: string): Promise<{ code: number | null; stdout: string; stderr: string }> {
+  const scriptPath = path.join(rootDir, 'scripts', 'sync_kindle.py');
+  const candidates: Array<{ cmd: string; args: string[] }> =
+    process.platform === 'win32'
+      ? [
+          { cmd: 'py', args: ['-3', scriptPath] },
+          { cmd: 'python', args: [scriptPath] },
+        ]
+      : [
+          { cmd: 'python3', args: [scriptPath] },
+          { cmd: 'python', args: [scriptPath] },
+        ];
+
+  const attempt = (index: number): Promise<{ code: number | null; stdout: string; stderr: string }> =>
+    new Promise((resolve, reject) => {
+      const { cmd, args } = candidates[index];
+      const child = spawn(cmd, args, {
+        cwd: rootDir,
+        env: { ...process.env, PYTHONUTF8: '1' },
+        windowsHide: true,
+      });
+
+      let stdout = '';
+      let stderr = '';
+      const timer = setTimeout(() => {
+        child.kill();
+        reject(new Error('Kindle USB sync timed out after 90 seconds.'));
+      }, 90_000);
+
+      child.stdout.on('data', (chunk: Buffer) => {
+        stdout += chunk.toString('utf-8');
+      });
+      child.stderr.on('data', (chunk: Buffer) => {
+        stderr += chunk.toString('utf-8');
+      });
+      child.on('error', (err: NodeJS.ErrnoException) => {
+        clearTimeout(timer);
+        if (err.code === 'ENOENT' && index + 1 < candidates.length) {
+          attempt(index + 1).then(resolve, reject);
+          return;
+        }
+        reject(err);
+      });
+      child.on('close', (code) => {
+        clearTimeout(timer);
+        resolve({ code, stdout, stderr });
+      });
+    });
+
+  return attempt(0);
+}
 
 function localDiskStorePlugin(): Plugin {
   const dataDir = path.resolve(__dirname, 'data');
@@ -10,6 +64,8 @@ function localDiskStorePlugin(): Plugin {
   const userStatePath = path.join(dataDir, 'user_state.json');
   const enrichmentPath = path.join(dataDir, 'enrichment_cache.json');
   const enrichmentPublicPath = path.join(publicDataDir, 'enrichment_cache.json');
+  const filmEnrichmentPath = path.join(dataDir, 'film_enrichment_cache.json');
+  const filmEnrichmentPublicPath = path.join(publicDataDir, 'film_enrichment_cache.json');
   const bundleDataPath = path.join(dataDir, 'library_bundle.json');
   const bundlePublicPath = path.join(publicDataDir, 'library_bundle.json');
 
@@ -37,6 +93,33 @@ function localDiskStorePlugin(): Plugin {
       req.on('end', () => resolve(body));
       req.on('error', reject);
     });
+
+  const handleJsonCacheRoute = async (
+    req: any,
+    res: any,
+    cachePath: string,
+    cachePublicPath: string
+  ) => {
+    if (req.method === 'GET') {
+      const cache = readJsonSafe(cachePath, {});
+      res.statusCode = 200;
+      res.end(JSON.stringify(cache));
+      return true;
+    }
+    if (req.method === 'POST') {
+      const raw = await readBody(req);
+      const incoming = JSON.parse(raw);
+      const existing = readJsonSafe<Record<string, unknown>>(cachePath, {});
+      const merged = { ...existing, ...incoming };
+      const serialized = JSON.stringify(merged, null, 2);
+      fs.writeFileSync(cachePath, serialized, 'utf-8');
+      fs.writeFileSync(cachePublicPath, serialized, 'utf-8');
+      res.statusCode = 200;
+      res.end(JSON.stringify({ ok: true, count: Object.keys(merged).length }));
+      return true;
+    }
+    return false;
+  };
 
   return {
     name: 'exlibris-local-disk-store',
@@ -75,24 +158,33 @@ function localDiskStorePlugin(): Plugin {
           }
 
           if (url === '/api/enrichment-cache') {
-            if (req.method === 'GET') {
-              const cache = readJsonSafe(enrichmentPath, {});
-              res.statusCode = 200;
-              res.end(JSON.stringify(cache));
-              return;
-            }
-            if (req.method === 'POST') {
-              const raw = await readBody(req);
-              const incoming = JSON.parse(raw);
-              const existing = readJsonSafe<Record<string, unknown>>(enrichmentPath, {});
-              const merged = { ...existing, ...incoming };
-              const serialized = JSON.stringify(merged, null, 2);
-              fs.writeFileSync(enrichmentPath, serialized, 'utf-8');
-              fs.writeFileSync(enrichmentPublicPath, serialized, 'utf-8');
-              res.statusCode = 200;
-              res.end(JSON.stringify({ ok: true, count: Object.keys(merged).length }));
-              return;
-            }
+            if (await handleJsonCacheRoute(req, res, enrichmentPath, enrichmentPublicPath)) return;
+          }
+
+          if (url === '/api/film-enrichment-cache') {
+            if (await handleJsonCacheRoute(req, res, filmEnrichmentPath, filmEnrichmentPublicPath)) return;
+          }
+
+          if (url === '/api/enrich-films' && req.method === 'POST') {
+            const raw = await readBody(req);
+            const body = JSON.parse(raw) as { films?: FilmLookupInput[] };
+            const inputs = Array.isArray(body?.films) ? body.films : [];
+            const results = await lookupFilmsDirectors(inputs);
+            const existing = readJsonSafe<Record<string, unknown>>(filmEnrichmentPath, {});
+            const merged = { ...existing, ...results };
+            const serialized = JSON.stringify(merged, null, 2);
+            fs.writeFileSync(filmEnrichmentPath, serialized, 'utf-8');
+            fs.writeFileSync(filmEnrichmentPublicPath, serialized, 'utf-8');
+            res.statusCode = 200;
+            res.end(
+              JSON.stringify({
+                ok: true,
+                processed: Object.keys(results).length,
+                totalCached: Object.keys(merged).length,
+                results,
+              })
+            );
+            return;
           }
 
           if (url === '/api/library-bundle' && req.method === 'POST') {
@@ -153,6 +245,44 @@ function localDiskStorePlugin(): Plugin {
               );
               return;
             }
+          }
+
+          if (url === '/api/sync-kindle' && req.method === 'POST') {
+            const { code, stdout, stderr } = await runKindleSyncScript(__dirname);
+            if (code !== 0) {
+              res.statusCode = 500;
+              res.end(
+                JSON.stringify({
+                  ok: false,
+                  error: stderr.trim() || stdout.trim() || `sync_kindle.py exited with code ${code}`,
+                })
+              );
+              return;
+            }
+
+            const syncPath = path.join(dataDir, 'kindle_sync.json');
+            const payload = readJsonSafe<Record<string, unknown> | null>(syncPath, null);
+            if (!payload) {
+              res.statusCode = 500;
+              res.end(
+                JSON.stringify({
+                  ok: false,
+                  error: 'Kindle sync completed, but data/kindle_sync.json was not found.',
+                })
+              );
+              return;
+            }
+
+            res.statusCode = 200;
+            res.end(
+              JSON.stringify({
+                ok: true,
+                connected: Boolean(payload.connected),
+                payload,
+                log: stdout.trim(),
+              })
+            );
+            return;
           }
 
           return next();

@@ -5,6 +5,8 @@ dist/
 
 # Local Runtime State, Raw Exports & Personal Caches
 /data/
+/public/data/
+scripts/__pycache__/
 *.zip
 *.csv
 ExLibris-Portable.html

@@ -183,14 +183,14 @@ describe('Goodreads Data Integrity & UX Suite', () => {
   });
 
   describe('3. Reconciled User Bundle Invariants', () => {
-    it('has 301 total books in bundle', () => {
-      expect(bundle.books.length).toBe(301);
+    it('has 305 total books in bundle', () => {
+      expect(bundle.books.length).toBe(305);
     });
 
-    it('ensures ratedCount is 87 and average rating ~4.01 (unrated 0s excluded)', () => {
-      expect(bundle.summaryStats.ratings.ratedCount).toBe(87);
+    it('ensures ratedCount is 91 and average rating ~3.97 (unrated 0s excluded)', () => {
+      expect(bundle.summaryStats.ratings.ratedCount).toBe(91);
       if (bundle.summaryStats.ratings.averageRating !== null) {
-        expect(bundle.summaryStats.ratings.averageRating).toBeCloseTo(4.01, 1);
+        expect(bundle.summaryStats.ratings.averageRating).toBeCloseTo(3.97, 1);
       }
     });
 
