@@ -218,7 +218,7 @@ export const ScriptoriumView: React.FC<ScriptoriumViewProps> = ({
   const telemetry = userState?.writingTelemetry;
   const avgWpd = telemetry?.activeDaysCount
     ? Math.round(telemetry.totalWords / telemetry.activeDaysCount)
-    : 472;
+    : 0;
 
   return (
     <div className="space-y-8 pb-16 animate-fadeIn">
@@ -326,11 +326,11 @@ export const ScriptoriumView: React.FC<ScriptoriumViewProps> = ({
               <Feather className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
             </div>
             <div className="font-mono-tabular text-xl sm:text-2xl font-bold text-[var(--text-ink)]">
-              {(telemetry?.totalWords || 54353).toLocaleString()}
+              {(telemetry?.totalWords ?? 0).toLocaleString()}
               <span className="text-xs font-normal text-[var(--text-muted)] ml-1">words</span>
             </div>
             <div className="text-[11px] text-[var(--text-muted)] font-mono-tabular mt-0.5">
-              {telemetry?.activeDaysCount || 115} active sessions · {avgWpd} w/day
+              {telemetry?.activeDaysCount ?? 0} active sessions · {avgWpd} w/day
             </div>
           </div>
 
@@ -342,11 +342,11 @@ export const ScriptoriumView: React.FC<ScriptoriumViewProps> = ({
               <Flame className="w-3.5 h-3.5 text-[var(--accent-gold)]" />
             </div>
             <div className="font-mono-tabular text-xl sm:text-2xl font-bold text-[var(--accent-gold)]">
-              {telemetry?.completedGoalDaysCount || 45}
+              {telemetry?.completedGoalDaysCount ?? 0}
               <span className="text-xs font-normal text-[var(--text-muted)] ml-1">days</span>
             </div>
             <div className="text-[11px] text-[var(--text-muted)] font-mono-tabular mt-0.5">
-              {telemetry?.dailyGoal || 300}w target hit
+              {telemetry?.dailyGoal ?? 300}w target hit
             </div>
           </div>
 
@@ -695,8 +695,8 @@ export const ScriptoriumView: React.FC<ScriptoriumViewProps> = ({
               })
             ) : (
               <p className="text-xs text-[var(--text-muted)] italic font-serif-editorial">
-                No matching vault essays found. Add Markdown notes to your Obsidian vault under
-                &ldquo;Benim Yazılar&rdquo; or review folders to link them automatically.
+                No matching vault essays found. Add Markdown notes to your Obsidian vault under your
+                essays or book review folders to link them automatically.
               </p>
             )}
           </div>

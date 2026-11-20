@@ -504,7 +504,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
                     type="text"
                     value={profileInput}
                     onChange={(e) => setProfileInput(e.target.value)}
-                    placeholder="https://www.goodreads.com/user/show/137464693-murat or 137464693"
+                    placeholder="https://www.goodreads.com/user/show/12345678-reader or 12345678"
                     disabled={isFetchingRss}
                     className="flex-1 px-3 py-2 rounded-md bg-[var(--bg-surface)] border border-[var(--border-ledger)] text-xs text-[var(--text-ink)] placeholder-[var(--text-muted)]/60 focus:outline-none focus:border-[var(--accent-primary)] font-mono-tabular"
                   />

@@ -35,7 +35,7 @@ export interface BroadsideBookplateModalProps {
 }
 
 const MOTTO_PRESETS = [
-  'Private Library of Murat',
+  'Private Library',
   'Ne içindeyim zamanın, ne de büsbütün dışında.',
   'A reader lives a thousand lives before he dies.',
   'So many books, so little time.',
@@ -391,7 +391,7 @@ export const BookplateSvg = React.forwardRef<SVGSVGElement, BookplateSvgProps>(
           letterSpacing="3"
           fill="#1C1B18"
         >
-          {(ownerName || 'Murat').toUpperCase()}
+          {(ownerName || 'Reader').toUpperCase()}
         </text>
 
         {/* Motto Ribbon Banner */}
@@ -413,7 +413,7 @@ export const BookplateSvg = React.forwardRef<SVGSVGElement, BookplateSvgProps>(
             fontStyle="italic"
             fill="#5C3826"
           >
-            “{motto || 'Private Library of Murat'}”
+            “{motto || 'Private Library'}”
           </text>
         </g>
 
@@ -523,9 +523,9 @@ export const BroadsideBookplateModal: React.FC<BroadsideBookplateModalProps> = (
 
   // Bookplate Studio State
   const initialConfig = userState.bookplateConfig;
-  const [ownerName, setOwnerName] = useState<string>(initialConfig?.ownerName || 'Murat');
+  const [ownerName, setOwnerName] = useState<string>(initialConfig?.ownerName || 'Reader');
   const [motto, setMotto] = useState<string>(
-    initialConfig?.motto || 'Private Library of Murat'
+    initialConfig?.motto || 'Private Library'
   );
   const [fleuron, setFleuron] = useState<'aldine' | 'compass' | 'owl' | 'quill'>(
     initialConfig?.fleuron || 'aldine'
@@ -614,8 +614,8 @@ export const BroadsideBookplateModal: React.FC<BroadsideBookplateModalProps> = (
   // Actions
   const handleSaveConfig = () => {
     const config: BookplateConfig = {
-      ownerName: ownerName.trim() || 'Murat',
-      motto: motto.trim() || 'Private Library of Murat',
+      ownerName: ownerName.trim() || 'Reader',
+      motto: motto.trim() || 'Private Library',
       fleuron,
       borderStyle,
     };
@@ -710,8 +710,8 @@ export const BroadsideBookplateModal: React.FC<BroadsideBookplateModalProps> = (
   };
 
   const handleCopyMarkdownEmbed = async () => {
-    const cleanName = ownerName.trim() || 'Murat';
-    const cleanMotto = motto.trim() || 'Private Library of Murat';
+    const cleanName = ownerName.trim() || 'Reader';
+    const cleanMotto = motto.trim() || 'Private Library';
     const snippet = `> [!NOTE] EX LIBRIS · ${cleanName.toUpperCase()}\n> *“${cleanMotto}”*\n> **${stats.totalVolumes} Volumes in Stacks** · *${stats.totalPagesRead.toLocaleString()} Pages Traversed*\n> *Est. Private Archive · Ex Libris*`;
 
     try {
@@ -892,7 +892,7 @@ export const BroadsideBookplateModal: React.FC<BroadsideBookplateModalProps> = (
                     type="text"
                     value={ownerName}
                     onChange={(e) => setOwnerName(e.target.value)}
-                    placeholder="e.g. Murat"
+                    placeholder="e.g. Reader"
                     maxLength={32}
                     className="w-full px-3.5 py-2.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-ledger)] text-sm font-serif-editorial text-[var(--text-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-gold)] transition-colors"
                   />

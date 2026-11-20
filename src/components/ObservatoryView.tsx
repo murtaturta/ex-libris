@@ -1080,7 +1080,9 @@ export const ObservatoryView: React.FC<ObservatoryViewProps> = ({
 
                   <div className="my-2">
                     <div className="font-mono-tabular font-bold text-3xl text-[var(--text-ink)]">
-                      {fv.avgPagesPerDay}
+                      {fv.booksCompleted === 0 && fv.sessionsWithDuration === 0
+                        ? '—'
+                        : fv.avgPagesPerDay}
                     </div>
                     <div className="text-[11px] font-mono-tabular text-[var(--text-muted)]">
                       pages / day average
@@ -1090,7 +1092,11 @@ export const ObservatoryView: React.FC<ObservatoryViewProps> = ({
                   <div className="mt-3 pt-3 border-t border-[var(--border-ledger)]/60 text-xs font-mono-tabular text-[var(--text-muted)] space-y-1">
                     <div className="flex justify-between">
                       <span>Median finish:</span>
-                      <strong className="text-[var(--text-ink)]">{fv.medianDaysToFinish} days</strong>
+                      <strong className="text-[var(--text-ink)]">
+                        {fv.booksCompleted === 0 && fv.sessionsWithDuration === 0
+                          ? '—'
+                          : `${fv.medianDaysToFinish} days`}
+                      </strong>
                     </div>
                     <div className="flex justify-between">
                       <span>Total read pages:</span>

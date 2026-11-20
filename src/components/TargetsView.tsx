@@ -111,11 +111,24 @@ export const TargetsView: React.FC<TargetsViewProps> = ({
             </h1>
 
             <p className="text-xs sm:text-sm text-[var(--text-muted)] max-w-2xl font-serif-editorial italic leading-relaxed">
-              Multi-metric annual pacing across titles, pages, and hours — calibrated to your{' '}
-              <strong className="not-italic text-[var(--text-ink)] font-mono-tabular">
-                {analytics.effectiveWpm} WPM
-              </strong>{' '}
-              {analytics.isKindleWpmCalibrated ? 'Kindle timer median' : 'baseline speed'}.
+              Multi-metric annual pacing across titles, pages, and hours —{' '}
+              {analytics.isKindleWpmCalibrated ? (
+                <>
+                  calibrated to your{' '}
+                  <strong className="not-italic text-[var(--text-ink)] font-mono-tabular">
+                    {analytics.effectiveWpm} WPM
+                  </strong>{' '}
+                  Kindle timer median.
+                </>
+              ) : (
+                <>
+                  estimated at{' '}
+                  <strong className="not-italic text-[var(--text-ink)] font-mono-tabular">
+                    {analytics.effectiveWpm} WPM
+                  </strong>{' '}
+                  default baseline (sync Kindle to calibrate).
+                </>
+              )}
             </p>
           </div>
 

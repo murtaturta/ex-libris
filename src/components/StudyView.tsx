@@ -66,7 +66,8 @@ export const StudyView: React.FC<StudyViewProps> = ({
   const dnfCount =
     stats?.shelves?.didNotFinish ??
     books.filter((b) => b.exclusiveShelf === 'did-not-finish').length;
-  const meanRating = stats?.ratings?.averageRating ?? 4.01;
+  const meanRating =
+    (stats?.ratings?.ratedCount ?? 0) > 0 ? (stats?.ratings?.averageRating ?? null) : null;
 
   // ------------------------------------------------------------------
   // 1. Nightstand Diagnostics & Split (Active This Week vs On Hold)
@@ -204,7 +205,7 @@ export const StudyView: React.FC<StudyViewProps> = ({
               <Star className="w-3.5 h-3.5 fill-[var(--accent-gold)] text-[var(--accent-gold)]" />
             </div>
             <div className="font-serif-editorial text-2xl sm:text-3xl font-bold text-[var(--text-ink)]">
-              {meanRating.toFixed(2)}
+              {meanRating !== null ? meanRating.toFixed(2) : '—'}
               <span className="text-base text-[var(--accent-gold)] ml-1">★</span>
             </div>
             <div className="text-xs text-[var(--text-muted)] font-mono-tabular mt-0.5">
